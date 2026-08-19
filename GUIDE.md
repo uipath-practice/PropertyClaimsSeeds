@@ -3,6 +3,33 @@
 > **Draft, 2026-08-18.** The sequence and the prompts are real; the prose around them is a skeleton that becomes
 > lessons once a build has been through it. Blocks 1, 3 and 4 have prompts written; the rest are outlined.
 
+## Getting the seed onto your machine
+
+If you are reading this, you may already have it. If not — one line in a terminal, and **the folder you create
+is your working folder**, so name it for your seat:
+
+```bash
+git clone https://github.com/uipath-practice/PropertyClaimsSeeds.git ClaimCase-01
+cd ClaimCase-01
+```
+
+No git on the machine? The same content as a zip:
+
+```bash
+curl -L https://github.com/uipath-practice/PropertyClaimsSeeds/archive/refs/heads/main.zip -o seed.zip
+unzip seed.zip && mv PropertyClaimsSeeds-main ClaimCase-01 && cd ClaimCase-01
+```
+
+On Windows PowerShell, `Invoke-WebRequest -Uri <url> -OutFile seed.zip` then `Expand-Archive seed.zip`.
+
+**Clone if you can.** Everything you build shows up as untracked in `git status`, and anything of ours you
+changed shows up in `git diff` — which makes "what did I actually produce" a command rather than a memory test,
+and is worth having when you write up `build-findings.md` at the end. `VERSION` records which seed you have;
+quote it if you report a problem.
+
+Then open the folder in your editor and start your coding agent **in it**. `AGENTS.md` and `CLAUDE.md` are
+picked up automatically.
+
 ## What you are building, and why this shape
 
 A property insurance claim arrives as three documents that do not always agree with each other. Your solution has
