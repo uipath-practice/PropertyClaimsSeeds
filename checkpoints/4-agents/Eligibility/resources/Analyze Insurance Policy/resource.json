@@ -1,0 +1,78 @@
+{
+  "$resourceType": "tool",
+  "id": "5e61d201-d39b-406a-9a7c-335be13caebe",
+  "name": "Analyze Insurance Policy",
+  "description": "Analyze insurance policy with an LLM to analyze eligibility",
+  "type": "internal",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "attachments": {
+        "type": "array",
+        "description": "The document to read, supplied as the agent input in_PolicyFile. Pass it as the `attachments` parameter.",
+        "items": {
+          "$ref": "#/definitions/job-attachment"
+        }
+      },
+      "analysisTask": {
+        "type": "string",
+        "description": "Read the file in full and follow the prompt to analyze eligibility of the submitted Claim Data against this policy."
+      }
+    },
+    "required": [
+      "attachments",
+      "analysisTask"
+    ],
+    "definitions": {
+      "job-attachment": {
+        "type": "object",
+        "required": [
+          "ID"
+        ],
+        "x-uipath-resource-kind": "JobAttachment",
+        "properties": {
+          "ID": {
+            "type": "string",
+            "description": "Orchestrator attachment key"
+          },
+          "FullName": {
+            "type": "string",
+            "description": "File name"
+          },
+          "MimeType": {
+            "type": "string",
+            "description": "The MIME type of the content, such as \"application/json\" or \"image/png\""
+          },
+          "Metadata": {
+            "type": "object",
+            "description": "Dictionary<string, string> of metadata",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  },
+  "settings": {},
+  "properties": {
+    "toolType": "analyze-attachments"
+  },
+  "guardrail": {
+    "policies": []
+  },
+  "isEnabled": true,
+  "argumentProperties": {},
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "analysis": {
+        "type": "string",
+        "description": "Analysis result of the attachments (analysis, summary, extracted information, etc.)"
+      }
+    },
+    "required": [
+      "analysis"
+    ]
+  }
+}

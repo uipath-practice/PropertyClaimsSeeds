@@ -1,0 +1,16 @@
+{
+  "agentPosition": {
+    "x": 0,
+    "y": 0
+  },
+  "resourceNodes": [
+    {
+      "id": "agent=>Analyze Files:b995039e-e2b1-4b59-a45b-f0a921584c3e",
+      "position": {
+        "x": 256,
+        "y": 384
+      }
+    }
+  ],
+  "zoom": 1.32
+}

@@ -1,0 +1,151 @@
+{
+  "$schema": "https://cloud.uipath.com/draft/2024-12/entry-point",
+  "$id": "entry-points.json",
+  "entryPoints": [
+    {
+      "filePath": "/content/agent.json",
+      "uniqueId": "03de7bb8-0628-41a3-b539-3177418bbfa7",
+      "type": "agent",
+      "input": {
+        "type": "object",
+        "required": [
+          "in_PolicyDataJSON",
+          "in_ClaimDataJSON",
+          "in_AssessmentReportJSON",
+          "in_EligibilityChecksJSON"
+        ],
+        "properties": {
+          "in_PolicyDataJSON": {
+            "type": "object",
+            "description": "Policy document as JSON",
+            "properties": {}
+          },
+          "in_ClaimDataJSON": {
+            "type": "object",
+            "description": "Claim details extracted on previous steps",
+            "properties": {}
+          },
+          "in_AssessmentReportJSON": {
+            "type": "object",
+            "description": "Validated assessor report converted to structured JSON.",
+            "properties": {}
+          },
+          "in_EligibilityChecksJSON": {
+            "type": "object",
+            "description": "Results of Eligibility Checks",
+            "properties": {}
+          }
+        }
+      },
+      "output": {
+        "type": "object",
+        "required": [
+          "out_CredibilityChecksJSON"
+        ],
+        "properties": {
+          "out_CredibilityChecksJSON": {
+            "description": "Credibility Analysis Results Check envelope — see CoreKitchen/check-envelope.md. Every string is shown to a human reviewer.",
+            "type": "object",
+            "required": [
+              "verdict",
+              "headline",
+              "summary",
+              "checks"
+            ],
+            "properties": {
+              "verdict": {
+                "type": "string",
+                "enum": [
+                  "pass",
+                  "attention",
+                  "fail"
+                ],
+                "description": "pass when nothing needs a human; attention when a reviewer should look; fail when this analysis blocks the claim."
+              },
+              "headline": {
+                "type": "string",
+                "maxLength": 80,
+                "description": "One line the reviewer can act on. States the reason, not the outcome."
+              },
+              "summary": {
+                "type": "string",
+                "description": "Your reasoning. Replaces the separate summary output that used to exist."
+              },
+              "flags": {
+                "type": "array",
+                "maxItems": 5,
+                "items": {
+                  "type": "string",
+                  "maxLength": 60
+                }
+              },
+              "checks": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 8,
+                "description": "One entry per thing you checked, reported whether it passed or not.",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "label",
+                    "status",
+                    "verdict"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "maxLength": 40,
+                      "description": "Stable snake_case key."
+                    },
+                    "label": {
+                      "type": "string",
+                      "maxLength": 30,
+                      "description": "Sentence case, written for a claims reviewer. Never a payload field name."
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "pass",
+                        "warn",
+                        "fail"
+                      ],
+                      "description": "warn when satisfied only with a caveat, or when data needed for the check was unavailable."
+                    },
+                    "verdict": {
+                      "type": "string",
+                      "maxLength": 80,
+                      "description": "The one-line result shown beside the label."
+                    },
+                    "details": {
+                      "type": "array",
+                      "maxItems": 6,
+                      "description": "Supporting evidence. Not displayed for a passing check.",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "label",
+                          "value"
+                        ],
+                        "properties": {
+                          "label": {
+                            "type": "string",
+                            "maxLength": 30
+                          },
+                          "value": {
+                            "type": "string",
+                            "maxLength": 120
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,216 @@
+{
+  "$schema": "https://cloud.uipath.com/draft/2024-12/entry-point",
+  "$id": "entry-points.json",
+  "entryPoints": [
+    {
+      "filePath": "/content/agent.json",
+      "uniqueId": "fd532f35-48f1-48a7-9368-37cc8a660bd8",
+      "type": "agent",
+      "input": {
+        "type": "object",
+        "required": [
+          "in_ClaimDataJSON",
+          "in_PolicyDataJSON",
+          "in_AssessorReportPDF",
+          "in_EligibilityChecksJSON"
+        ],
+        "properties": {
+          "in_ClaimDataJSON": {
+            "type": "object",
+            "description": "Cleaned claim data used to verify the report matches the claim under review.",
+            "properties": {}
+          },
+          "in_PolicyDataJSON": {
+            "type": "object",
+            "description": "Policy data as JSON used to verify the insured property and policy context.",
+            "properties": {}
+          },
+          "in_AssessorReportPDF": {
+            "description": "The assessor report PDF to validate and convert into structured JSON.",
+            "$ref": "#/definitions/job-attachment",
+            "definitions": {
+              "job-attachment": {
+                "type": "object",
+                "properties": {
+                  "ID": {
+                    "type": "string",
+                    "description": "Orchestrator attachment key"
+                  },
+                  "FullName": {
+                    "type": "string",
+                    "description": "File name"
+                  },
+                  "MimeType": {
+                    "type": "string",
+                    "description": "The MIME type of the content, such as \"application/json\" or \"image/png\""
+                  },
+                  "Metadata": {
+                    "type": "object",
+                    "description": "Dictionary<string, string> of metadata",
+                    "additionalProperties": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "required": [
+                  "ID"
+                ],
+                "x-uipath-resource-kind": "JobAttachment"
+              }
+            }
+          },
+          "in_EligibilityChecksJSON": {
+            "type": "object",
+            "description": "Output from the Claims Eligibility Agent, used as pre-screening context and to carry forward known discrepancies.",
+            "properties": {}
+          }
+        },
+        "definitions": {
+          "job-attachment": {
+            "type": "object",
+            "required": [
+              "ID"
+            ],
+            "x-uipath-resource-kind": "JobAttachment",
+            "properties": {
+              "ID": {
+                "type": "string",
+                "description": "Orchestrator attachment key"
+              },
+              "FullName": {
+                "type": "string",
+                "description": "File name"
+              },
+              "MimeType": {
+                "type": "string",
+                "description": "The MIME type of the content, such as \"application/json\" or \"image/png\""
+              },
+              "Metadata": {
+                "type": "object",
+                "description": "Dictionary<string, string> of metadata",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "output": {
+        "type": "object",
+        "required": [
+          "out_AssessmentReportValidationJSON",
+          "out_AssessmentReportJSON"
+        ],
+        "properties": {
+          "out_AssessmentReportValidationJSON": {
+            "description": "Validation results for the assessor report, including completeness, credential checks, and claim matching. Check envelope — see CoreKitchen/check-envelope.md. Every string is shown to a human reviewer.",
+            "type": "object",
+            "required": [
+              "verdict",
+              "headline",
+              "summary",
+              "checks"
+            ],
+            "properties": {
+              "verdict": {
+                "type": "string",
+                "enum": [
+                  "pass",
+                  "attention",
+                  "fail"
+                ],
+                "description": "pass when nothing needs a human; attention when a reviewer should look; fail when this analysis blocks the claim."
+              },
+              "headline": {
+                "type": "string",
+                "maxLength": 80,
+                "description": "One line the reviewer can act on. States the reason, not the outcome."
+              },
+              "summary": {
+                "type": "string",
+                "description": "Your reasoning. Replaces the separate summary output that used to exist."
+              },
+              "flags": {
+                "type": "array",
+                "maxItems": 5,
+                "items": {
+                  "type": "string",
+                  "maxLength": 60
+                }
+              },
+              "checks": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 8,
+                "description": "One entry per thing you checked, reported whether it passed or not.",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "label",
+                    "status",
+                    "verdict"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "maxLength": 40,
+                      "description": "Stable snake_case key."
+                    },
+                    "label": {
+                      "type": "string",
+                      "maxLength": 30,
+                      "description": "Sentence case, written for a claims reviewer. Never a payload field name."
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "pass",
+                        "warn",
+                        "fail"
+                      ],
+                      "description": "warn when satisfied only with a caveat, or when data needed for the check was unavailable."
+                    },
+                    "verdict": {
+                      "type": "string",
+                      "maxLength": 80,
+                      "description": "The one-line result shown beside the label."
+                    },
+                    "details": {
+                      "type": "array",
+                      "maxItems": 6,
+                      "description": "Supporting evidence. Not displayed for a passing check.",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "label",
+                          "value"
+                        ],
+                        "properties": {
+                          "label": {
+                            "type": "string",
+                            "maxLength": 30
+                          },
+                          "value": {
+                            "type": "string",
+                            "maxLength": 120
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "out_AssessmentReportJSON": {
+            "type": "object",
+            "description": "Structured assessor report JSON for downstream analysis. Preserve all materially relevant report fields and findings.",
+            "properties": {}
+          }
+        }
+      }
+    }
+  ]
+}

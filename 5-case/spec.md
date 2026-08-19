@@ -79,11 +79,44 @@ event, two tests, nothing to race. `pdd.md` §3 states this as a process rule; t
 
 **Give each stage exactly one way in.** Two entry conditions that can both become true is a double execution.
 
+## Rules make it run; edges make it legible
+
+A stage is entered by its **entry conditions**, not by a line on a canvas — so a plan with no edges at all still
+executes correctly. It also renders as a row of disconnected boxes, and a human opening it cannot tell what
+follows what.
+
+**Draw the edge for every transition your rules allow.** The canvas is how a reviewer, a trainer and Studio Web
+read your case, and "it runs" is not the same as "someone can maintain it".
+
+Leave `layout` empty unless you are placing nodes deliberately: an empty map means the designer lays the plan
+out itself, which is fine. A map that names *some* stages and omits one is what crashes the designer on load.
+
 ## Parallelism is grouping, not ordering
 
 Task groups are a nested array and **the inner grouping is what expresses concurrency**. Three tasks listed in
 sequence run in sequence, however independent they look. `pdd.md` §3 says which work is parallel; expressing it is
 your job.
+
+## Three shapes the schema insists on
+
+These are not style. Each one was found by a live run failing in a way that named nothing useful.
+
+**A JSON payload variable is `"type": "jsonSchema"`, never `"object"`.** The agents' own schemas use JSON Schema
+convention where `object` is right, and copying that into a case variable is the natural mistake. The case
+engine then **rejects the task before dispatch, silently** — no Orchestrator job is created at all, the element
+just reads `Failed`, and `case instance incidents` has nothing to say. `object` is legitimate only *inside* a
+nested schema body, describing a shape; never as a variable's or a task output's own type.
+
+**A file output binds with `target: "=orchestrator.JobAttachments"`.** The ordinary
+`target: "=<variable>"` shape is right for scalars and JSON payloads and wrong for files: you get an incident
+reading `[400300] Error evaluating expression in activity inputs: Failed to evaluate expression: =<yourVar>`,
+again before any job exists. Keep `var`/`id` pointing at your case variable — only `target` changes.
+
+**The claim id is the case's own external id, not an input.** The case takes two arguments, `scenario` and
+`discrepancy` (`7-testing/`), and nothing else. Set a `caseIdentifier` prefix and let the platform mint
+`<PREFIX>-<generated>`; read it wherever it is needed as `=js:metadata.ExternalId`. Adding a `claimId`
+in-argument means the caller has to invent an id the platform is already generating, and every downstream
+consumer then has two sources of truth for the same thing.
 
 ## The four things a generated plan gets wrong
 
@@ -136,6 +169,24 @@ an unstarted claim shows errors.
 
 Worth doing well: the second section is most useful as the **case's own progress** — what each decider said and
 where the claim has got to — rather than more claim data, which the first section already carries.
+
+## Deploy into your own folder, never the tenant root
+
+A solution deployment **creates a folder**, and if you do not say where, it is created at the tenant root — next
+to every other participant's, and outside the seat that holds your processes and buckets. Two of them collide
+into `ClaimCase-01`, `ClaimCase-01 1`, and it is not obvious afterwards which is yours.
+
+Name the parent explicitly, every time:
+
+```bash
+uip solution deploy run --package-name <pkg> --package-version <v> \
+  --folder-name <solution-folder> --parent-folder-path ClaimCase-<NN>
+```
+
+This is the same fact as *a solution folder is not the same folder*, seen from the other side: the deployment
+creates a **child** of your seat, and that child does not inherit the seat's processes or buckets — so bindings
+still need their folder named. Getting the parent right does not remove that; it just keeps your work where you
+can find it.
 
 ## Done when
 

@@ -1,33 +1,64 @@
 # The provided processes — the plumbing contract
 
-Six processes are deployed in your folder before you start. **They are infrastructure the exercise provides**:
-you bind them, you never open or rebuild them. Together they cover every movement of a file or a payload between
-storage and your case, which is why building one yourself is always a mistake — if you are about to write a
-bucket download, an IXP invocation or a PDF-to-text step, it already exists.
+Six processes are deployed in your folder before you start. You bind them; you never open or rebuild them.
+
+**They are the integration layer.** In a real insurer, retrieving a policy means logging into a portal,
+searching, downloading a PDF and handing it back — and the same for the assessor's report and the claim history.
+Here that is stood in with a storage bucket, which keeps the shape while removing a dependency nobody can
+provision for a room full of people. The interfaces are what they would be either way: ask for a policy by
+number, get a file.
+
+So what is left for you is the part that is actually hard, and actually transferable: **stitching these into a
+case, putting a human in the right two places, and making it survive an execution that runs for days.**
+
+Practically: if you are about to write a bucket download, an IXP invocation or a PDF-to-text step, stop — it
+already exists, and it is on the list below.
 
 **The argument names and types below are a contract.** Your case plan binds to them by name, and a wrong type is
 the single most common way a claim faults at run time having packed and deployed cleanly.
 
-## The six
+## Read the contract from the platform, not from here
 
-| Process | In | Out |
-|---|---|---|
-| `Retrieve Property Claim` | `in_ClaimID` · `in_Scenario` · `in_Discrepancy` | — |
-| `Extract Claim Data (IXP)` | `in_ClaimID` | `out_PolicyID` · `out_ClaimIXPDataJSON` · `out_ClaimFormPDF` |
-| `Retrieve Policy Document` | `in_PolicyID` | `out_PolicyPDF` |
-| `Retrieve Previous Claims` | `in_PolicyID` | `out_PreviousClaimsJSON` |
-| `Retrieve Inspection Report` | `in_ClaimID` | `out_AssessmentReport` · `out_ReportReady` |
-| `Client Notification` | `in_Subject` · `in_Body` · `in_Recepient` | — |
+**This file explains what each process is for. The platform is authoritative on its arguments**, and you should
+read them before you bind anything:
 
-### Types, and the two that are easy to get wrong
+```bash
+uip or processes list --folder-key <your seat folder> --output json     # what is deployed
+uip or packages entry-points "<PackageId>:<Version>" --output json      # its exact I/O schema
+```
 
-| Argument | Type | Notes |
-|---|---|---|
-| `out_ClaimIXPDataJSON` | **object** | Not a string. An agent input declared `type: object` receives it directly; wrap or stringify it and the agent faults on input validation. |
-| `out_PreviousClaimsJSON` | **string** | Not an object — the opposite of the one above, in the same case plan. Parse it where you need fields. |
-| `out_ClaimFormPDF` · `out_PolicyPDF` · `out_AssessmentReport` | **file** | These become job attachments. Bind one to an agent input declared as a job attachment; never to a string. |
-| `out_PolicyID` | string | The policy number read off the claim form. |
-| `out_ReportReady` | boolean | `false` until the assessor's report exists. See the polling note below. |
+`packages entry-points` returns real JSON Schema for inputs and outputs — names, types, which are required, and
+each argument's own description. That is the shape your case plan has to match, and it cannot go stale the way
+a document can.
+
+Two habits worth forming here, because they apply to everything you bind later: **check what is actually
+deployed rather than what you were told**, and **treat a document as the explanation and the platform as the
+truth.** If this file and `entry-points` disagree, the platform wins — and that disagreement is a finding worth
+logging.
+
+`uip maestro case tasks describe --type process` looks like the right command and does **not** work for these —
+it accepts `process` and then reports no entry found. Use `packages entry-points`.
+
+## The six, and what each is for
+
+| Process | Stands in for | Give it | Get back |
+|---|---|---|---|
+| `Retrieve Property Claim` | a claim arriving through the front door | a claim number, and optionally an aimed scenario | nothing — the documents land in the buckets |
+| `Extract Claim Data (IXP)` | reading the submitted form | the claim number | the claim as structured data, the policy number, and the form as a file |
+| `Retrieve Policy Document` | the policy admin system | a policy number | the policy document |
+| `Retrieve Previous Claims` | the claims history system | a policy number | what has been claimed against that policy before |
+| `Retrieve Inspection Report` | the assessor's filing | the claim number | a ready flag, and the report once it exists |
+| `Client Notification` | correspondence to the claimant | subject, body, recipient | nothing |
+
+### Three shapes that are easy to get wrong
+
+Check them against `packages entry-points`; they are called out because a mismatch fails at run time rather than
+at bind time.
+
+- **The extracted claim is an object, not a string.** An agent input declared `type: object` takes it directly.
+- **The claim history is a string**, not an object — the opposite, in the same case plan.
+- **The three document outputs are job attachments.** Bind one to an attachment-typed agent input, never to a
+  string.
 
 ## What each one does
 

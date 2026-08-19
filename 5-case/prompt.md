@@ -10,9 +10,10 @@ section before editing anything) · `CONFIG.md` (folders and names)
 
 **Must hold.**
 
-- **Bind the plumbing; do not build it.** Six processes are already deployed, and
-  `contracts/provided-processes.md` gives every argument, its type and its behaviour. If you are about to write
-  a bucket download, an IXP call or a PDF-to-text step, you have missed one.
+- **Bind the plumbing; do not build it.** Six processes are already deployed. Read what they are for in
+  `contracts/provided-processes.md`, and read their exact arguments from the platform —
+  `uip or packages entry-points "<PackageId>:<Version>"` — before binding. If you are about to write a bucket
+  download, an IXP call or a PDF-to-text step, you have missed one.
 - **Match the types.** One retrieval returns an object, another a string, three return files. A type mismatch
   packs and deploys cleanly and faults on a live claim.
 - **One solution, named for your seat**, holding the case and all seven agents. A case cannot bind an agent that
@@ -42,5 +43,6 @@ entered shows complete, and the claim record carries a row written stage by stag
 **Where it goes.** Generated code into `Build/ClaimCase<NN>/` — one solution for the whole build. Notes and
 documents you write for this block go in this block's folder.
 
-**Log as you go.** Keep `build-findings.md`: every retry, every surprise, and everything these instructions
-failed to explain — what you tried, what happened, what you did next. Dead ends included; they are the point.
+**Log as you go.** Append to `build-findings.md`, and insert a row per finding into `WorkshopFindings` as
+`AGENTS.md` describes — every retry, every surprise, and everything these instructions failed to explain. Dead
+ends included; they are the point.

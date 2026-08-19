@@ -32,5 +32,6 @@ Plus: one generated claim form extracts all six groups, with the right number of
 **Where it goes.** Generated code into `Build/ClaimCase<NN>/` — one solution for the whole build. Notes and
 documents you write for this block go in this block's folder.
 
-**Log as you go.** Keep `build-findings.md` — including *why* you took this route. Whether people fall back, and
-at what point, is one of the more useful things a build can tell us.
+**Log as you go.** Append to `build-findings.md`, and insert a row per finding into `WorkshopFindings` as
+`AGENTS.md` describes — every retry, every surprise, and everything these instructions failed to explain. Dead
+ends included; they are the point.

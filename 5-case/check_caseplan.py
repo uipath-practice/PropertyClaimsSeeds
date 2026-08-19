@@ -154,5 +154,24 @@ for stage in stages:
                               f'but that stage marks itself COMPLETE — the rule never fires')
                         problems.append(cond['id'])
 
+# ------------------------------------------------------------- legibility (warnings)
+# Entry conditions drive execution; edges draw the picture. A plan with none runs
+# correctly and renders as disconnected boxes, which is how a case becomes
+# unmaintainable without ever failing.
+if stages and not edges:
+    print('WARNING  no edges — this plan will run, and will render as disconnected boxes')
+else:
+    linked = set()
+    for e in edges:
+        linked.add((e.get('source'), e.get('target')))
+    for stage in stages:
+        for cond in (stage['data'].get('entryConditions') or []):
+            for group in cond['rules']:
+                for rule in group:
+                    for src in (rule.get('selectedStageIds') or []):
+                        if (src, stage['id']) not in linked:
+                            print(f'WARNING  {labels.get(src, src)} -> {labels.get(stage["id"])} '
+                                  f'is a real transition with no edge drawn')
+
 print(f'{len(stages)} stages, {len(edges)} edges — {len(problems) - len(missing)} referential problem(s)')
 sys.exit(1 if problems else 0)

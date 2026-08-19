@@ -55,9 +55,13 @@ files between storage and your case (extraction, policy, prior claims, assessor 
 buckets, and a shared extraction project you may adopt instead of training your own. `contracts/provided-processes.md` gives every one
 with its exact arguments, types and behaviour.
 
-**They are the whole plumbing layer, on purpose.** If you find yourself about to build a bucket download, an IXP
-invocation or a PDF-to-text step, stop and check `contracts/provided-processes.md` — it exists. This exercise is about driving a coding
-agent through a real solution, not about writing file transfers.
+**They are the integration layer, and they are given on purpose.** In a real insurer, fetching a policy means
+driving a portal — log in, search, download, return the file. Here it is a storage bucket behind the same
+interface. What that leaves you is the part worth practising: stitching the pieces into a case, putting a human
+in the right two places, and making it survive a long-running execution.
+
+So if you find yourself about to build a bucket download, an IXP invocation or a PDF-to-text step, stop and
+check `contracts/provided-processes.md` — it exists.
 
 **Yours:** the extraction taxonomy or the adoption of the shared one, the claim record, the seven agent prompts
 and their schemas, the case plan and every binding in it, and the app. **All of it in one solution**, named for
@@ -124,10 +128,33 @@ logging.
 stale cache rather than an absent resource. `uip login status` before believing anything is missing, and read
 `known-issues/` before believing a `list` that comes back empty.
 
-## Keep `build-findings.md`
+## Log what you learn, twice
 
-One file at the root of your work, appended as you go: every retry, every surprise, and everything this seed
-failed to explain — what you tried, what happened, what you did next, dead ends included.
+**`build-findings.md`, at this folder's root.** Appended as you go: every retry, every surprise, and everything
+this seed failed to explain — what you tried, what happened, what you did next, dead ends included. It is the
+narrative, and it is yours.
 
-It is not homework. It is the deliverable that improves the seed for the next cohort, and it is the most useful
-thing you will have when someone asks what the build actually cost.
+**And one row per finding in the shared table**, so findings can be counted across everyone doing this exercise
+rather than read one folder at a time:
+
+```bash
+uip df records insert WorkshopFindings --body '[{
+  "seat":"<NN>", "block":"5-case",
+  "codingAgent":"<your agent>", "model":"<your model>",
+  "uipVersion":"<uip --version>", "seedVersion":"<from VERSION>",
+  "category":"seed-gap",
+  "summary":"What happened, what you tried, what happened next."
+}]' --output json
+```
+
+`category` is free text — `seed-gap`, `platform-bug`, `model-weakness`, `friction`, whatever fits. Do not
+agonise: the summary is what gets read.
+
+**Write the row while the finding is fresh**, not in a batch at the end. An hour later it has lost the detail
+that made it useful.
+
+**If the insert fails, carry on.** Note it and keep building. This is telemetry, not a gate, and nothing about
+your build depends on it.
+
+It is not homework. It is the deliverable that improves this for the next person, and the most useful thing you
+will have when someone asks what the build actually cost.

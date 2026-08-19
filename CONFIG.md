@@ -65,8 +65,12 @@ No email connection is provisioned. `Client Notification` logs the letter rather
 
 **You create the Data Fabric connection yourself** in block 3 — it has to be owned by you.
 
-**A solution folder is not the same folder.** Deploying a solution creates a sub-folder, and a sub-folder does
-**not** inherit its parent's buckets or processes. Anything in your case plan that calls one of the above needs
+**Deploy into your seat folder, never the tenant root.** `solution deploy run` creates a folder, and without
+`--parent-folder-path ClaimCase-<NN>` it creates it at the root — beside everyone else's, and outside the seat
+that holds your processes and buckets.
+
+**And a solution folder is not the same folder.** The sub-folder it creates does **not** inherit its parent's
+buckets or processes. Anything in your case plan that calls one of the above needs
 its folder named explicitly — `ClaimCase-<NN>`, your seat folder — or it resolves to an empty folder and fails at
 run time. `uip or processes list --folder-key <key>` settles it in one call, and a count of zero is the whole
 diagnosis.

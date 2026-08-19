@@ -60,9 +60,19 @@ closes a claim on its own. §4 says where the one exception lies, and it runs in
 
 ## 3. The lifecycle
 
-Eight stages. **Five are primary — the main path — and three are secondary**: exception and terminal routes that a
-portfolio view does not show as ordinary progress. Which stages are which is worth deciding deliberately, because it
-is what a case timeline displays.
+Eight stages. **Five are primary — the main path — and three are secondary.** The split is what a case timeline
+displays, so it is worth getting right, and the criterion is simple:
+
+> **Primary is the path a healthy claim takes. Secondary is everything else** — a hold, an exception, and the
+> unhappy ending.
+
+Applied here that gives **primary**: intake, eligibility screening, analysis, claim review, approved. And
+**secondary**: awaiting inspection (a hold — the claim waits on someone outside the process, and it is the one
+stage a claim can return to), missing details (an exception), denied (the unhappy ending).
+
+Making the *approved* ending secondary is the tempting mistake, because the two endings look symmetric. They are
+not: approval is what a healthy claim does, and a portfolio view that shows every settled claim as an exception
+is a portfolio view nobody can read.
 
 **Intake.** Register the claim. Then **in parallel**: open the claim record and retrieve the documents. Then **in
 parallel** again: retrieve the policy, look up prior claims against it, and tell the claimant the claim was received.

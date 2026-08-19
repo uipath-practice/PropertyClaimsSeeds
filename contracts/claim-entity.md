@@ -61,10 +61,13 @@ no extracted field and no document reference exists yet.
 
 ### Written after the eligibility analysis
 
-**Seven of these are agent outputs; two are not.** The eligibility agent emits the seven scalars below as
+**Seven of these are agent outputs; one is not.** The eligibility agent emits the seven scalars below as
 separate outputs, for the reason in *Scalars are not extracted from blobs*. `policyId` arrives with the policy
-retrieval, before any analysis runs, and `reviewRequired` is computed by the case from the agent's verdict — it
-is a case expression, not an eleventh agent output. A column's presence in this table means a stage writes it,
+retrieval, before any analysis runs.
+
+`reviewRequired` is **not here** — it belongs to the claim-review stage. It is computed by the case from the
+decision analysis's recommendation, so it cannot exist until that analysis has run, and it must be written
+*before* the gateway that reads it opens. A column's presence in this table means a stage writes it,
 never that an agent produces it.
 
 | Column | Type | Column | Type |
@@ -73,7 +76,7 @@ never that an agent produces it.
 | `incidentType` | `STRING` | `totalClaimAmount` | `DECIMAL` |
 | `incidentDate` | `DATE` | `currency` | `STRING` |
 | `dateOfSubmission` | `DATE` | `propertyCountry` | `STRING` |
-| `reviewRequired` | `BOOLEAN` | | |
+
 
 | Column | Type | Holds |
 |---|---|---|
@@ -104,7 +107,8 @@ never that an agent produces it.
 
 | Column | Type | Column | Type |
 |---|---|---|---|
-| `reviewDecision` | `STRING` | `decisionReason` | `STRING`, ≤ 200 |
+| `reviewRequired` | `BOOLEAN` | `decisionReason` | `STRING`, ≤ 200 |
+| `reviewDecision` | `STRING` | | |
 | `reviewerNotes` | `STRING` | `claimResponseJson` | `MULTILINE_TEXT` · 10,000 |
 | `reviewedAt` | `DATETIME_WITH_TZ` | `closedAt` | `DATETIME_WITH_TZ` |
 | `approvedPayout` | `DECIMAL` | | |

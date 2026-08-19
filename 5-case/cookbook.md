@@ -8,8 +8,10 @@ block. Read the first section before you edit anything: it is the one that costs
 The file you edit is source. The runtime executes **`caseplan.json.bpmn`**, a compiled artifact sitting beside it.
 
 - `pack` **copies** the compiled file. It does not build it.
-- No CLI command reliably regenerates it.
-- **Opening the project in Studio Web is what recompiles it.**
+- **`uip maestro case debug <project-dir>` recompiles it.** It uploads to Studio Web as part of running the
+  debug session, which is the same thing opening the designer does — so a headless session does have a way to
+  force the compile. Verify with `uip solution download <id> --extract` and check the `.bpmn` matches.
+- Opening the project in Studio Web also recompiles it, and remains the fallback.
 
 So a hand edit to `caseplan.json` can pack, deploy and run while changing nothing at all, and every symptom points
 somewhere else. Before believing any edit took effect:
@@ -47,6 +49,24 @@ One failure is worth knowing by name: **a stage with no `layout.nodes` entry cra
 load**, with an error naming nothing in your plan (`Cannot read properties of undefined (reading 'x')`). If the
 canvas dies after you added a stage, that is why.
 
+## Resolving the processes you bind
+
+Every provided process is found through the registry, and **the registry cache goes stale**:
+
+```bash
+uip maestro case registry pull --force
+uip maestro case registry search "<process name>" --type process --output json
+```
+
+Without the pull you get a partial index — four of six processes, with no indication that two are simply
+missing. And **filter the results by folder**: the tenant is shared, other seats have processes with the same
+names, and the wrong pick binds cleanly and fails at run time. Check
+`Folders[0].FullyQualifiedName == "ClaimCase-<NN>"`.
+
+`uip maestro case tasks describe --type process` does **not** work for classic Orchestrator processes despite
+`--help` accepting `process` — it looks in the wrong index and reports no entry found. You do not need it:
+`contracts/provided-processes.md` gives every argument and type.
+
 ## Local files and Studio Web — never let them drift
 
 The sync is automatic in **one direction only**: opening the project in Studio Web writes the tenant's state
@@ -58,7 +78,7 @@ The loop that is safe:
 1. Edit locally.
 2. `python3 5-case/check_caseplan.py caseplan.json`
 3. Upload your work **before** opening the designer.
-4. Open the project in Studio Web once — this is what recompiles the `.bpmn`.
+4. `uip maestro case debug <project-dir>` — or open the project in Studio Web once. Either recompiles the `.bpmn`.
 5. `grep -c` your token in the `.bpmn` to prove the recompile happened.
 
 **Studio Web saves the plan minified onto a single line.** A 100 KB single-line JSON file is unreadable by tools

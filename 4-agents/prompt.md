@@ -36,5 +36,6 @@ produces a failing check *in the agent that owns it*, worded so a reviewer can s
 **Where it goes.** Generated code into `Build/ClaimCase<NN>/` — one solution for the whole build. Notes and
 documents you write for this block go in this block's folder.
 
-**Log as you go.** Keep `build-findings.md`: every retry, every surprise, and everything these instructions
-failed to explain — what you tried, what happened, what you did next. Dead ends included; they are the point.
+**Log as you go.** Append to `build-findings.md`, and insert a row per finding into `WorkshopFindings` as
+`AGENTS.md` describes — every retry, every surprise, and everything these instructions failed to explain. Dead
+ends included; they are the point.

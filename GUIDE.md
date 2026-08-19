@@ -97,6 +97,19 @@ At the end of block 2 you should be able to fill this in, from your own design:
 enough to build it — and every hour after this point gets more expensive to correct. If you can, the rest of the
 exercise is execution, and the same table becomes your test plan in block 7.
 
+## When a block goes wrong — checkpoints
+
+`checkpoints/` holds a working version of a block's output. Restore one and carry on.
+
+Using a checkpoint is a **deliberate choice, not a failure** — the same logic as block 1's shared extraction
+project. A half-finished component that everything downstream depends on is worse than a borrowed working one,
+so take the checkpoint the moment a block stops being the interesting part of your day.
+
+Two things make it honest. **Read the block's `spec.md` anyway** — block 5 binds these components by name, and
+debugging a wiring problem in something you have never looked at is the most expensive hour available here. And
+**say so in `build-findings.md`**: which checkpoint, when, and what had gone wrong. That is the clearest signal
+we get about where this is too hard.
+
 ## Block 1 has two routes, on purpose
 
 Training an extraction model is the one block with a real floor on how long it takes — most of it spent waiting
