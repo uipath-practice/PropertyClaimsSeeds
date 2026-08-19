@@ -25,6 +25,9 @@ groups every later block consumes.
 **Must hold.**
 
 - The six group names match `1-extraction/taxonomy.md` exactly. A renamed group is a broken build three blocks later.
+- **Title the project for your seat** — `ClaimCase-<NN>`, the same string as everything else you create
+  (`CONFIG.md`, *One name, everywhere*). The platform derives its own lowercase slug `Name` from your title, and
+  that slug is what every later command wants.
 - A five-row claim returns five occurrences of `ClaimDamageInventory`. Confirm those **per occurrence** — the
   plain form confirms a field in every occurrence, including the ones that extracted wrong.
 - Field types match the imported taxonomy. Most are `Exact Text` deliberately; do not "improve" them.
@@ -43,7 +46,7 @@ damage rows.
 **If it stalls, switch.** Use `1-extraction/prompt-shared.md` and move on. Extraction feeds everything downstream, so a
 half-trained project is worse than a borrowed one — and the rest of the exercise is identical either way.
 
-**Where it goes.** Generated code into `Build/ClaimCase<NN>/` — one solution for the whole build. Notes and
+**Where it goes.** Generated code into `Build/ClaimCase-<NN>/` — one solution for the whole build. Notes and
 documents you write for this block go in this block's folder.
 
 **Log as you go.** `python3 log-finding.py --block <this-block> --category <kind> --summary "..."` — every

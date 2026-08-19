@@ -71,10 +71,12 @@ with nothing in the message pointing back to here.
 
 There is no `uip is connections get`. Inspect a connection with the `list` form above.
 
-## Naming: the entity name is stricter than the folder name
+## Naming: the entity is the one place the hyphen is illegal
 
-Entity names take **letters, digits and underscores only, and must start with a letter**. Your seat token is
-part of the name and folder-style punctuation is rejected — `ClaimCase_01`, not `ClaimCase-01`.
+Everything else you create is `ClaimCase-<NN>` — folder, solution, packages, build directory (`CONFIG.md`,
+*One name, everywhere*). Entity names take **letters, digits and underscores only, and must start with a
+letter**, so this one is `ClaimCase_07`. Not `ClaimCase-07`, which is rejected, and not `ClaimCase07`, which is
+accepted and then reads as somebody else's convention for the rest of the build.
 
 Your folder scopes the name, so a collision with another seat is not the risk it would be at tenant level — but
 keep the seat token anyway. It is what makes a row, a log line or a runtime error attributable to you.

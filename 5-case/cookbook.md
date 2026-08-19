@@ -216,7 +216,7 @@ output into a case variable, and write that variable to nothing else.
 ## Redeploy into the same folder, not a new one
 
 `solution deploy run` refuses a folder that already holds the solution, and the tempting answer — deploy `1.0.2`
-into `ClaimCase02-v102`, `1.0.3` into `-v103` — leaves a folder per attempt, each with fourteen processes, and
+into `ClaimCase-02-v102`, `1.0.3` into `-v103` — leaves a folder per attempt, each with fourteen processes, and
 by the fifth iteration it is genuinely unclear which one you last ran.
 
 Uninstall, then deploy into the same name:
@@ -245,7 +245,7 @@ ones return errors about themselves, which is easy to mistake for a broken run.
 succeeded. Use `uip or processes list --folder-key <k>` to confirm what landed.
 
 **`uip or jobs start` takes the process GUID**, the `Key` from `processes list` — not the dotted
-`ProcessKey` like `ClaimCase07.Case.ClaimLifecycle`, which fails with `HTTP 400: Undefined process`. Both look
+`ProcessKey` like `ClaimCase-07.Case.ClaimLifecycle`, which fails with `HTTP 400: Undefined process`. Both look
 like identifiers and only one is.
 
 `uip or jobs get` and `uip or jobs logs` reject `--folder-key`, though `uip or jobs list` accepts it.

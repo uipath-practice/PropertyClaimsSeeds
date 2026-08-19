@@ -21,7 +21,7 @@ and lets a clean claim through untouched.
 caught it, what the claimant was told, and pass or fail. Nine pinned runs, two clean runs, then twenty on
 `random`.
 
-**Where it goes.** The results table in this block's folder. Generated code, as ever, in `Build/ClaimCase<NN>/`.
+**Where it goes.** The results table in this block's folder. Generated code, as ever, in `Build/ClaimCase-<NN>/`.
 
 **Log as you go.** `python3 log-finding.py --block 7-testing --category <kind> --summary "..."` — every retry,
 every surprise, everything these instructions failed to explain, and anything that took longer than it should

@@ -37,7 +37,7 @@ uip maestro case instance incidents <instance-id> --folder-key <key>
 
 ## `uip or jobs start` wants the GUID, not the process key
 
-`uip or jobs start ClaimCase07.Case.ClaimLifecycle` fails with `HTTP 400: Undefined process`. The positional
+`uip or jobs start ClaimCase-07.Case.ClaimLifecycle` fails with `HTTP 400: Undefined process`. The positional
 argument is the `Key` GUID from `uip or processes list` — the dotted string is the `ProcessKey`, a different
 field that looks more like an identifier and is not the one.
 

@@ -72,7 +72,7 @@ stage exactly as designed, because an analysis said something was off with a cla
 it. Go back to that agent's prompt and fix the over-flagging — `7-testing/spec.md` says how to find which one.
 A workshop-day claim that always needs a human is a solution nobody would ship.
 
-**Where it goes.** Generated code into `Build/ClaimCase<NN>/` — one solution for the whole build. Notes and
+**Where it goes.** Generated code into `Build/ClaimCase-<NN>/` — one solution for the whole build. Notes and
 documents you write for this block go in this block's folder.
 
 **Log as you go.** `python3 log-finding.py --block 5-case --category <kind> --summary "..."` — every retry,

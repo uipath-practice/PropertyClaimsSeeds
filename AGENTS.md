@@ -90,11 +90,11 @@ Three places, and nothing anywhere else:
 
 | What you produce | Where it goes |
 |---|---|
-| **All generated code** — agents, the case, the app | `Build/ClaimCase<NN>/` — **one solution**, named for your seat |
+| **All generated code** — agents, the case, the app | `Build/ClaimCase-<NN>/` — **one solution**, named for your seat |
 | **Notes and documents you write for a block** — a design, a decision about structure, an SDD | that block's folder, e.g. `2-design/sdd.md`, `5-case/notes.md` |
 | **Findings** | the shared table, via `log-finding.py` — never a local file |
 
-**One solution, and its name is fixed.** `Build/ClaimCase<NN>/` holds everything: a case binds agents by name
+**One solution, and its name is fixed.** `Build/ClaimCase-<NN>/` holds everything: a case binds agents by name
 *inside its own solution*, so agents published in a solution of their own are unreachable from the case that
 needs them. Do not create a second solution for a component, and do not invent a name — every extra solution is
 another package to version, deploy and uninstall in step, and a name nobody chose is a name nobody can find.
@@ -113,8 +113,9 @@ run `ls Build/` and see your entire solution, once.
 and entity columns are one name in three casings, by design (`contracts/claim-entity.md`). A better name breaks
 the mapping three blocks later, at run time, silently.
 
-**Everything you create carries your seat token.** The tenant is shared — with this workshop and with other
-exercises; `CONFIG.md` says what has to carry the token and how to find yours.
+**Everything you create is called `ClaimCase-<NN>`** — folder, solution, packages, build directory, IXP project
+— because the tenant is shared and one name is what makes your work findable and removable. `CONFIG.md`,
+*One name, everywhere*, has the table and the single exception the platform forces.
 
 **Do not read the answer key.** The generator drops a `manifest.json` beside the documents naming the problems
 it planted and the outcome it expects. Nothing you build may read it — an analysis that consults it is brilliant

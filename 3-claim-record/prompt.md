@@ -24,7 +24,7 @@ uip df entities get <entity-id> --folder-key <your-seat-folder-key> --output jso
 uip is connections list uipath-uipath-dataservice --refresh --all-folders --output json  # the shared connection
 ```
 
-**Where it goes.** Generated code into `Build/ClaimCase<NN>/` — one solution for the whole build. Notes and
+**Where it goes.** Generated code into `Build/ClaimCase-<NN>/` — one solution for the whole build. Notes and
 documents you write for this block go in this block's folder.
 
 **Log as you go.** `python3 log-finding.py --block <this-block> --category <kind> --summary "..."` — every

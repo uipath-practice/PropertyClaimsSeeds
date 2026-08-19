@@ -26,10 +26,25 @@ rather than assume:
 uip or folders list --output json --output-filter "[?starts_with(Name,'ClaimCase')].Name"
 ```
 
+### One name, everywhere
+
+**Your seat's name is `ClaimCase-<NN>`, and it is the same string in every surface.** Not a family of similar
+names — the same one. It is what makes a folder, a package, a job and a log line attributable to you at a glance,
+and it is what lets a teardown script find everything you made.
+
+| Surface | Name |
+|---|---|
+| Orchestrator folder | `ClaimCase-07` |
+| Local build folder | `Build/ClaimCase-07/` |
+| Solution, and every package it publishes | `ClaimCase-07` |
+| Solution folder you deploy into | `ClaimCase-07` under your seat folder |
+| IXP project, if you build your own | title it `ClaimCase-07` |
+| **Data Fabric entity** | **`ClaimCase_07`** — the one exception |
+
 **The entity name is the strict one.** Data Fabric takes letters, digits and underscores only, and the name must
-start with a letter — so your folder is `ClaimCase-07` and your entity is **`ClaimCase_07`**. The hyphen that
-works everywhere else is rejected there, and it is rejected at create time with a message about the name rather
-than about the seat, which is why it is worth knowing before you meet it.
+start with a letter, so the hyphen that works everywhere else is rejected — at create time, with a message about
+the name rather than about the seat. Underscore there, hyphen everywhere else, and nowhere at all is it
+`ClaimCase07`.
 
 ## Data Fabric: your entity is folder-scoped, the connection is shared
 
@@ -55,7 +70,7 @@ it is the difference between a case that writes rows and one that faults with
 ## One solution, one name, one place on disk
 
 ```
-Build/ClaimCase<NN>/             everything you generate — agents, the case, later the app
+Build/ClaimCase-<NN>/             everything you generate — agents, the case, later the app
 ```
 
 Not one solution per component. A case binds agents **by name inside its own solution**, so agents published in

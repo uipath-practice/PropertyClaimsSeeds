@@ -41,7 +41,7 @@ gateway declares all three gateway inputs, and every payload name matches `contr
 Plus, by inspection: a clean claim produces five passing eligibility checks, and a claim with a planted problem
 produces a failing check *in the agent that owns it*, worded so a reviewer can see what is actually wrong.
 
-**Where it goes.** Generated code into `Build/ClaimCase<NN>/` — one solution for the whole build. Notes and
+**Where it goes.** Generated code into `Build/ClaimCase-<NN>/` — one solution for the whole build. Notes and
 documents you write for this block go in this block's folder.
 
 **Log as you go.** `python3 log-finding.py --block <this-block> --category <kind> --summary "..."` — every
