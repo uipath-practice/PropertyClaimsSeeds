@@ -1,6 +1,6 @@
 # Block 3 — the claim record
 
-**Goal.** Create the Data Fabric entity that holds one row per claim, so every later step has somewhere to write
+**Goal.** Create the Data Fabric case entity that holds one row per claim, so every later step has somewhere to write
 and the reviewer's screen has somewhere to read from.
 
 **Read.** `contracts/claim-entity.md` · `pdd.md` §8 (why the record exists at all) · `CONFIG.md` ·
@@ -9,19 +9,24 @@ and the reviewer's screen has somewhere to read from.
 **Must hold.**
 
 - Every payload your design produces has a column, and the column types match the contract.
-- The entity name carries your seat token — entity names are tenant-scoped and will collide otherwise.
+- **The entity is created in your seat folder**, not at tenant level (`CONFIG.md`). A tenant-level create is
+  refused with a message about permissions rather than about scope.
+- The entity name carries your seat token, and uses underscores — `ClaimCase_07`, not `ClaimCase-07`.
 - You have not exceeded the platform's cap on large-text columns. Count them before you create, not after.
+- **The Data Fabric connection already exists and is shared.** Find it, confirm it answers, and record its name
+  and folder — block 5 binds it. Do not create one.
 
 **Done when.**
 
 ```bash
-uip df entities list --output json          # your entity exists, with your seat token
-uip df entities get <entity-id> --output json   # every column from the contract is present
+uip df entities list --native-only --folder-key <your-seat-folder-key> --output json   # your entity is there
+uip df entities get <entity-id> --folder-key <your-seat-folder-key> --output json      # every contract column
+uip is connections list uipath-uipath-dataservice --refresh --all-folders --output json  # the shared connection
 ```
 
 **Where it goes.** Generated code into `Build/ClaimCase<NN>/` — one solution for the whole build. Notes and
 documents you write for this block go in this block's folder.
 
-**Log as you go.** Append to `build-findings.md`, and insert a row per finding into `WorkshopFindings` as
-`AGENTS.md` describes — every retry, every surprise, and everything these instructions failed to explain. Dead
-ends included; they are the point.
+**Log as you go.** `python3 log-finding.py --block <this-block> --category <kind> --summary "..."` — every
+retry, every surprise, everything these instructions failed to explain, and anything that took longer than it
+should have. Dead ends included; they are the point. `AGENTS.md` has the detail.

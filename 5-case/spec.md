@@ -41,6 +41,17 @@ task is not there yet: the eligibility screening stage and the claim review stag
 and block 6 drops a task into each. A stage that has been merged away or made to complete instantly has to be
 rebuilt rather than extended, and the entry and exit rules around it are the expensive part.
 
+**What "shaped" has to mean, concretely.** In pass 1 a flagged claim reaches the review stage and stops there,
+because the only thing that could move it on is a human who has not been asked. **That is the correct
+behaviour, not a defect** — the stage is waiting for a task block 6 will add. What is a defect is not knowing
+which of the two you are looking at, so decide it before you run anything:
+
+- the clean exit is present and conditional — `reviewRequired === false` and nothing else;
+- the flagged path has **no** exit yet, and no invented substitute — an auto-approve "for now", a timer that
+  gives up, a second exit that fires on the same completion, are each a thing block 6 has to find and remove;
+- **the acceptance run is a claim that takes the clean path.** A flagged claim parking forever proves nothing
+  either way, which is why `auto-settle` is what closes this block.
+
 That is not a workaround. Proving the spine before inserting the humans is the cheaper order: a stuck claim in
 pass 1 has one possible cause, and you will have learned the edit loop before you need it under pressure.
 
@@ -78,6 +89,11 @@ diverting exit** and let both destinations key on the *same* completion with mut
 event, two tests, nothing to race. `pdd.md` §3 states this as a process rule; this is what it means structurally.
 
 **Give each stage exactly one way in.** Two entry conditions that can both become true is a double execution.
+
+**And every stage has a way in at all.** A stage nothing enters — a placeholder for work you thought of but did
+not design, a branch you started and abandoned — is not free. It draws as a dead box on the canvas, it warns on
+every validation from here to the end of the build, and the next person cannot tell it from a transition you
+forgot to wire. If your design does not have it, the plan does not either.
 
 ## Rules make it run; edges make it legible
 
@@ -145,6 +161,14 @@ gateway (`pdd.md` §4).
 
 The gate is **`reviewRequired !== false`, never `=== true`.** A missing or malformed value must route to a
 reviewer; only an explicit `false` may skip. This is a one-character difference with a one-way consequence.
+
+## The claim record is written through a shared connection
+
+The Data Fabric connection is shared and lives in the `Shared` folder; your entity lives in **your seat folder**
+(`CONFIG.md`). That combination is the one place where the connector's defaults are wrong for this build — the
+activities it reaches for resolve entity names at tenant level and will not find yours, deploying cleanly and
+faulting on the first row. `5-case/cookbook.md` has the six-line correction. Apply it to every write task, not
+the first one you test.
 
 ## Every stage writes what it learned
 

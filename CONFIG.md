@@ -16,9 +16,8 @@ uip login status --output json     # confirm before anything else
 ```
 
 **You share this tenant**, and not only with this workshop — other exercises publish here too. Prefix everything
-you create — solution, processes, agents, entity, app — with your seat number so twenty builds can coexist. Data
-Fabric entity names in particular are **tenant-scoped**, so an unprefixed `ClaimCase` collides with someone
-else's on the first deploy.
+you create — solution, processes, agents, entity, app — with your seat number so twenty builds can coexist. A
+name without it is a collision waiting for the second participant to reach the same step.
 
 **Your seat number is the `NN` in your Orchestrator folder**, and nothing in this folder states it — confirm it
 rather than assume:
@@ -31,6 +30,27 @@ uip or folders list --output json --output-filter "[?starts_with(Name,'ClaimCase
 start with a letter — so your folder is `ClaimCase-07` and your entity is **`ClaimCase_07`**. The hyphen that
 works everywhere else is rejected there, and it is rejected at create time with a message about the name rather
 than about the seat, which is why it is worth knowing before you meet it.
+
+## Data Fabric: your entity is folder-scoped, the connection is shared
+
+Two facts that decide how block 3 and block 5 are written. Neither is guessable and both fail late.
+
+**Your claim entity lives in your seat folder, not at tenant level.** Create it with `--folder-key`, the key of
+`ClaimCase-<NN>`. A tenant-level create is refused outright — `You don't have permission to access the entity,
+field or record` — which reads like a broken login and is really a scope you were never granted. Folder scope is
+also what gives you a space of your own: nobody else's build can see or touch your rows.
+
+**The Data Fabric connection already exists and is shared.** `Shared Data Fabric Connection`, in the `Shared`
+folder — do not create your own.
+
+```bash
+uip is connections list uipath-uipath-dataservice --refresh --all-folders --output json
+```
+
+The cost of folder scope lands in one place — the case's Data Fabric writes need the V3 activities rather than
+the V2 ones the tooling reaches for by default. `5-case/cookbook.md` has the exact shape; it is six lines, and
+it is the difference between a case that writes rows and one that faults with
+`Entity 'ClaimCase_<NN>' not found at tenant level`.
 
 ## One solution, one name, one place on disk
 
@@ -63,8 +83,6 @@ about to build a bucket download, an IXP invocation or a PDF-to-text step, stop:
 
 No email connection is provisioned. `Client Notification` logs the letter rather than sending it, on purpose.
 
-**You create the Data Fabric connection yourself** in block 3 — it has to be owned by you.
-
 **Deploy into your seat folder, never the tenant root.** `solution deploy run` creates a folder, and without
 `--parent-folder-path ClaimCase-<NN>` it creates it at the root — beside everyone else's, and outside the seat
 that holds your processes and buckets.
@@ -82,15 +100,38 @@ Pin these. They are not preferences — a model swap changes tool-call behaviour
 | Setting | Value | Why |
 |---|---|---|
 | `temperature` | `0` | Same claim, same analysis. A reviewer comparing two runs of one claim must not see two answers. |
-| `model` | `gpt-5.6-terra` | The default for this exercise. If you use another, **record which** in `build-findings.md` — a model swap changes tool-call behaviour, so it belongs in the list of things you can rule out. |
+| `model` | `gpt-5.6-terra` | The default for this exercise. If you use another, **log it** (`log-finding.py`) — a model swap changes tool-call behaviour, so it belongs in the list of things you can rule out. |
 
-## Versions to record
+## Say which agent you are, once
 
-`uip` self-updates, and the UiPath skills change often. When something works and then stops, the version is the
-first suspect and the only one you cannot reconstruct afterwards. Note these in `build-findings.md` at the start:
+`log-finding.py` records `uip --version` and the seed version on every finding by itself. The one thing it
+cannot know is what is driving it, so tell it once at the start of the session:
 
 ```bash
-uip --version
+export WORKSHOP_AGENT="Codex"  WORKSHOP_MODEL="gpt-5.5"     # bash
+$env:WORKSHOP_AGENT="Codex"; $env:WORKSHOP_MODEL="gpt-5.5"  # PowerShell
 ```
 
-Plus your coding agent and model. A green-then-red result is undiagnosable without them.
+A green-then-red result is undiagnosable without them, and a model swap changes tool-call behaviour — it has
+broken this build before.
+
+## If you are on Windows
+
+The seat VM runs PowerShell, and **the single largest time sink in the last run was JSON on a command line.**
+PowerShell rewrites quotes before `uip` ever sees them, so an argument that prints correctly still arrives
+mangled — and the error names the JSON, not the shell.
+
+- **Prefer `--file` wherever a command offers it**, and write the file with UTF-8 **without a BOM**.
+  `Set-Content -Encoding utf8` adds one, and the next command reports the file is not valid JSON *at line 1
+  column 1* — which is the BOM, not your JSON. `python3 -c "..."` or `[IO.File]::WriteAllText()` write it clean.
+- **Where only an inline argument exists** — `uip or jobs start --input-arguments` is the one you will meet —
+  stop PowerShell from parsing at all:
+
+  ```powershell
+  uip.cmd --% or jobs start <guid> --input-arguments "{\"scenario\":\"auto-settle\",\"discrepancy\":\"\"}"
+  ```
+
+- `log-finding.py` already does the right thing; you never pass it JSON.
+
+Two more that cost a retry each: `Get-Date -AsUTC` and `ConvertFrom-Json -Depth` do not exist in this
+PowerShell. Use `[DateTime]::UtcNow.ToString('o')`, and parse large JSON with `python3` instead.

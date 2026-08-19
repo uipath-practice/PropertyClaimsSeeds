@@ -32,6 +32,6 @@ Plus: one generated claim form extracts all six groups, with the right number of
 **Where it goes.** Generated code into `Build/ClaimCase<NN>/` — one solution for the whole build. Notes and
 documents you write for this block go in this block's folder.
 
-**Log as you go.** Append to `build-findings.md`, and insert a row per finding into `WorkshopFindings` as
-`AGENTS.md` describes — every retry, every surprise, and everything these instructions failed to explain. Dead
-ends included; they are the point.
+**Log as you go.** `python3 log-finding.py --block <this-block> --category <kind> --summary "..."` — every
+retry, every surprise, everything these instructions failed to explain, and anything that took longer than it
+should have. Dead ends included; they are the point. `AGENTS.md` has the detail.

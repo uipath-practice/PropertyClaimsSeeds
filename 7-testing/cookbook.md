@@ -127,7 +127,7 @@ Two shapes worth recognising:
 
 ## Keep a log
 
-As you test, keep `build-findings.md` alongside your work. Add an entry whenever you retry something, get a
+As you test, log findings with `log-finding.py`. Add one whenever you retry something, get a
 result you did not expect, or have to work out something these instructions did not explain — what you tried,
 what happened, what you did next. Do not tidy it up afterwards and do not omit the dead ends; the dead ends are
 the point.

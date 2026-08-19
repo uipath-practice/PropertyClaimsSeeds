@@ -3,25 +3,42 @@
 The spec is `5-case/spec.md`. This is the platform friction, and there is more of it here than in any other
 block. Read the first section before you edit anything: it is the one that costs a day if you meet it cold.
 
-## `caseplan.json` is not what runs
+## `caseplan.json` is not what runs — and how to make it run
 
-The file you edit is source. The runtime executes **`caseplan.json.bpmn`**, a compiled artifact sitting beside it.
+The file you edit is source. The runtime executes **`caseplan.json.bpmn`**, a compiled artifact sitting beside
+it. `solution pack` **copies** that file; it does not build it. So a hand edit to `caseplan.json` can pack,
+deploy and run while changing nothing at all, and every symptom points somewhere else.
 
-- `pack` **copies** the compiled file. It does not build it.
-- **`uip maestro case debug <project-dir>` recompiles it.** It uploads to Studio Web as part of running the
-  debug session, which is the same thing opening the designer does — so a headless session does have a way to
-  force the compile. Verify with `uip solution download <id> --extract` and check the `.bpmn` matches.
-- Opening the project in Studio Web also recompiles it, and remains the fallback.
+**`uip maestro case pack` recompiles it, in place, from source:**
 
-So a hand edit to `caseplan.json` can pack, deploy and run while changing nothing at all, and every symptom points
-somewhere else. Before believing any edit took effect:
+```bash
+uip maestro case pack <case-project-dir> <throwaway-output-dir>
+```
+
+It writes a `.nupkg` you can ignore — the point is the side effect. `caseplan.json.bpmn` beside your source is
+rewritten from `caseplan.json`, including the `{"root": ...}` wrapper the runtime requires. Run it after every
+edit, before `solution pack`.
+
+**Then prove it, every time:**
 
 ```bash
 grep -c "<a-token-that-exists-nowhere-else>" caseplan.json.bpmn
 ```
 
-Pick a string your edit introduces that appears nowhere else — a new task name, a new variable. If the count is
-zero, the runtime has not seen your change, whatever the deploy said.
+Pick a string your edit introduces that appears nowhere else — a new task name, a new variable. Zero means the
+runtime has not seen your change, whatever the deploy said.
+
+**Do not hand-patch the compiled file.** It is XML with the whole plan embedded as CDATA, and a patched copy
+packs cleanly, validates cleanly, deploys cleanly, and then faults at the first element with
+`[400013] Case management process metadata missing 'root' property` — because the design-time shape you pasted
+in has no `root` wrapper. Delete it and re-pack instead; that is a ten-second fix for a fault that reads like a
+platform failure.
+
+If `case pack` refuses with *"JSON is not a valid Case Management JSON of any previous version"*, your plan's
+schema version is **newer than the CLI understands** — which happens after a designer round trip, not to a plan
+you authored yourself. `uip maestro case debug <project-dir>` recompiles through Studio Web and is the fallback;
+it needs a personal robot on your account, and returns `409 ... Cannot find a personal robot configured` if you
+have none.
 
 ## `uip maestro case validate` may or may not work — check, then pin
 
@@ -32,7 +49,7 @@ and calling it an update.
 
 So: try it. If it validates, use it — it catches things the script below cannot, like duplicate task names. If
 it refuses on the version, do not downgrade your plan to satisfy it; that is a schema the designer will
-overwrite. Either way **record `uip --version` in `build-findings.md`**, because this is the class of result that
+overwrite. Either way **log `uip --version`**, because this is the class of result that
 is undiagnosable afterwards.
 
 **The gate that always works is the script shipped beside this file:**
@@ -67,23 +84,23 @@ names, and the wrong pick binds cleanly and fails at run time. Check
 `--help` accepting `process` — it looks in the wrong index and reports no entry found. You do not need it:
 `contracts/provided-processes.md` gives every argument and type.
 
-## Local files and Studio Web — never let them drift
+## You do not need Studio Web — and opening it has a cost
 
-The sync is automatic in **one direction only**: opening the project in Studio Web writes the tenant's state
-*down* over your local folder, wholesale. Nothing ever pushes local work up for you. So there is exactly one way
-to lose work — open Studio Web while local is ahead.
+The whole loop is local:
 
-The loop that is safe:
-
-1. Edit locally.
+1. Edit `caseplan.json`.
 2. `python3 5-case/check_caseplan.py caseplan.json`
-3. Upload your work **before** opening the designer.
-4. `uip maestro case debug <project-dir>` — or open the project in Studio Web once. Either recompiles the `.bpmn`.
-5. `grep -c` your token in the `.bpmn` to prove the recompile happened.
+3. `uip maestro case pack <case-project-dir> <throwaway-dir>` — recompiles `caseplan.json.bpmn`.
+4. `grep -c` your token in the `.bpmn` to prove the recompile happened.
+5. `uip solution pack` / `deploy`.
 
-**Studio Web saves the plan minified onto a single line.** A 100 KB single-line JSON file is unreadable by tools
-that slice by line, so pretty-print it after every round trip. Formatting is inert — it changes nothing the
-runtime sees.
+Open the designer to *look* at your plan by all means. Just know that the sync runs in **one direction only**:
+opening the project in Studio Web writes the tenant's state *down* over your local folder, wholesale, and
+nothing ever pushes local work up for you. Upload before you open it, or lose whatever local is ahead by.
+
+It also **saves the plan minified onto a single line**, and may write a schema version newer than the CLI can
+pack — which is how a working local loop stops working after one visit to the canvas. Pretty-print after any
+round trip; formatting is inert.
 
 ## Deploying, and the traps in order
 
@@ -138,3 +155,97 @@ parallel gateway markers, per-stage completion trackers. Your own task ids appea
 A case can reach an ending with a stage that never started. Check the stages, not just the outcome: every stage
 the claim entered should show complete, and the claim record should carry columns written by each of them. A gap
 in the record is a stage that was skipped, and it is invisible anywhere else.
+
+## Writing to a folder-scoped entity: use the V3 activities
+
+Your claim entity lives in your seat folder (`CONFIG.md`), and **the Data Fabric connector's default activities
+resolve entity names at tenant level only.** Generate the write tasks the ordinary way and the case deploys
+cleanly, then faults on the first row with:
+
+```
+[102003] Integration Services bad request — Entity 'ClaimCase_<NN>' not found at tenant level
+```
+
+The fix is the V3 form of the same two activities. `uip maestro case spec` will generate them even though the
+case type cache advertises only V2 — ask for them by name:
+
+```bash
+uip maestro case spec --object-name CreateEntityRecord_V3 ...
+uip maestro case spec --object-name UpdateEntityRecord_V3 ...
+```
+
+What each write task must then carry:
+
+| | create | update |
+|---|---|---|
+| `objectName` | `CreateEntityRecord_V3` | `UpdateEntityRecord_V3` |
+| `method` | `POST` | `PUT` |
+| `path` | `/v3/CreateEntityRecord/insert` | `/v3/UpdateEntityRecord/update` |
+| `pathParameters` | `{"entityName": "ClaimCase_<NN>"}` | same |
+| `queryParameters` | `entityScope`, `folderEntityName`, `folderEntityName_folderPath` | the same three, plus `recordId` |
+
+```json
+"queryParameters": {
+  "entityScope": "folder",
+  "folderEntityName": "ClaimCase_07",
+  "folderEntityName_folderPath": "ClaimCase-07",
+  "recordId": "=js:(vars.caseRecordId)"
+}
+```
+
+Two details that each cost a deploy cycle if missed:
+
+- **The query keys are lower-case.** `EntityScope` / `FolderEntityName` return `404 Entity ... does not exist`
+  — the same error you get for a genuinely missing entity, from a request that named it correctly.
+- **`pathParameters.entityName` is still required**, even though the entity is identified by the query
+  parameters. Without it: `Missing path variables in URL .../EntityService/{entityName}/insert`.
+
+Prove the shape without deploying anything — this is read-only and answers in seconds:
+
+```bash
+uip is resources run create <connection-id> --object-name QueryEntityRecords_V3 \
+  --query "entityScope=folder&folderEntityName=ClaimCase_07&folderEntityName_folderPath=ClaimCase-07&limit=1"
+```
+
+`Success` with `Data: []` means the connection can see your entity. Quote the query string — an unquoted `&` is
+a command separator in every shell you might be using.
+
+The create task's record id is what every later update needs. Take it from the connector's generic `response`
+output into a case variable, and write that variable to nothing else.
+
+## Redeploy into the same folder, not a new one
+
+`solution deploy run` refuses a folder that already holds the solution, and the tempting answer — deploy `1.0.2`
+into `ClaimCase02-v102`, `1.0.3` into `-v103` — leaves a folder per attempt, each with fourteen processes, and
+by the fifth iteration it is genuinely unclear which one you last ran.
+
+Uninstall, then deploy into the same name:
+
+```bash
+uip solution deploy uninstall <solution-name> --output json
+uip solution deploy run --package-name <pkg> --package-version <v> \
+  --folder-name <same-name-every-time> --parent-folder-path ClaimCase-<NN>
+```
+
+`deploy uninstall` takes the deployment **name** as a positional argument and rejects `--deployment-key`, which
+is the reverse of most commands here.
+
+## The diagnostics that work, and the ones that do not
+
+When a case run faults, three commands answer and three do not. Reach for the working ones first — the failing
+ones return errors about themselves, which is easy to mistake for a broken run.
+
+| Question | Use | Not |
+|---|---|---|
+| What faulted, and why | `uip maestro case instance incidents <id> --folder-key <k>` | `case job status --detailed` → `unknown_error` |
+| Where the case got to | `uip maestro case instance get <id> --folder-key <k>` | `case job traces` → crashes on `null` |
+| What is deployed | `uip or processes list --folder-key <k>` | `case process list` → generic error code |
+
+`uip solution deploy list` returns `403` for a participant account in this tenant even when the deploy itself
+succeeded. Use `uip or processes list --folder-key <k>` to confirm what landed.
+
+**`uip or jobs start` takes the process GUID**, the `Key` from `processes list` — not the dotted
+`ProcessKey` like `ClaimCase07.Case.ClaimLifecycle`, which fails with `HTTP 400: Undefined process`. Both look
+like identifiers and only one is.
+
+`uip or jobs get` and `uip or jobs logs` reject `--folder-key`, though `uip or jobs list` accepts it.

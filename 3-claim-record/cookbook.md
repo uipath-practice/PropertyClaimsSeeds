@@ -22,41 +22,62 @@ and the check belongs in block 7, where a column whose length is exactly 10,000 
 **A `MULTILINE_TEXT` column with no `lengthLimit` defaults to 200 characters.** Same silent truncation, fifty
 times worse. Set it explicitly on every one.
 
-## Create the Data Fabric connection now, not in block 5
+## Create the entity in your seat folder
 
-The entity can be created without a connection, but nothing can *write* to it from a case plan without
-one — and that failure surfaces two blocks later, expensively.
+Data Fabric entities can live at tenant level or in an Orchestrator folder. **Yours goes in your seat folder**,
+which means one extra flag and one changed failure mode:
 
 ```bash
-uip is connections create uipath-uipath-dataservice --no-browser --no-wait --output json
+FK=$(uip or folders list --all --name ClaimCase-<NN> --output json --output-filter "[0].Key")
+uip df entities create ClaimCase_<NN> --file <schema>.json --folder-key $FK --output json
+uip df entities list --native-only --folder-key $FK --output json      # confirm
 ```
 
-This returns an `AuthUrl` and stops. **A coding agent cannot finish this step** — it is an OAuth consent, and it
-has to be you. Open the URL, authorise, then verify:
+Without `--folder-key` the create is refused:
+
+```
+You don't have permission to access the entity, field or record or you are using an unsupported robot type.
+```
+
+That message describes neither the scope nor the fix. It is not a login problem and not a role problem — it is
+the tenant-level create you were never entitled to make. Add the flag.
+
+**Every later `df` command needs the same flag.** `entities list`, `entities get`, `records query` — a
+folder-scoped entity is invisible to the tenant-scoped form of the same command, which returns success and an
+empty list. An empty list here means *wrong scope*, not *missing entity*.
+
+**The one consequence to carry forward:** in block 5 the case writes to this entity through the Data Fabric
+connector, and the connector's default activities resolve entity names **at tenant level only**. They will not
+find yours. `5-case/cookbook.md` has the six-line fix; know now that it exists, so the runtime error
+`Entity 'ClaimCase_<NN>' not found at tenant level` reads as expected rather than as a broken entity.
+
+## The Data Fabric connection is shared — find it, do not create it
+
+One connection serves every seat, in the `Shared` folder:
 
 ```bash
 uip is connections list uipath-uipath-dataservice --refresh --all-folders --output json
+uip is connections ping <connection-id> --output json      # expect Enabled
 ```
 
-**Use exactly that command.** A bare `uip is connections list` reports *"No connections found for any
+**Use exactly that first command.** A bare `uip is connections list` reports *"No connections found for any
 connector"* while the connection exists and works — it does not look past its default folder scope or its cache.
-The CLI's own `Instructions` field suggests the bare form, so the natural next step after authorising is a
-message saying nothing is there. Add `--refresh --all-folders` before concluding anything failed.
+The CLI's own `Instructions` field suggests the bare form, so the natural next step is a message saying nothing
+is there. Add `--refresh --all-folders` before concluding anything failed.
 
-The connection is deliberately **yours**, not something provisioning created for you: a connection owned by
-somebody else — or living in a personal workspace — produces `Missing instance <n> for user <n>` at run time,
-in block 5, with nothing in the message pointing back to here.
+Do not create your own. A connection needs an interactive OAuth consent that a coding agent cannot complete, and
+a second connection in a personal workspace produces `Missing instance <n> for user <n>` at run time in block 5,
+with nothing in the message pointing back to here.
+
+There is no `uip is connections get`. Inspect a connection with the `list` form above.
 
 ## Naming: the entity name is stricter than the folder name
 
 Entity names take **letters, digits and underscores only, and must start with a letter**. Your seat token is
 part of the name and folder-style punctuation is rejected — `ClaimCase_01`, not `ClaimCase-01`.
 
-The name is also tenant-scoped, so it is the collision surface with every other seat. Check first:
-
-```bash
-uip df entities list --output json --output-filter "[].Name"
-```
+Your folder scopes the name, so a collision with another seat is not the risk it would be at tenant level — but
+keep the seat token anyway. It is what makes a row, a log line or a runtime error attributable to you.
 
 If you find entities from an earlier attempt at this use case — a normalised model with names like `Claim`,
 `Policy`, `DamagedItem` — **leave them alone** and do not bind to them by accident. They are not this design,

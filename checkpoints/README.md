@@ -14,6 +14,6 @@ checkpoint the moment a block stops being the interesting part of your day.
 **But read the block's `spec.md` either way.** Block 5 binds these components by name, and debugging a wiring
 problem in something you have never looked at is the most expensive hour in this exercise.
 
-**Say so in `build-findings.md`.** Which checkpoint, at what point, and what had gone wrong. That is not an
+**Log it.** Which checkpoint, at what point, and what had gone wrong. That is not an
 admission — it is the single most useful signal about where the seed is too hard, and it is why the next
 cohort's version is better.

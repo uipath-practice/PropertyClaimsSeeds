@@ -92,7 +92,7 @@ Three places, and nothing anywhere else:
 |---|---|
 | **All generated code** — agents, the case, the app | `Build/ClaimCase<NN>/` — **one solution**, named for your seat |
 | **Notes and documents you write for a block** — a design, a decision about structure, an SDD | that block's folder, e.g. `2-design/sdd.md`, `5-case/notes.md` |
-| **The running log** | `build-findings.md`, at this folder's root |
+| **Findings** | the shared table, via `log-finding.py` — never a local file |
 
 **One solution, and its name is fixed.** `Build/ClaimCase<NN>/` holds everything: a case binds agents by name
 *inside its own solution*, so agents published in a solution of their own are unreachable from the case that
@@ -113,8 +113,8 @@ run `ls Build/` and see your entire solution, once.
 and entity columns are one name in three casings, by design (`contracts/claim-entity.md`). A better name breaks
 the mapping three blocks later, at run time, silently.
 
-**Everything you create carries your seat token.** Entity names are tenant-scoped and the tenant is shared;
-`CONFIG.md` says what has to carry it and how to find yours.
+**Everything you create carries your seat token.** The tenant is shared — with this workshop and with other
+exercises; `CONFIG.md` says what has to carry the token and how to find yours.
 
 **Do not read the answer key.** The generator drops a `manifest.json` beside the documents naming the problems
 it planted and the outcome it expects. Nothing you build may read it — an analysis that consults it is brilliant
@@ -128,33 +128,34 @@ logging.
 stale cache rather than an absent resource. `uip login status` before believing anything is missing, and read
 `known-issues/` before believing a `list` that comes back empty.
 
-## Log what you learn, twice
+## Log what you learn
 
-**`build-findings.md`, at this folder's root.** Appended as you go: every retry, every surprise, and everything
-this seed failed to explain — what you tried, what happened, what you did next, dead ends included. It is the
-narrative, and it is yours.
-
-**And one row per finding in the shared table**, so findings can be counted across everyone doing this exercise
-rather than read one folder at a time:
+**One command, one sink.** Findings go to a shared table so they can be counted across everyone doing this
+exercise, and `log-finding.py` is the whole interface to it:
 
 ```bash
-uip df records insert WorkshopFindings --body '[{
-  "seat":"<NN>", "block":"5-case",
-  "codingAgent":"<your agent>", "model":"<your model>",
-  "uipVersion":"<uip --version>", "seedVersion":"<from VERSION>",
-  "category":"seed-gap",
-  "summary":"What happened, what you tried, what happened next."
-}]' --output json
+python3 log-finding.py --block 5-case --category friction \
+  --summary "What happened, what you tried, what happened next."
 ```
 
-`category` is free text — `seed-gap`, `platform-bug`, `model-weakness`, `friction`, whatever fits. Do not
-agonise: the summary is what gets read.
+Seat, agent, model, `uip` version and seed version are filled in for you. Nothing else to look up, no entity id,
+no JSON on a command line — the script writes the payload to a file before calling `uip`, which is the only shape
+that survives every shell. Several at once: `--file findings.json`, a JSON array of `{block, category, summary}`.
 
-**Write the row while the finding is fresh**, not in a batch at the end. An hour later it has lost the detail
-that made it useful.
+**There is no local findings file.** Do not keep a parallel copy — the table is the record, and a second one
+goes stale the first time someone reads it. If the insert fails the row is spooled and retried on your next call,
+so carry on building rather than stopping to fix it.
 
-**If the insert fails, carry on.** Note it and keep building. This is telemetry, not a gate, and nothing about
-your build depends on it.
+`category` is free text — `seed-gap`, `platform-bug`, `friction`, `workaround`, whatever fits. Do not agonise;
+the summary is what gets read. Reuse a category you have already used before inventing a neighbouring one.
+
+**Write it while the finding is fresh**, not in a batch at the end — an hour later it has lost the detail that
+made it useful.
+
+**Log the frictions, not only the failures.** Anything that took longer to work out than it should have is the
+point of this run: a command whose error named the wrong cause, a document that sent you the wrong way, a step
+you only got right on the fourth try. Those are what get fixed before the next person arrives — in this seed, or
+in the tooling itself.
 
 It is not homework. It is the deliverable that improves this for the next person, and the most useful thing you
 will have when someone asks what the build actually cost.

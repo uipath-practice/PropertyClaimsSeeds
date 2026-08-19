@@ -113,6 +113,29 @@ Run the clean scenario deliberately, and more than once. It is the assertion mos
 **A solution that finds something to flag on every claim has not passed.** It has learned to always answer *yes*
 to "is anything wrong here?", which is the easiest way to look thorough and the least useful.
 
+**This is also block 5's acceptance run**, and the reason it comes first: a clean claim is the only claim that
+can run the whole plan without a human, so it is the only one that can prove the spine works before the app
+exists. Run `auto-settle` as soon as the case deploys.
+
+### When the clean claim gets flagged
+
+The case plan is not what is wrong. It parked the claim at the review stage exactly as it was told to, because
+an analysis said something was off with a claim that has nothing off about it. Find which one from the row it
+wrote:
+
+```bash
+uip df records query <entity-id> --folder-key <your-seat-folder-key> --output json
+```
+
+`eligibilityChecksJson`, `coverageChecksJson`, `payoutChecksJson`, `credibilityChecksJson` and
+`decisionJson` each name their own checks and say which failed. One of them will be holding a *pass* claim to a
+standard the process never asked for — a missing optional field read as an omission, a rounding difference read
+as a discrepancy, a silence read as a refusal.
+
+**Fix the agent's prompt, not the case plan and not the entity.** Then republish that one agent and run
+`auto-settle` again. Over-flagging is the most common defect in this whole build and the only thing that
+reliably exposes it is a claim with nothing wrong.
+
 ## How many, and in what order
 
 1. **One per problem, pinned** — nine runs. This is the coverage test, and it is the one to keep green.

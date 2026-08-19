@@ -24,7 +24,7 @@ On Windows PowerShell, `Invoke-WebRequest -Uri <url> -OutFile seed.zip` then `Ex
 
 **Clone if you can.** Everything you build shows up as untracked in `git status`, and anything of ours you
 changed shows up in `git diff` — which makes "what did I actually produce" a command rather than a memory test,
-and is worth having when you write up `build-findings.md` at the end. `VERSION` records which seed you have;
+and is worth logging at the start. `VERSION` records which seed you have;
 quote it if you report a problem.
 
 Then open the folder in your editor and start your coding agent **in it**. `AGENTS.md` and `CLAUDE.md` are
@@ -56,7 +56,7 @@ read the seed  →  prompt your agent  →  it builds  →  run the gate command
 That is deliberate: this pipeline fails late and quietly, and a mistake three blocks back costs far more to find
 than the same mistake caught at its own gate.
 
-**Keep `build-findings.md` as you go.** Every retry, every surprise, everything the seed failed to explain. It is
+**Log findings as you go** with `log-finding.py`. Every retry, every surprise, everything the seed failed to explain. It is
 how the next cohort's seed gets better, and it is also the most useful thing you will have at the end when
 someone asks what actually happened.
 
@@ -65,10 +65,10 @@ someone asks what actually happened.
 | Block | You build | Gate | Roughly |
 |---|---|---|---|
 | 1 | **Extraction** — an IXP project that reads the claim form. Build your own, **or** adopt the shared one | six field groups back, damage rows repeating correctly | ~60 min · ~5 min shared |
-| 2 | **The plan** — an SDD, and a table mapping each planted problem to the component that catches it | you can fill that table from your own design | ~45 min |
+| 2 | **The design** — four tables (stages · work · data · traceability) and an SDD | you can answer block 2's three questions from the tables alone | ~45 min |
 | 3 | **The claim record** — a Data Fabric entity | every payload has a column | ~20 min |
 | 4 | **The analyses** — seven agents | one runs on a pinned input; review grade ≥ B | ~90 min |
-| 5 | **The case** — the lifecycle, the two gateways, the wiring | one aimed claim stops where it should | ~90 min |
+| 5 | **The case** — the lifecycle, the two gateways, the wiring. **Three passes**: skeleton, wiring, deploy | a clean claim settles end to end, unattended | ~90 min |
 | 6 | **The app** — what a reviewer sees at each gateway | both gateways render; a decision writes back | ~90 min |
 | 7 | **Test** — aim runs at known problems | nine pinned runs and two clean runs behave | ~45 min |
 
@@ -88,7 +88,13 @@ payloads you imagined.
 
 ## Block 2 is the one that decides the day
 
-At the end of block 2 you should be able to fill this in, from your own design:
+Block 2 creates nothing on the platform, which makes it the easy one to rush. It is also the one that decides
+what blocks 4 and 5 cost, because **it is where the build stops living in your agent's context and starts living
+on disk.** Blocks 4 and 5 are long enough that your agent will lose its working context partway through at least
+one of them; what it comes back to is either four tables it wrote, or a 340-line process description it has to
+read again.
+
+The last of the four is the honesty check:
 
 | Planted problem | Which component catches it | Which field carries the finding | Which screen shows it |
 |---|---|---|---|
@@ -96,6 +102,16 @@ At the end of block 2 you should be able to fill this in, from your own design:
 `pdd.md` §9 lists nine of them. If you cannot fill the table, you do not yet understand the process well
 enough to build it — and every hour after this point gets more expensive to correct. If you can, the rest of the
 exercise is execution, and the same table becomes your test plan in block 7.
+
+## Block 5 is three passes, not one attempt
+
+The case plan is the biggest single piece of work here and the one that fails in the most ways. Its prompt
+splits it — skeleton, then wiring, then deploy and run — and each pass ends in a command that passes or does
+not. Take the passes seriously as stopping points: a pass that goes wrong costs a pass, where the same mistake
+found at the end costs the block.
+
+Its acceptance run is **a claim with nothing wrong with it**. That is the only claim that can run the whole
+lifecycle without a human, which is what makes it provable before the app exists in block 6.
 
 ## When a block goes wrong — checkpoints
 
@@ -107,7 +123,7 @@ so take the checkpoint the moment a block stops being the interesting part of yo
 
 Two things make it honest. **Read the block's `spec.md` anyway** — block 5 binds these components by name, and
 debugging a wiring problem in something you have never looked at is the most expensive hour available here. And
-**say so in `build-findings.md`**: which checkpoint, when, and what had gone wrong. That is the clearest signal
+**log it**: which checkpoint, when, and what had gone wrong. That is the clearest signal
 we get about where this is too hard.
 
 ## Block 1 has two routes, on purpose
@@ -132,7 +148,7 @@ folder**, so anything your case plan calls needs its folder named explicitly.
   reporting it — worded so a human can act on it.
 - A claim with nothing wrong clears both gateways and settles in full, unattended.
 - The claimant's letter says what actually happened.
-- You have an SDD describing what you built, and a `build-findings.md` describing what it cost.
+- You have an SDD describing what you built, and a table of findings describing what it cost.
 
 The second one is the one most solutions fail. A solution that finds something to flag on every claim has not
 learned to be careful — it has learned to always answer *yes* to "is anything wrong here?", which is the easiest
