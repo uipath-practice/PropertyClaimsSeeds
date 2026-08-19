@@ -1,0 +1,415 @@
+{
+  "entity_defs": [
+    {
+      "id": "1b030f27791db549",
+      "name": "Boolean",
+      "title": "Boolean",
+      "inherits_from": [
+        "0000000000000046"
+      ],
+      "trainable": true,
+      "color": 0,
+      "_entity_def_flags": [],
+      "instructions": "Use to represent boolean values in text."
+    },
+    {
+      "id": "23a234c923931bb3",
+      "name": "Date",
+      "title": "Date",
+      "inherits_from": [
+        "0000000000000007"
+      ],
+      "trainable": true,
+      "color": 1,
+      "_entity_def_flags": [],
+      "instructions": "Use to represent dates in text."
+    },
+    {
+      "id": "dcc96b6077051ad1",
+      "name": "Exact Text",
+      "title": "Exact Text",
+      "inherits_from": [],
+      "trainable": true,
+      "color": 2,
+      "_entity_def_flags": [
+        "appears_verbatim"
+      ],
+      "instructions": "Use to represent text that appears verbatim in text."
+    },
+    {
+      "id": "f44d4c444723d206",
+      "name": "Inferred Text",
+      "title": "Inferred Text",
+      "inherits_from": [],
+      "trainable": true,
+      "color": 3,
+      "_entity_def_flags": [],
+      "instructions": "Use for text that might not appear verbatim in the text."
+    },
+    {
+      "id": "5667234ca79cf4d9",
+      "name": "Monetary Quantity",
+      "title": "Monetary Quantity",
+      "inherits_from": [
+        "0000000000000006"
+      ],
+      "trainable": true,
+      "color": 4,
+      "_entity_def_flags": [],
+      "instructions": "Use to represent monetary values in text."
+    },
+    {
+      "id": "cabed16a1492c1b0",
+      "name": "Number",
+      "title": "Number",
+      "inherits_from": [
+        "0000000000000044"
+      ],
+      "trainable": true,
+      "color": 5,
+      "_entity_def_flags": [],
+      "instructions": "Use to represent amounts or quantities in text."
+    }
+  ],
+  "label_groups": [
+    {
+      "name": "default",
+      "label_defs": [
+        {
+          "name": "Claim",
+          "id": "3aa1e352674d1494",
+          "moon_form": [
+            {
+              "field_id": "0722f457b74b6b41",
+              "id": "dcc96b6077051ad1",
+              "field_type_id": "dcc96b6077051ad1",
+              "kind": "Exact Text",
+              "name": "Claim ID",
+              "instructions": "The claim number printed in the document header, format CLM-HO-<8 digits>. Take it exactly as printed.",
+              "rule_set": null
+            },
+            {
+              "field_id": "22c3e8592208e63d",
+              "id": "dcc96b6077051ad1",
+              "field_type_id": "dcc96b6077051ad1",
+              "kind": "Exact Text",
+              "name": "Insurer Name",
+              "instructions": "The insurance company name in the top header, repeated in the footer of the last page.",
+              "rule_set": null
+            },
+            {
+              "field_id": "9e05d373c8b9e259",
+              "id": "dcc96b6077051ad1",
+              "field_type_id": "dcc96b6077051ad1",
+              "kind": "Exact Text",
+              "name": "Insurer Address",
+              "instructions": "The insurer's address, directly under the company name in the top header. Not the insured property address in Section 2.",
+              "rule_set": null
+            },
+            {
+              "field_id": "3f2bb490b2b057b6",
+              "id": "23a234c923931bb3",
+              "field_type_id": "23a234c923931bb3",
+              "kind": "Date",
+              "name": "Date of Submission",
+              "instructions": "The submission date in the header block. Not the incident date in Section 3.",
+              "rule_set": null
+            }
+          ],
+          "instructions": "The claim's identity and the insurer, from the document header."
+        },
+        {
+          "name": "Claim > Claim Totals",
+          "id": "57fe312de1c6062c",
+          "moon_form": [
+            {
+              "field_id": "d9143f17e90bb44c",
+              "id": "5667234ca79cf4d9",
+              "field_type_id": "5667234ca79cf4d9",
+              "kind": "Monetary Quantity",
+              "name": "Total Structure Damage",
+              "instructions": "Section 5, 'Total Structure / Dwelling Damage'.",
+              "rule_set": null
+            },
+            {
+              "field_id": "116d12d210fdfcac",
+              "id": "5667234ca79cf4d9",
+              "field_type_id": "5667234ca79cf4d9",
+              "kind": "Monetary Quantity",
+              "name": "Total Personal Property",
+              "instructions": "Section 5, 'Total Personal Property Loss'.",
+              "rule_set": null
+            },
+            {
+              "field_id": "70ac45e28d51f5bb",
+              "id": "5667234ca79cf4d9",
+              "field_type_id": "5667234ca79cf4d9",
+              "kind": "Monetary Quantity",
+              "name": "Total Additional Living Expenses",
+              "instructions": "Section 5, 'Additional Living Expenses (if displaced)'.",
+              "rule_set": null
+            },
+            {
+              "field_id": "7c654b600e54828c",
+              "id": "5667234ca79cf4d9",
+              "field_type_id": "5667234ca79cf4d9",
+              "kind": "Monetary Quantity",
+              "name": "Total Claim Amount",
+              "instructions": "Section 5, 'TOTAL CLAIMED AMOUNT' \u2014 the bold total at the foot of the table, not a per-category subtotal.",
+              "rule_set": null
+            }
+          ],
+          "instructions": "Section 5 \u2014 the claimed totals."
+        },
+        {
+          "name": "Claim > Claimant",
+          "id": "27219fa18d7f1b71",
+          "instructions": "Section 1 \u2014 who is making the claim.",
+          "moon_form": [
+            {
+              "field_id": "a4124a54e761a16b",
+              "id": "dcc96b6077051ad1",
+              "field_type_id": "dcc96b6077051ad1",
+              "kind": "Exact Text",
+              "name": "Name",
+              "instructions": "Section 1, 'Full Legal Name'. The person making the claim.",
+              "rule_set": null
+            },
+            {
+              "field_id": "3bc2b9cc6653c9f8",
+              "id": "dcc96b6077051ad1",
+              "field_type_id": "dcc96b6077051ad1",
+              "kind": "Exact Text",
+              "name": "Phone Number",
+              "instructions": "Section 1, 'Daytime Phone'. Keep the punctuation and country prefix exactly as printed.",
+              "rule_set": null
+            },
+            {
+              "field_id": "602ea8d7d9d67da1",
+              "id": "dcc96b6077051ad1",
+              "field_type_id": "dcc96b6077051ad1",
+              "kind": "Exact Text",
+              "name": "Email Address",
+              "instructions": "Section 1, 'Email Address'.",
+              "rule_set": null
+            },
+            {
+              "field_id": "b0bc6d123adf0f86",
+              "id": "dcc96b6077051ad1",
+              "field_type_id": "dcc96b6077051ad1",
+              "kind": "Exact Text",
+              "name": "Policy Number",
+              "instructions": "Section 1, 'Policy Number', format HO-<8 digits>. This is the key that links the claim to its policy \u2014 take it exactly as printed.",
+              "rule_set": null
+            }
+          ]
+        },
+        {
+          "name": "Claim > Damage Inventory",
+          "id": "7f3a4d917f2a99de",
+          "moon_form": [
+            {
+              "field_id": "0b34ff5247d50a30",
+              "id": "dcc96b6077051ad1",
+              "field_type_id": "dcc96b6077051ad1",
+              "kind": "Exact Text",
+              "name": "Category",
+              "instructions": "Section 4 table, 'Category' column. One occurrence per table row.",
+              "rule_set": null
+            },
+            {
+              "field_id": "c4e31e0219e46293",
+              "id": "dcc96b6077051ad1",
+              "field_type_id": "dcc96b6077051ad1",
+              "kind": "Exact Text",
+              "name": "Location",
+              "instructions": "Section 4 table, 'Location in Home' column, for this row.",
+              "rule_set": null
+            },
+            {
+              "field_id": "0fe175571412fe74",
+              "id": "dcc96b6077051ad1",
+              "field_type_id": "dcc96b6077051ad1",
+              "kind": "Exact Text",
+              "name": "Description",
+              "instructions": "Section 4 table, 'Description of Damage' column, for this row.",
+              "rule_set": null
+            },
+            {
+              "field_id": "e9756d933a4788bd",
+              "id": "5667234ca79cf4d9",
+              "field_type_id": "5667234ca79cf4d9",
+              "kind": "Monetary Quantity",
+              "name": "Estimated Cost",
+              "instructions": "Section 4 table, 'Estimated Cost' column, for this row. Keep the currency as printed \u2014 claims arrive in several currencies and are never converted.",
+              "rule_set": null
+            },
+            {
+              "field_id": "ad8d16b80012e7f6",
+              "id": "dcc96b6077051ad1",
+              "field_type_id": "dcc96b6077051ad1",
+              "kind": "Exact Text",
+              "name": "Repair or Replace",
+              "instructions": "Section 4 table, 'Repair or Replace' column, for this row.",
+              "rule_set": null
+            }
+          ],
+          "instructions": "Section 4 \u2014 the damage table. One occurrence per row; a claim has between one and five."
+        },
+        {
+          "name": "Claim > Incident",
+          "id": "dff8a3f3b760c776",
+          "instructions": "Section 3 \u2014 what happened and the emergency response.",
+          "moon_form": [
+            {
+              "field_id": "37342f49915369d9",
+              "id": "23a234c923931bb3",
+              "field_type_id": "23a234c923931bb3",
+              "kind": "Date",
+              "name": "Date of Incident",
+              "instructions": "Section 3, the 'Date of Incident' field only. Do NOT read a date out of the incident description.",
+              "rule_set": null
+            },
+            {
+              "field_id": "0e98dc6b13c8e776",
+              "id": "dcc96b6077051ad1",
+              "field_type_id": "dcc96b6077051ad1",
+              "kind": "Exact Text",
+              "name": "Time of Incident",
+              "instructions": "Section 3, 'Approximate Time', as printed.",
+              "rule_set": null
+            },
+            {
+              "field_id": "2e39babe8a405108",
+              "id": "dcc96b6077051ad1",
+              "field_type_id": "dcc96b6077051ad1",
+              "kind": "Exact Text",
+              "name": "Type of Incident",
+              "instructions": "Section 3, printed as 'Type of Loss' \u2014 e.g. Fire, Water Damage, Storm, Theft. Take the claimant's stated type; the assessor's cause determination is a separate document.",
+              "rule_set": null
+            },
+            {
+              "field_id": "a26bfaa30a476b80",
+              "id": "dcc96b6077051ad1",
+              "field_type_id": "dcc96b6077051ad1",
+              "kind": "Exact Text",
+              "name": "Description of Incident",
+              "instructions": "Section 3, the free-text 'Description of What Happened'. Capture the whole narrative \u2014 a later analysis compares it against the assessor's findings.",
+              "rule_set": null
+            },
+            {
+              "field_id": "5f85b8b71fef89d5",
+              "id": "1b030f27791db549",
+              "field_type_id": "1b030f27791db549",
+              "kind": "Boolean",
+              "name": "Police Report Filed",
+              "instructions": "Section 3, Emergency Response, 'Was a police report filed?'",
+              "rule_set": null
+            },
+            {
+              "field_id": "7e266345629ccdf5",
+              "id": "dcc96b6077051ad1",
+              "field_type_id": "dcc96b6077051ad1",
+              "kind": "Exact Text",
+              "name": "Police Report Number",
+              "instructions": "Section 3, Emergency Response, 'Police Report Number'. The form prints 'N/A' when no report was filed \u2014 take it as printed.",
+              "rule_set": null
+            },
+            {
+              "field_id": "1e1b2a83b3975643",
+              "id": "1b030f27791db549",
+              "field_type_id": "1b030f27791db549",
+              "kind": "Boolean",
+              "name": "Emergency Services Called",
+              "instructions": "Section 3, Emergency Response, 'Were emergency services called?'",
+              "rule_set": null
+            },
+            {
+              "field_id": "c7e96c25e3088242",
+              "id": "1b030f27791db549",
+              "field_type_id": "1b030f27791db549",
+              "kind": "Boolean",
+              "name": "Temporary Repairs Made",
+              "instructions": "Section 3, Emergency Response, 'Were temporary repairs made to prevent further damage?' This answers the policy's duty-to-mitigate condition.",
+              "rule_set": null
+            },
+            {
+              "field_id": "d3a1e6554914059b",
+              "id": "dcc96b6077051ad1",
+              "field_type_id": "dcc96b6077051ad1",
+              "kind": "Exact Text",
+              "name": "Temporary Repairs Description",
+              "instructions": "Section 3, the description of the temporary repairs. The form prints 'N/A' when none were made \u2014 take it as printed.",
+              "rule_set": null
+            }
+          ]
+        },
+        {
+          "name": "Claim > Property",
+          "id": "a31d4580961393b4",
+          "instructions": "Section 2 \u2014 the insured property.",
+          "moon_form": [
+            {
+              "field_id": "8bd6ba1951a61402",
+              "id": "dcc96b6077051ad1",
+              "field_type_id": "dcc96b6077051ad1",
+              "kind": "Exact Text",
+              "name": "Street Address ",
+              "instructions": "Section 2, 'Street Address' \u2014 the insured property, including any unit or flat number. A unit number is load-bearing: it is compared against the policy.",
+              "rule_set": null
+            },
+            {
+              "field_id": "00630acb7a84e387",
+              "id": "dcc96b6077051ad1",
+              "field_type_id": "dcc96b6077051ad1",
+              "kind": "Exact Text",
+              "name": "City",
+              "instructions": "Section 2, 'City'.",
+              "rule_set": null
+            },
+            {
+              "field_id": "398dcccfec950db8",
+              "id": "dcc96b6077051ad1",
+              "field_type_id": "dcc96b6077051ad1",
+              "kind": "Exact Text",
+              "name": "State",
+              "instructions": "Section 2, 'State'. Legitimately blank in countries that have none \u2014 leave it empty rather than inventing one.",
+              "rule_set": null
+            },
+            {
+              "field_id": "abe025d6aac52946",
+              "id": "dcc96b6077051ad1",
+              "field_type_id": "dcc96b6077051ad1",
+              "kind": "Exact Text",
+              "name": "Zip Code",
+              "instructions": "Section 2, 'ZIP Code'. Exactly as printed, keeping any leading zeros or letters.",
+              "rule_set": null
+            },
+            {
+              "field_id": "79e7964fb8cb2bfb",
+              "id": "1b030f27791db549",
+              "field_type_id": "1b030f27791db549",
+              "kind": "Boolean",
+              "name": "Primary Residence",
+              "instructions": "Section 2, 'Is this your primary residence?' \u2014 the Yes/No answer.",
+              "rule_set": null
+            },
+            {
+              "field_id": "c80330bcbe9a5299",
+              "id": "1b030f27791db549",
+              "field_type_id": "1b030f27791db549",
+              "kind": "Boolean",
+              "name": "Present At Incident",
+              "instructions": "Section 2, 'Were you present at the property at the time of the incident?' \u2014 the Yes/No answer.",
+              "rule_set": null
+            }
+          ]
+        }
+      ],
+      "label_collection_name": null,
+      "trainable": true,
+      "hidden": false,
+      "instructions": ""
+    }
+  ]
+}

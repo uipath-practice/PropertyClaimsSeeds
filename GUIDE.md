@@ -1,0 +1,99 @@
+# Property Claims — the exercise
+
+> **Draft, 2026-08-18.** The sequence and the prompts are real; the prose around them is a skeleton that becomes
+> lessons once a build has been through it. Blocks 1, 3 and 4 have prompts written; the rest are outlined.
+
+## What you are building, and why this shape
+
+A property insurance claim arrives as three documents that do not always agree with each other. Your solution has
+to read them, work out whether the claim is payable and for how much, put a human in front of the two decisions
+that need one, and tell the claimant what happened.
+
+You are not being asked to learn insurance. You are being asked to **drive a coding agent through a real
+end-to-end build** — one that spans document extraction, AI analyses, a case lifecycle, a human-facing app and a
+deploy. The claims process is the material; the coding agent is the subject.
+
+**What you get:** a seed folder describing the process, the contracts between components, and what a working
+result looks like. **What you write:** everything else — the agent prompts, the case plan, the entity, the app.
+The seed says *what* must be true. How you get there is the exercise.
+
+## How a block works
+
+Every block is the same loop, and it is the loop worth taking away:
+
+```
+read the seed  →  prompt your agent  →  it builds  →  run the gate command  →  fix, or move on
+```
+
+**The gate is a command, not an opinion.** Each block ends with something you run that either passes or does not.
+That is deliberate: this pipeline fails late and quietly, and a mistake three blocks back costs far more to find
+than the same mistake caught at its own gate.
+
+**Keep `build-findings.md` as you go.** Every retry, every surprise, everything the seed failed to explain. It is
+how the next cohort's seed gets better, and it is also the most useful thing you will have at the end when
+someone asks what actually happened.
+
+## The sequence
+
+| Block | You build | Gate | Roughly |
+|---|---|---|---|
+| 1 | **Extraction** — an IXP project that reads the claim form. Build your own, **or** adopt the shared one | six field groups back, damage rows repeating correctly | ~60 min · ~5 min shared |
+| 2 | **The plan** — an SDD, and a table mapping each planted problem to the component that catches it | you can fill that table from your own design | ~45 min |
+| 3 | **The claim record** — a Data Fabric entity | every payload has a column | ~20 min |
+| 4 | **The analyses** — seven agents | one runs on a pinned input; review grade ≥ B | ~90 min |
+| 5 | **The case** — the lifecycle, the two gateways, the wiring | one aimed claim stops where it should | ~90 min |
+| 6 | **The app** — what a reviewer sees at each gateway | both gateways render; a decision writes back | ~90 min |
+| 7 | **Test** — aim runs at known problems | nine pinned runs and two clean runs behave | ~45 min |
+
+Timings are a sketch until a real cohort has run it.
+
+### Why this order
+
+**Block 2 before anything is built.** Not ceremony: the analyses hand data to the case, the case hands it to the
+app, and the shapes have to be agreed before three components are written against three different guesses.
+
+**Agents (4) before the case (5).** Agents are the only component you can test on their own — one command, one
+pinned input, no deploy. The case plan is the most failure-prone artifact in the build and binds to things that
+must already exist, so it is worth authoring once, against components that are real.
+
+**The app (6) after a real run.** Build it against payloads your own agents actually produced, not against
+payloads you imagined.
+
+## Block 2 is the one that decides the day
+
+At the end of block 2 you should be able to fill this in, from your own design:
+
+| Planted problem | Which component catches it | Which field carries the finding | Which screen shows it |
+|---|---|---|---|
+
+`pdd.md` §9 lists nine of them. If you cannot fill the table, you do not yet understand the process well
+enough to build it — and every hour after this point gets more expensive to correct. If you can, the rest of the
+exercise is execution, and the same table becomes your test plan in block 7.
+
+## Block 1 has two routes, on purpose
+
+Training an extraction model is the one block with a real floor on how long it takes — most of it spent waiting
+for retrains. So there are two prompts: build your own, or adopt a shared project that is already trained.
+
+**Falling back is a supported path, not a penalty.** Extraction feeds every block after it, so a half-trained
+model is worse than a borrowed one. Pick the shared project the moment yours stops being the interesting part of
+your day; everything downstream is identical either way, because both produce the same six field groups.
+
+## What already exists
+
+You are not starting from nothing. The claim documents are generated for you by a process that already runs and
+drops them into storage; the connections for email and data are provisioned; and it is all in **your** folder.
+`CONFIG.md` has the details, including the one that trips most builds — **a solution folder is not the same
+folder**, so anything your case plan calls needs its folder named explicitly.
+
+## What "finished" means
+
+- A claim with a planted problem stops at the right gateway, and the analysis that owns that problem is the one
+  reporting it — worded so a human can act on it.
+- A claim with nothing wrong clears both gateways and settles in full, unattended.
+- The claimant's letter says what actually happened.
+- You have an SDD describing what you built, and a `build-findings.md` describing what it cost.
+
+The second one is the one most solutions fail. A solution that finds something to flag on every claim has not
+learned to be careful — it has learned to always answer *yes* to "is anything wrong here?", which is the easiest
+way to look thorough and the least useful.

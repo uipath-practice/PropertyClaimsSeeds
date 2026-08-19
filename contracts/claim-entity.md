@@ -1,0 +1,185 @@
+# The claim record — one row per claim
+
+Every claim gets exactly one Data Fabric row, created when the case starts and updated by each stage as it
+learns something. It is what the reviewer's app reads, what the dashboard aggregates, and the only place the
+whole claim exists in one piece — the case instance holds lifecycle, not content.
+
+Build this in block 3. Blocks 5 and 6 bind to it, so the **names below are a contract, not a suggestion**.
+
+## One name, three casings
+
+This is the rule that makes the wiring mechanical. A piece of data keeps one name from the agent that produces
+it to the column it lands in; only the casing changes, and it changes predictably:
+
+| Where | Form | Example |
+|---|---|---|
+| Agent output | `out_` + PascalCase, acronyms upper | `out_EligibilityChecksJSON` |
+| Agent input | `in_` + the same | `in_EligibilityChecksJSON` |
+| Case variable | camelCase, acronyms **not** upper | `eligibilityChecksJson` |
+| Entity column | **identical to the case variable** | `eligibilityChecksJson` |
+
+So every write is a rename-only mapping, and every mapping is checkable by eye. Two consequences worth stating,
+each with one legitimate exception:
+
+- **An agent output with no matching column is data that will be lost** — unless the case uses it for control
+  flow, which is a real reason for an output to exist. Say which it is; an output that is neither stored nor
+  branched on is dead weight the model spent tokens producing.
+- **A column with no producer stays empty forever**, and a panel bound to it stays blank. There is no good
+  exception to this one.
+
+**Do not improve these names.** A clearer name is a broken binding three blocks later, discovered on a live run.
+
+**There are two claim payloads and they are not the same thing.** Extraction produces `claimIxpDataJson` — the
+raw six-group output of the extraction model, shaped by the taxonomy. The eligibility analysis reads it and
+emits `claimDataJson`, the claim reorganised for every later analysis to consume. Only the second one has a
+column. Giving both the same name looks tidy and breaks block 5, where a case variable can hold one shape at a
+time and the analysis would be reading the variable it is about to write.
+
+The same distinction, for the record: `policyDataJson` and `assessmentReportJson` are *produced by analyses*
+from source documents. They are outputs, not inputs, on the agent that creates them.
+
+## The columns
+
+`claimId` is the key: required, unique, and equal to the case's `ExternalId`. Everything else is written by
+exactly one stage — the stage that first has the data, and **only `claimId` is required**; a row is created
+carrying three columns, so anything else marked required would break intake.
+
+Types are Data Fabric's own. The suffix decides the two temporal ones: a column named `…Date` is a calendar date
+(`DATE`), a column named `…At` is the instant something happened (`DATETIME_WITH_TZ`). Six further types are
+accepted by the server and unusable in the UI — `3-claim-record/cookbook.md` names them.
+
+### Written at intake, when the row is created
+
+| Column | Type | Source |
+|---|---|---|
+| `claimId` | `STRING`, **key, required, unique** | the case `ExternalId` |
+| `caseInstanceId` | `STRING` | the case instance id, from case metadata |
+| `status` | `STRING` | a lifecycle word your case sets; the dashboard filters on it |
+
+Nothing else can be written here. The row is created *before* extraction and before the document retrievals, so
+no extracted field and no document reference exists yet.
+
+### Written after the eligibility analysis
+
+**Seven of these are agent outputs; two are not.** The eligibility agent emits the seven scalars below as
+separate outputs, for the reason in *Scalars are not extracted from blobs*. `policyId` arrives with the policy
+retrieval, before any analysis runs, and `reviewRequired` is computed by the case from the agent's verdict — it
+is a case expression, not an eleventh agent output. A column's presence in this table means a stage writes it,
+never that an agent produces it.
+
+| Column | Type | Column | Type |
+|---|---|---|---|
+| `claimantName` | `STRING` | `policyId` | `STRING` |
+| `incidentType` | `STRING` | `totalClaimAmount` | `DECIMAL` |
+| `incidentDate` | `DATE` | `currency` | `STRING` |
+| `dateOfSubmission` | `DATE` | `propertyCountry` | `STRING` |
+| `reviewRequired` | `BOOLEAN` | | |
+
+| Column | Type | Holds |
+|---|---|---|
+| `claimDataJson` | `MULTILINE_TEXT` · 10,000 | the extracted claim, structured |
+| `policyDataJson` | `MULTILINE_TEXT` · 10,000 | the policy, structured |
+| `eligibilityChecksJson` | `MULTILINE_TEXT` · 10,000 | the eligibility envelope |
+| `claimFormPdfId` · `claimFormPdfName` | `STRING` | the claim form attachment |
+| `policyPdfId` · `policyPdfName` | `STRING` | the policy attachment |
+
+### Written when the eligibility gateway closes
+
+| Column | Type |
+|---|---|
+| `eligibilityDecision` | `STRING` |
+| `eligibilityNotes` | `STRING` |
+| `eligibilityReviewedAt` | `DATETIME_WITH_TZ` |
+
+### Written after the analyses
+
+| Column | Type | Column | Type |
+|---|---|---|---|
+| `assessmentReportJson` | `MULTILINE_TEXT` · 10,000 | `credibilityChecksJson` | `MULTILINE_TEXT` · 10,000 |
+| `assessmentReportValidationJson` | `MULTILINE_TEXT` · 10,000 | `settlementJson` | `MULTILINE_TEXT` · 10,000 |
+| `coverageChecksJson` | `MULTILINE_TEXT` · 10,000 | `decisionJson` | `MULTILINE_TEXT` · 10,000 |
+| `payoutChecksJson` | `MULTILINE_TEXT` · 10,000 | `assessmentReportPdfId` · `assessmentReportPdfName` | `STRING` |
+
+### Written when the claim review closes, and at closure
+
+| Column | Type | Column | Type |
+|---|---|---|---|
+| `reviewDecision` | `STRING` | `decisionReason` | `STRING`, ≤ 200 |
+| `reviewerNotes` | `STRING` | `claimResponseJson` | `MULTILINE_TEXT` · 10,000 |
+| `reviewedAt` | `DATETIME_WITH_TZ` | `closedAt` | `DATETIME_WITH_TZ` |
+| `approvedPayout` | `DECIMAL` | | |
+
+`decisionReason` is short and deliberately a plain string: it is the one outcome sentence a *list* view can show
+without fetching every row, for the reason in the next section.
+
+## Every JSON column is capped at 10,000 characters — design for 8,000
+
+The eleven `*Json` columns are `MULTILINE_TEXT` with an explicit `lengthLimit: 10000`. That is the platform's
+hard ceiling for the type, and **past it the write truncates silently, with `Result: Success`** — no error, no
+warning, and for a column you cannot read in a list view the loss is invisible until a screen renders half a
+document three blocks later.
+
+So the limit is not a formality, and it is not the agents' to discover at run time:
+
+- **Budget 8,000 characters per payload**, not 10,000. The 20% is headroom for a claim with more damage rows
+  than the one this was measured on — payload size scales with the claim, and the ceiling does not.
+- **Say the budget in the agent's prompt**, and never in its output schema. A `maxLength` in an output schema
+  is hard validation rather than a clamp: one over-long string faults the whole job instead of being retried.
+  `4-agents/spec.md` has the rule.
+- **Assert it in block 7.** A column whose length is *exactly* 10,000 has been truncated — that is the
+  signature, and it is the only way silent truncation ever announces itself.
+
+Two payloads sit near the line and need real editorial discipline in their prompts: the structured policy
+(measured at 10.9 KB on a single claim — **over the ceiling as designed**) and the coverage findings (9.0 KB).
+Both carry material no downstream consumer reads. Cutting what nothing consumes is the fix; truncating a JSON
+string is not, because it produces something that no longer parses.
+
+> **This is an interim shape.** A larger field type (128 KB, one column) exists and is in private preview; the
+> flag is expected within a couple of weeks. When it lands, these columns become that type and the budget
+> disappears. Nothing else about the design changes, which is why it is worth building against the small
+> ceiling now rather than waiting.
+
+**There are eleven of these columns and no cap applies to them today.** The 10-column ceiling belongs to
+`MULTILINE_MAX`, not to `MULTILINE_TEXT` — verified by creating all eleven in one call, which the platform
+accepted without complaint. It becomes live again when the larger type ships: the design then moves nine of the
+eleven to `MULTILINE_MAX` and leaves `decisionJson` and `claimResponseJson` on the small type, which is 9 of 10
+with one slot spare. Worth knowing before anyone proposes a twelfth analysis payload.
+
+## How the connector actually writes
+
+The update operation is named *Replace* and uses PUT, which reads like "overwrite the whole record". **It does
+not.** Measured behaviour, per column:
+
+| The request body | Result |
+|---|---|
+| omits the column | preserved |
+| sends `null` | preserved — the null is ignored |
+| sends `""` | **content destroyed, silently, with `Result: Success`** |
+| sends a value | replaced |
+
+So it is a **merge**, which is what makes per-stage partial writes possible at all. The empty-string row is a
+live trap, because **an unset case variable resolves to `""`, not `null`.** Mapping a column whose variable has
+not been produced yet erases whatever an earlier stage wrote there — no warning, and for a max-length column the
+loss is invisible in any list view.
+
+Two rules follow, and neither is optional:
+
+- **A stage writes only the columns it produces.** Never map a column defensively "in case it is set".
+- **Every update needs `recordId`**, and that is the row's Data Fabric `Id` — *not* `claimId`. Capture it from
+  the create response into a case variable and thread it through every later stage. If it is ever lost, recover
+  it by querying on `claimId` rather than creating a second row: `claimId` is unique, so a re-create fails.
+
+## Two traps in expressions
+
+**Casing differs by access path, in the same solution.** Business fields are camelCase through the connector
+(`claimId`) but PascalCase through `uip df records get` (`ClaimId`). Entity *system* fields are PascalCase
+everywhere, so the record id reads as `Id`. And a job **attachment** object spells its key `ID`, all caps.
+Getting any of the three wrong yields `undefined` — which per the table above writes nothing, so it is safe;
+but never coalesce a missing value to `""`, which erases.
+
+**Scalars are not extracted from blobs.** Reading a header value out of an agent's JSON output inside a case
+expression writes nothing at all — a two-level read into an agent `json` output does not resolve. That is why
+the eligibility agent emits `claimantName`, `incidentType`, `incidentDate`, `dateOfSubmission`,
+`totalClaimAmount`, `currency` and `propertyCountry` as **seven separate scalar outputs**, bound one-to-one.
+Plain scalars are the only form proven to bind. The agent also does the typing — a number, not `HK$1,234.00`,
+and ISO dates — because it knows the locale and a case expression should not have to parse.
