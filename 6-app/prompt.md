@@ -3,8 +3,14 @@
 **Goal.** Two people have to sign off on a claim, and neither of them has anywhere to do it yet. Build the screen
 they use.
 
-**Read.** `pdd.md` §2 and §6 (who these two people are, and what their approval binds) · `6-app/spec.md` (the
-design decisions already taken) · `6-app/cookbook.md` (how to build it here, and what has cost other people time)
+**Read.** `pdd.md` §2 and §6 (who these two people are, and what their approval binds) · `2-design/` (your own
+tables — what each analysis produces and which column it lands in) · `5-case/` (your own notes — the two stages
+you shaped and left waiting, and what you wrote down for this block) · `6-app/spec.md` (the design decisions
+already taken) · `6-app/cookbook.md` (how to build it here, and what has cost other people time)
+
+You may be starting this block in a fresh session, with none of block 5 in your head. That is normal and it is
+why those notes exist — read them before anything else, because the two stages waiting for this screen were
+built with an interim exit that you are about to replace.
 
 ## What the business is asking for
 
