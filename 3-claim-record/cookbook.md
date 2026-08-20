@@ -76,6 +76,28 @@ with nothing in the message pointing back to here.
 
 There is no `uip is connections get`. Inspect a connection with the `list` form above.
 
+## Changing a column after the fact
+
+You will get one wrong. Widening a `lengthLimit` is safe and loses nothing — but `updateFields` keys on the
+field's **`id`**, not its name, and the name is what you have:
+
+```
+Each field in updateFields must include a non-empty 'id' string
+```
+
+Read the ids out of the entity first, then send a partial update naming only what changes:
+
+```bash
+uip df entities get <entity-id> --folder-key <seat-folder-key> --output json \
+  --output-filter "Fields[?Name=='eligibilityNotes'].Id | [0]"
+
+uip df entities update <entity-id> --folder-key <seat-folder-key> \
+  --body '{"updateFields":[{"id":"<field-id>","lengthLimit":4000}]}'
+```
+
+A partial update leaves everything you did not name alone — `displayName`, `isRequired` and the type all
+survive. `--yes` is only needed for `removeFields`.
+
 ## Naming: the entity is the one place the hyphen is illegal
 
 Everything else you create is `ClaimCase-<NN>` — folder, solution, packages, build directory (`CONFIG.md`,
