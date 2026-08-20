@@ -170,62 +170,109 @@ A case can reach an ending with a stage that never started. Check the stages, no
 the claim entered should show complete, and the claim record should carry columns written by each of them. A gap
 in the record is a stage that was skipped, and it is invisible anywhere else.
 
+## A task's inputs and outputs are addressed by name, and the names are not yours
+
+Two ways to lose every binding in a plan that packs, deploys, validates and passes
+`check_caseplan.py`. Both were measured on 2026-08-20, on the same plan, and each one alone is
+enough to stop the case on its first real claim.
+
+### Outputs keep the `out_` prefix
+
+A task output is named for **the argument the automation actually declares**. The extraction
+process emits `out_PolicyID`, so the task output is `out_PolicyID` — not `PolicyID`, however much
+tidier that looks beside a case variable called `policyId`.
+
+```json
+{ "name": "out_PolicyID", "source": "=out_PolicyID", "var": "policyId", "id": "policyId" }
+```
+
+`name`/`source` are the automation's side; `var`/`id` are yours. Rename the automation's side and
+the output binds to nothing: the variable stays empty, nothing reports it, and the case fails
+later at whichever task first reads it — as `170002 ... Value for a required activity argument
+'in_PolicyID' was not supplied`, several tasks away from the mistake. Confirm the names rather
+than deriving them:
+
+```bash
+uip or packages entry-points "<PackageId>:<Version>" --output json    # processes
+```
+
+### Connector inputs use `target` + `body`, never `value`
+
+Every other input in a case plan carries its payload in `value`. A connector activity does not:
+
+```json
+{ "name": "queryParameters", "type": "json", "target": "queryParameters",
+  "body": { "entityScope": "folder", "folderEntityName": "ClaimCase_07" } }
+```
+
+Write `value` here and the activity is dispatched with **no query parameters at all**. For a Data
+Fabric write that surfaces as the error in the next section, which reads as a missing entity and is
+really a missing input.
+
+`check_caseplan.py` catches both classes. `uip maestro case validate` catches neither.
+
 ## Writing to a folder-scoped entity: use the V3 activities
 
-Your claim entity lives in your seat folder (`CONFIG.md`), and **the Data Fabric connector's default activities
-resolve entity names at tenant level only.** Generate the write tasks the ordinary way and the case deploys
-cleanly, then faults on the first row with:
+Your claim entity lives in your seat folder (`CONFIG.md`), and **the Data Fabric connector's default
+activities resolve entity names at tenant level only.** Generate the write tasks the ordinary way and
+the case deploys cleanly, then faults on the first row with:
 
 ```
 [102003] Integration Services bad request — Entity 'ClaimCase_<NN>' not found at tenant level
 ```
 
-The fix is the V3 form of the same two activities. `uip maestro case spec` will generate them even though the
-case type cache advertises only V2 — ask for them by name:
+The fix is the V3 form of the same two activities. **Do not hand-author these — generate them**, and
+paste the result in:
 
 ```bash
-uip maestro case spec --object-name CreateEntityRecord_V3 ...
-uip maestro case spec --object-name UpdateEntityRecord_V3 ...
+uip maestro case spec --type activity --activity-type-id <dfd2bc7a-…> \
+  --connection-id <your-connection> --object-name CreateEntityRecord_V3 \
+  --input-details '{"queryParameters":{"entityScope":"folder","folderEntityName":"ClaimCase_07",
+                    "folderEntityName_folderPath":"ClaimCase-07"},"bodyParameters":{…}}'
 ```
 
-What each write task must then carry:
+Ask for the V3 objects by name — the case type cache advertises only V2, and `spec` will build them
+anyway. What the generated task carries:
 
 | | create | update |
 |---|---|---|
 | `objectName` | `CreateEntityRecord_V3` | `UpdateEntityRecord_V3` |
 | `method` | `POST` | `PUT` |
 | `path` | `/v3/CreateEntityRecord/insert` | `/v3/UpdateEntityRecord/update` |
-| `pathParameters` | `{"entityName": "ClaimCase_<NN>"}` | same |
 | `queryParameters` | `entityScope`, `folderEntityName`, `folderEntityName_folderPath` | the same three, plus `recordId` |
 
-```json
-"queryParameters": {
-  "entityScope": "folder",
-  "folderEntityName": "ClaimCase_07",
-  "folderEntityName_folderPath": "ClaimCase-07",
-  "recordId": "=js:(vars.caseRecordId)"
-}
-```
+Three details that each cost a deploy cycle if missed:
 
-Two details that each cost a deploy cycle if missed:
+- **The query keys are lower-case** — and `case spec` prints them PascalCased, like everything else
+  this CLI displays. `EntityScope` / `FolderEntityName` return `404 Entity ... does not exist`, the
+  same error a genuinely missing entity gives. Lower-case them on the way in.
+- **There is no `entityName` path parameter.** The entity is identified entirely by the query
+  parameters; `pathParameters` stays empty. Confirm it for yourself in one command:
 
-- **The query keys are lower-case.** `EntityScope` / `FolderEntityName` return `404 Entity ... does not exist`
-  — the same error you get for a genuinely missing entity, from a request that named it correctly.
-- **`pathParameters.entityName` is still required**, even though the entity is identified by the query
-  parameters. Without it: `Missing path variables in URL .../EntityService/{entityName}/insert`.
+  ```bash
+  uip is resources describe uipath-uipath-dataservice CreateEntityRecord_V3 --operation Create
+  ```
 
-Prove the shape without deploying anything — this is read-only and answers in seconds:
+  Every parameter it lists is `"Type": "query"`. **An earlier version of this cookbook said
+  `pathParameters.entityName` was required; it is not, and chasing it cost one build nine deploy
+  cycles.** The error that sends you there — `Missing path variables in URL
+  .../EntityService/{entityName}/insert` — names Integration Services' *own* downstream URL, and it
+  means the entity could not be resolved from the query parameters. Nine times out of ten the query
+  parameters never arrived: see `target` + `body` above.
+- **The response id is what every later update needs.** Take it from the connector's generic
+  `response` output into a case variable, and write that variable to nothing else.
+
+Prove the whole shape without deploying anything:
 
 ```bash
-uip is resources run create <connection-id> --object-name QueryEntityRecords_V3 \
-  --query "entityScope=folder&folderEntityName=ClaimCase_07&folderEntityName_folderPath=ClaimCase-07&limit=1"
+uip is resources run create uipath-uipath-dataservice CreateEntityRecord_V3 \
+  --connection-id <id> --query "entityScope=folder&folderEntityName=ClaimCase_07&folderEntityName_folderPath=ClaimCase-07" \
+  --body '{"claimId":"PROBE-1"}'
 ```
 
-`Success` with `Data: []` means the connection can see your entity. Quote the query string — an unquoted `&` is
-a command separator in every shell you might be using.
-
-The create task's record id is what every later update needs. Take it from the connector's generic `response`
-output into a case variable, and write that variable to nothing else.
+If that succeeds and the case task does not, the connector and your permissions are both fine and
+the difference is in how the task is written — not in the platform. Quote the query string; an
+unquoted `&` is a command separator in every shell you might be using.
 
 ## Redeploy into the same folder, not a new one
 

@@ -36,8 +36,10 @@ uip maestro case validate <caseplan.json> --skeleton --output json     # Valid
   `contracts/provided-processes.md` and their exact arguments from the platform,
   `uip or packages entry-points "<PackageId>:<Version>"`. If you are about to write a bucket download, an IXP
   call or a PDF-to-text step, you have missed one.
-- **Match the types.** One retrieval returns an object, another a string, three return files. A type mismatch
-  packs and deploys cleanly and faults on a live claim.
+- **Match the types, and copy the names exactly.** One retrieval returns an object, another a string, three
+  return files. A task output keeps the automation's own `out_` prefix, and a connector input carries its
+  payload under `target`/`body` rather than `value` — get either wrong and every binding in the plan resolves
+  to nothing, silently, until a live claim faults several tasks later (`5-case/cookbook.md`).
 - **One solution, `ClaimCase-<NN>`**, holding the case and all seven agents. A case cannot bind an agent that
   lives in another solution.
 - Parallel work is *grouped*, not sequenced.

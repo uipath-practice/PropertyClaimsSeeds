@@ -154,15 +154,35 @@ def spool(rows):
 
 
 def drain(eid):
+    """Send the spool, claiming it first so two processes cannot send it twice.
+
+    Read-insert-then-delete looks fine and is not: two of these running at once
+    both read the same rows, both insert them, and the table gets a duplicate of
+    every one -- which is worse than a lost row in a table whose whole purpose is
+    counting how often a friction recurs. It happened on 2026-08-20 (findings 74).
+    An atomic rename is the claim: exactly one process can win it, and if the
+    insert then fails the rows are renamed back rather than dropped.
+    """
     if not SPOOL.exists():
         return 0
-    rows = [json.loads(l) for l in SPOOL.read_text(encoding="utf-8").splitlines() if l.strip()]
+    claim = SPOOL.with_suffix(".sending.%d" % os.getpid())
+    try:
+        SPOOL.rename(claim)           # atomic; the loser gets FileNotFoundError
+    except OSError:
+        return 0
+    rows = [json.loads(l) for l in claim.read_text(encoding="utf-8").splitlines() if l.strip()]
     if not rows:
+        claim.unlink()
         return 0
     ok, _ = insert(eid, rows)
     if ok:
-        SPOOL.unlink()
+        claim.unlink()
         return len(rows)
+    # Put them back for the next attempt, appending anything spooled meanwhile.
+    with open(SPOOL, "a", encoding="utf-8") as f:
+        for r in rows:
+            f.write(json.dumps(r) + "\n")
+    claim.unlink()
     return 0
 
 

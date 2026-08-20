@@ -154,6 +154,58 @@ for stage in stages:
                               f'but that stage marks itself COMPLETE — the rule never fires')
                         problems.append(cond['id'])
 
+# ------------------------------------------------- bindings: the name has to be the real one
+#
+# Added 2026-08-20 after a plan that passed this script *and* `uip maestro case validate`
+# faulted on its fourth task with `170002 ... Value for a required activity argument
+# 'in_PolicyID' was not supplied`. Both classes below bind to nothing at run time and are
+# invisible to every other gate, which is what makes them worth a second each here.
+
+# 1. A process or agent output carries the automation's own argument name, `out_`-prefix
+#    and all. Strip the prefix to something tidier -- `PolicyID` for `out_PolicyID` -- and
+#    the output binds to nothing, the case variable stays empty, and the failure surfaces
+#    one or more tasks later, on whoever first reads it.
+ENGINE_SUPPLIED = {'Error', 'response'}
+
+for node in doc['nodes']:
+    for group in (node['data'].get('tasks') or []):
+        for task in group:
+            if task.get('type') not in ('process', 'rpa', 'agent'):
+                continue
+            for out in (task['data'].get('outputs') or []):
+                name = out.get('name') or ''
+                if name in ENGINE_SUPPLIED:
+                    continue
+                if not name.startswith('out_'):
+                    kind = task.get('type')
+                    article = 'an' if kind and kind[0] in 'aeiou' else 'a'
+                    print(f'BAD OUTPUT  {task["id"]}.{name} — {article} {kind} output is named for the '
+                          f'automation argument it reads, so this should be out_{name}; as written it binds '
+                          f'to nothing and vars.{out.get("var") or out.get("id")} stays empty')
+                    problems.append(name)
+                # A source that is not an expression is a deliberate literal seed (the poll
+                # loop primes its flag with `false`), so only an expression is checked.
+                elif str(out.get('source', '')).startswith('=') and out['source'] != '=' + name:
+                    print(f'BAD OUTPUT  {task["id"]}.{name} has source {out["source"]!r}, expected {"=" + name!r}')
+                    problems.append(name)
+
+# 2. A connector activity's inputs are addressed by `target`, and their payload lives under
+#    `body`. Write `value` instead -- the shape every other input in the plan uses -- and the
+#    activity is dispatched with no query parameters at all. For a Data Fabric write that
+#    surfaces as `[102003] Missing path variables in URL .../EntityService/{entityName}/insert`,
+#    which reads as a missing entity name and is really a missing input.
+for node in doc['nodes']:
+    for group in (node['data'].get('tasks') or []):
+        for task in group:
+            if task.get('type') != 'execute-connector-activity':
+                continue
+            for inp in (task['data'].get('inputs') or []):
+                if 'target' not in inp:
+                    print(f'BAD INPUT   {task["id"]}.{inp.get("name")} has no "target" — a connector input '
+                          f'needs {{"target": "{inp.get("name")}", "body": {{...}}}}, not "value"; as written '
+                          f'the activity is dispatched without it')
+                    problems.append(inp.get('name'))
+
 # ------------------------------------------------------------- legibility (warnings)
 # Entry conditions drive execution; edges draw the picture. A plan with none runs
 # correctly and renders as disconnected boxes, which is how a case becomes
