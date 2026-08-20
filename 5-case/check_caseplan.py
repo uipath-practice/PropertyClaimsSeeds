@@ -206,24 +206,44 @@ for node in doc['nodes']:
                           f'the activity is dispatched without it')
                     problems.append(inp.get('name'))
 
+# ------------------------------------------------------------- reachability: orphan stages
+#
+# With edges retired, an entry condition is the *only* thing that makes a stage reachable, and a
+# stage without one renders exactly like a stage with one. Measured 2026-08-20: a plan whose
+# terminal Denied stage had no entryConditions at all passed every gate, deployed, and parked
+# with "The case manager returned no actions to execute" and every task green.
+#
+# One stage is *meant* to be unreachable — `pdd.md` §3 asks for an empty placeholder that must
+# exist in the lifecycle and must not do anything yet. It is told apart from a real orphan by
+# its tasks: a stage with work in it and no way in is a defect; a stage with neither is the
+# placeholder, and it is reported as a warning so a reviewer counting them knows which is which.
+first = stages[0]['id'] if stages else None
+for stage in stages:
+    if stage['id'] == first or (stage['data'].get('entryConditions') or []):
+        continue
+    label = labels.get(stage['id'])
+    if any(g for g in (stage['data'].get('tasks') or []) for _ in g):
+        print(f'ORPHAN      {label} has tasks and no entry condition — nothing can reach it, and '
+              f'with edges retired the canvas cannot show you that')
+        problems.append(stage['id'])
+    else:
+        print(f'WARNING  {label} has no entry condition and no tasks — expected only of the one '
+              f'deliberate placeholder; say so in your design')
+
 # ------------------------------------------------------------- legibility (warnings)
 # Entry conditions drive execution; edges draw the picture. A plan with none runs
 # correctly and renders as disconnected boxes, which is how a case becomes
 # unmaintainable without ever failing.
-if stages and not edges:
-    print('WARNING  no edges — this plan will run, and will render as disconnected boxes')
-else:
-    linked = set()
-    for e in edges:
-        linked.add((e.get('source'), e.get('target')))
-    for stage in stages:
-        for cond in (stage['data'].get('entryConditions') or []):
-            for group in cond['rules']:
-                for rule in group:
-                    for src in (rule.get('selectedStageIds') or []):
-                        if (src, stage['id']) not in linked:
-                            print(f'WARNING  {labels.get(src, src)} -> {labels.get(stage["id"])} '
-                                  f'is a real transition with no edge drawn')
+# Edges are retired: flow lives only in the conditions, so `edges: []` is correct and an
+# authored edge is the thing worth reporting. Corrected 2026-08-20 — this script warned the
+# other way round for nine days, on advice that was already out of date when it was written.
+if edges:
+    print(f'WARNING  {len(edges)} edge(s) authored — edges are retired; flow belongs in entry '
+          f'and exit conditions and `edges` should be []')
+
+# Layout is the one purely visual thing left, and an unplaced plan is a grid in declaration order.
+if stages and not layout.get('nodes'):
+    print('WARNING  no layout.nodes — the canvas will auto-arrange, which reads as a wall of boxes')
 
 print(f'{len(stages)} stages, {len(edges)} edges — {len(problems) - len(missing)} referential problem(s)')
 sys.exit(1 if problems else 0)

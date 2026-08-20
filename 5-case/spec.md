@@ -100,17 +100,21 @@ lifecycle and must not do anything yet"* — so build it with no tasks and no wi
 inventing an entry condition or by deleting the stage. Say in your design that it is deliberate; then a reviewer
 counting warnings knows which one is expected and which one is new.
 
-## Rules make it run; edges make it legible
+## Conditions are the only description of the flow
 
-A stage is entered by its **entry conditions**, not by a line on a canvas — so a plan with no edges at all still
-executes correctly. It also renders as a row of disconnected boxes, and a human opening it cannot tell what
-follows what.
+**Edges are retired.** `edges` stays `[]`, no `Edge` or `TriggerEdge` object is ever authored, and a stage is
+entered by its **entry conditions** alone. Nothing on the canvas carries flow information that the conditions do
+not already carry.
 
-**Draw the edge for every transition your rules allow.** The canvas is how a reviewer, a trainer and Studio Web
-read your case, and "it runs" is not the same as "someone can maintain it".
+That makes the conditions load-bearing in a way they were not when a picture existed alongside them. **Every
+stage other than the first needs an entry condition naming a predecessor**, and one that does not is not a
+missing line — it is a stage the case can never reach, rendering identically to one it can. The symptom is
+*"The case manager returned no actions to execute"*: the engine evaluated everything, found nothing runnable,
+and stopped with every task green.
 
-Leave `layout` empty unless you are placing nodes deliberately: an empty map means the designer lays the plan
-out itself, which is fine. A map that names *some* stages and omits one is what crashes the designer on load.
+**`layout` is the only thing left that is purely visual**, and it is worth writing rather than leaving empty —
+`5-case/cookbook.md` has the arrangement. A map that names *some* stages and omits one is what crashes the
+designer on load, so it is all of them or none.
 
 ## Parallelism is grouping, not ordering
 

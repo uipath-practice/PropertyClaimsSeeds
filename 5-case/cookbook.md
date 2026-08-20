@@ -288,41 +288,34 @@ uip solution deploy run --name ClaimCase-<NN> --folder-name ClaimCase-<NN>-Deplo
 is the reverse of most commands here. And **an uninstalled deployment never leaves the tenant's Solutions view** —
 so a name per attempt is not untidiness you can clear up later, it is permanent.
 
-## Make the canvas readable — the skill says the frontend will, and it does not
+## Make the canvas readable
 
-Three things decide whether a reviewer opening your case in Studio Web sees a process or a wall of boxes. All
-three are cheap, and on the current frontend **all three have to be authored by hand**.
+A reviewer opening your case in Studio Web should see a process. Two things decide whether they do, and neither
+is what most builds reach for first.
 
-### Draw the edges
+### Do not author edges — they are retired
 
-`uipath-maestro-case` Rule 20 says edges are retired, `schema.edges` stays `[]`, and the frontend auto-derives
-canvas connectors from the entry conditions. **It does not** — measured 2026-08-20 on two independent builds,
-both of which emitted `edges: []` exactly as instructed and both of which render as disconnected boxes with no
-line between any two stages.
+`schema.edges` stays `[]`, and you never write a `TriggerEdge` or `Edge` object. This is not a rendering
+compromise: **stage-to-stage flow is expressed entirely through entry and exit conditions**, and the canvas
+derives what it shows from them. `uipath-maestro-case` Rule 20 is correct and current; follow it.
 
-Author one edge per stage-to-stage transition. It costs a few lines, it changes nothing at run time — reachability
-really is condition-driven — and it is the difference between a diagram and an inventory:
-
-```json
-{ "id": "edge_intake_elig", "source": "Stage_Intake", "target": "Stage_Elig",
-  "sourceHandle": "Stage_Intake____source____right",
-  "targetHandle": "Stage_Elig____target____left",
-  "type": "case-management:Edge", "data": { "isIntersecting": false } }
-```
-
-The handle names are positional and literal: `<stageId>____source____<side>` and `<stageId>____target____<side>`,
-four underscores, sides `left` `right` `top` `bottom`. The trigger's edge is the same shape with
-`"type": "case-management:TriggerEdge"` and `"sourceHandle": "output"`.
+The consequence is worth stating plainly, because it is where the deploy cycles go: **there is no second place
+that describes your flow.** A missing edge used to be a cosmetic problem you could see. A missing entry condition
+is an unreachable stage that looks identical to a reachable one, and the case simply stops with
+*"The case manager returned no actions to execute"*. `check_caseplan.py` fails a stage with no entry condition
+for exactly this reason.
 
 ### Place the stages yourself
 
-Rule 18 says emit `layout: {}` and the frontend auto-lays-out on load. What it actually produces is a grid in
-declaration order, with terminal stages beside the stage that starts them and no reading direction. Write
-`layout.nodes` instead — **every node needs an entry or the designer crashes on load** with
-`Cannot read properties of undefined (reading 'x')`, which is why `check_caseplan.py` fails an incomplete map
-rather than an absent one.
+`layout` is canvas state and has no effect on execution, which is why it is tempting to emit `layout: {}` and let
+the frontend auto-lay-out on load — Rule 18 says you may. What that produces is a grid in declaration order:
+endings beside the stage that starts them, waiting stages inline with the main path, and no reading direction.
+For a plan someone has to *review*, write the map.
 
-The shape that reads well, and the one the reference solution uses:
+**Every node needs an entry or the designer crashes on load** with `Cannot read properties of undefined
+(reading 'x')`, which is why `check_caseplan.py` fails an incomplete map rather than an absent one.
+
+The arrangement that reads well, and the one the reference solution uses:
 
 | | x | y |
 |---|---|---|
@@ -341,11 +334,25 @@ The shape that reads well, and the one the reference solution uses:
     "Stage_Apprvd": { "position": { "x": 1776, "y": 224 }, "style": { "width": 304 } },
     "Stage_Denied": { "position": { "x": 1776, "y": 624 }, "style": { "width": 304 } }
   },
-  "edges": { "edge_intake_elig": { "zIndex": 0 } }
+  "edges": {}
 }
 ```
 
 Stages are 304 wide; leave the height to the canvas, which measures it from the task count.
+
+## A stage exits on a condition, and a condition nothing can satisfy is a dead case
+
+*"The case manager returned no actions to execute"* means the engine evaluated everything and found nothing
+runnable. Every task in the stage can be green when it happens. Three ways to build one, all measured:
+
+- **A stage with no entry condition.** Unreachable, and indistinguishable on the canvas from a reachable one.
+- **An exit that names a task which never runs.** An exit rule of the form
+  `selected-tasks-completed: [tWrite, tSkip]` gated on `=js:vars.reviewRequired === false` cannot fire if `tSkip`
+  is itself conditional on the same flag — the flag being false is now needed *twice*, and the flag being
+  anything else blocks the exit permanently. **Gate the exit or gate the task, never both.**
+- **An expression against a variable nothing has written.** `undefined === false` is `false`, so a stage whose
+  exit tests `=== false` parks forever when the write that should have set the flag silently did not land. When
+  a stage will not leave, read the claim record before re-reading the plan: an empty column names the cause.
 
 ### An Orchestrator automation is `rpa`, not `process`
 

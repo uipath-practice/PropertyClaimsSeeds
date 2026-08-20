@@ -22,10 +22,11 @@ Stages, entry and exit conditions, edges. No tasks yet.
 - Every stage from your design, each with **exactly one way in**.
 - Every stage exit names its finishing task or group, and every downstream entry matches how that stage
   leaves — completed against completed, exited against exited. A mismatch is silent at deploy and fatal at run.
-- **Draw an edge for every transition your rules allow, and place every stage.** Rules make it run; edges and
-  `layout.nodes` make it readable — main path left to right, waiting stages beneath the stage they hang off,
-  endings stacked at the right. Your case skill will tell you to emit `edges: []` and `layout: {}` and let the
-  canvas work it out; it does not, and the result is a wall of disconnected boxes (`5-case/cookbook.md`).
+- **No edges — `edges` stays `[]`.** Flow is expressed only through entry and exit conditions, so a stage with
+  no entry condition is not a missing line on a picture, it is a stage nothing can reach.
+- **Place every stage in `layout.nodes`** — main path left to right, waiting stages beneath the stage they hang
+  off, endings stacked at the right (`5-case/cookbook.md`). The canvas will auto-arrange if you leave it empty,
+  and what it produces is unreadable.
 - **No stage that is not in your design.** An empty stage nothing enters is not a placeholder for later work —
   it is a dead box on the canvas and a warning in every validation from here on.
 
