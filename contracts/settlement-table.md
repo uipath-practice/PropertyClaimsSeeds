@@ -147,10 +147,16 @@ The Response agent receives `final` and the outcome, and:
 
 ## Payout prompt: fixed check ids, and prose that stops restating numbers
 
-The table carries every number, so the checks carry only **judgement**. Six fixed ids, in this order — the same
+The table carries every number, so the checks carry only **judgement**. Seven fixed ids, in this order — the same
 closed-list discipline the eligibility agent already has, which is what ends the id drift:
 
-`item_valuation` · `coverage_limits` · `sublimits` · `deductible` · `settlement_basis` · `reasonableness`
+`item_valuation` · `coverage_limits` · `sublimits` · `aggregate_limit` · `deductible` · `settlement_basis` ·
+`reasonableness`
+
+**`aggregate_limit` was added 2026-08-20**, after a build found the list had six ids and no home for the one
+planted problem `pdd.md` §9 assigns to payout by that name. It is a distinct arithmetic step — §5.3 caps at the
+section limits first and at what the annual aggregate has left third — so overloading `coverage_limits` would
+have hidden it. On a claim with no prior claims it reports `pass` with "no prior claims found", never `warn`.
 
 - **Never restate a number the table already shows.** A check says *why* a figure was chosen, not what it is.
 - `summary` drops to **≤ 400 characters** — the reasoning, not a re-reading of the arithmetic. Measured range

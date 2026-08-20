@@ -56,7 +56,9 @@ the model edits sensibly. Leave either out and it writes an essay.
 
 Two analyses read a source document rather than extracted fields: eligibility reads the **policy**, and report
 validation reads the **assessor's report**. Both arrive as **job attachments** — the file itself, passed by
-reference — and the agent reads the document.
+reference — and the agent reads the document. The two inputs are named `in_PolicyPDF` and
+`in_AssessorReportPDF`; they are bound by name in block 5 like everything else, so they are not yours to
+rephrase.
 
 This is deliberate, and it is the reason extraction does not cover these two. A policy is long unstructured prose
 whose meaning lives in the exclusion and coverage clauses; two insurers write them completely differently. Sending

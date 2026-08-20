@@ -34,6 +34,14 @@
             "type": "object",
             "description": "The validated assessor report converted to structured JSON object.",
             "properties": {}
+          },
+          "in_EligibilityDecision": {
+            "type": "string",
+            "description": "The human reviewer's decision at the eligibility gateway. An approval makes every finding in in_EligibilityChecksJSON a granted exception, not an open breach."
+          },
+          "in_EligibilityNotes": {
+            "type": "string",
+            "description": "The reviewer's own note explaining that decision. Where it contradicts a finding, the note wins."
           }
         }
       },
@@ -44,8 +52,8 @@
         ],
         "properties": {
           "out_CoverageChecksJSON": {
-            "description": "JSON results of coverage analysis Check envelope — see CoreKitchen/check-envelope.md. Every string is shown to a human reviewer.",
             "type": "object",
+            "description": "JSON results of coverage analysis Check envelope — see contracts/check-envelope.md. Every string is shown to a human reviewer.",
             "required": [
               "verdict",
               "headline",
@@ -55,16 +63,15 @@
             "properties": {
               "verdict": {
                 "type": "string",
+                "description": "pass when nothing needs a human; attention when a reviewer should look; fail when this analysis blocks the claim.",
                 "enum": [
                   "pass",
                   "attention",
                   "fail"
-                ],
-                "description": "pass when nothing needs a human; attention when a reviewer should look; fail when this analysis blocks the claim."
+                ]
               },
               "headline": {
                 "type": "string",
-                "maxLength": 80,
                 "description": "One line the reviewer can act on. States the reason, not the outcome."
               },
               "summary": {
@@ -73,16 +80,12 @@
               },
               "flags": {
                 "type": "array",
-                "maxItems": 5,
                 "items": {
-                  "type": "string",
-                  "maxLength": 60
+                  "type": "string"
                 }
               },
               "checks": {
                 "type": "array",
-                "minItems": 1,
-                "maxItems": 8,
                 "description": "One entry per thing you checked, reported whether it passed or not.",
                 "items": {
                   "type": "object",
@@ -95,32 +98,28 @@
                   "properties": {
                     "id": {
                       "type": "string",
-                      "maxLength": 40,
                       "description": "Stable snake_case key."
                     },
                     "label": {
                       "type": "string",
-                      "maxLength": 30,
                       "description": "Sentence case, written for a claims reviewer. Never a payload field name."
                     },
                     "status": {
                       "type": "string",
+                      "description": "warn when satisfied only with a caveat, or when data needed for the check was unavailable.",
                       "enum": [
                         "pass",
                         "warn",
                         "fail"
-                      ],
-                      "description": "warn when satisfied only with a caveat, or when data needed for the check was unavailable."
+                      ]
                     },
                     "verdict": {
                       "type": "string",
-                      "maxLength": 80,
                       "description": "The one-line result shown beside the label."
                     },
                     "details": {
                       "type": "array",
-                      "maxItems": 6,
-                      "description": "Supporting evidence. Not displayed for a passing check.",
+                      "description": "Supporting evidence for this check, up to 6 rows. Supply it for every check, passing ones included — a reviewer can expand a passing check to see what was compared.",
                       "items": {
                         "type": "object",
                         "required": [
@@ -129,12 +128,10 @@
                         ],
                         "properties": {
                           "label": {
-                            "type": "string",
-                            "maxLength": 30
+                            "type": "string"
                           },
                           "value": {
-                            "type": "string",
-                            "maxLength": 120
+                            "type": "string"
                           }
                         }
                       }

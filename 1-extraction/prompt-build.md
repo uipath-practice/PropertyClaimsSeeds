@@ -6,6 +6,8 @@ groups every later block consumes.
 **Read.** `1-extraction/spec.md` (what to build and what "done" means) · `1-extraction/taxonomy.json` (import this verbatim) and
 `1-extraction/taxonomy.md` (what is in it) · `1-extraction/cookbook.md` (the traps) · `CONFIG.md` (your folder)
 
+**Skill.** `uipath-ixp`.
+
 **Do.**
 
 1. **Generate samples.** Run the provided `Retrieve Property Claim` process 10–15 times without pinning a

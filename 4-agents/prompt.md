@@ -1,17 +1,23 @@
 # Block 4 — the analysis agents
 
-**Goal.** Build and publish the seven analyses that read a claim and report what they found.
+**Goal.** Build the seven analyses that read a claim and report what they found, and prove each one on a pinned
+input. **Nothing is published in this block** — the agents ship inside the solution your case plan deploys in
+block 5, so a `solution upload` here is work you do not need to do.
 
 **Read.** `2-design/` (your own tables — which analysis owns which problem, and what each one is called) ·
 `pdd.md` §5 (what each analysis decides) · `4-agents/spec.md` (the set and the answer shape) ·
 `contracts/check-envelope.md` (the payload every one returns) · `4-agents/cookbook.md` ·
 `7-testing/spec.md` (what a pass looks like — read it before you write prompts, not after)
 
+**Skill.** `uipath-agents`.
+
 **Must hold.**
 
 - The two agents that read a source document — the policy, the assessor's report — take it as a **job
   attachment**, not as text. `4-agents/spec.md` says why, and what it costs at test time.
-- One analysis per agent. An agent may cite another's finding as evidence, never report it as its own.
+- One analysis per agent. Where two analyses touch the same fact, the one that does not own it defers **in
+  words** — naming the owner in its own text — and never by reading the other's payload: the three parallel
+  analyses cannot see each other's output at all.
 - Every agent returns the pinned envelope. No length or item-count limits in any output schema.
 - **Each payload has a size budget, and it belongs in the prompt.** The columns that store them cut at 10,000
   characters — silently in the entity, and *loudly* through the connector, which faults the whole case with

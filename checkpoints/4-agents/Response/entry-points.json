@@ -8,16 +8,22 @@
       "type": "agent",
       "input": {
         "type": "object",
+        "_requiredNote": "Narrowed 2026-08-10 to the three payloads that exist at BOTH gateways. The four downstream analyses were required, which made this agent unusable on the denial path: a claim denied at the eligibility gateway never reaches coverage, payout, credibility or decision, so requiring them faulted the job precisely when a refusal letter was owed. A denied claimant still gets a letter (process.md 3.8) — it just cites the eligibility finding and the reviewer's reason.",
         "required": [
+          "in_Outcome",
           "in_ClaimDataJSON",
           "in_PolicyDataJSON",
-          "in_EligibilityChecksJSON",
-          "in_CoverageChecksJSON",
-          "in_PayoutChecksJSON",
-          "in_CredibilityChecksJSON",
-          "in_DecisionJSON"
+          "in_EligibilityChecksJSON"
         ],
         "properties": {
+          "in_Outcome": {
+            "type": "string",
+            "enum": [
+              "approved",
+              "denied"
+            ],
+            "description": "The ending the claim actually reached, supplied by the case stage itself. Authoritative: no analysis, verdict or flag can override it."
+          },
           "in_ClaimDataJSON": {
             "type": "object",
             "description": "Cleaned claim data with claimant name, address, locale, and policy number",
@@ -53,6 +59,11 @@
             "description": "Final decision output from the Decision Agent",
             "properties": {}
           },
+          "in_SettlementJSON": {
+            "type": "object",
+            "description": "The settlement table the claimant is owed amounts from — see contracts/settlement-table.md. Every amount is a number and the currency is stated once, so quote them rather than restating prose. Deliberately not required: a claim denied at the eligibility gateway never reached payout analysis, so no settlement exists and the letter cites only the eligibility finding.",
+            "properties": {}
+          },
           "in_EscalationDecision": {
             "type": "string",
             "description": "Human reviewer's decision for escalated claims: approve_full, approve_partial, or reject. Only provided when claim was escalated and reviewed."
@@ -72,15 +83,25 @@
           "out_ClaimResponseJSON": {
             "type": "object",
             "description": "Decision letter content and metadata including full letter text Carries a `summary` field explaining the wording; replaces the former out_ClaimResponseAnalysisSummary output.",
+            "required": [
+              "letter_text",
+              "decision",
+              "summary"
+            ],
             "properties": {
               "summary": {
                 "type": "string",
                 "description": "Reasoning for the wording and tone of the letter."
+              },
+              "letter_text": {
+                "type": "string",
+                "description": "The complete letter to the claimant, ready to send, in the claimant's own language. This is the text the case plan mails out - no placeholders, no markup, no commentary about the letter."
+              },
+              "decision": {
+                "type": "string",
+                "description": "The outcome the letter communicates: approve, partial_approve, or deny. Must agree with in_Outcome; there is no pending or escalated value."
               }
-            },
-            "required": [
-              "summary"
-            ]
+            }
           }
         }
       }

@@ -34,6 +34,18 @@
             "type": "object",
             "description": "Eligibility pre-screening output",
             "properties": {}
+          },
+          "in_EligibilityDecision": {
+            "type": "string",
+            "description": "The human reviewer's decision at the eligibility gateway. An approval makes every finding in in_EligibilityChecksJSON a granted exception, not an open breach."
+          },
+          "in_EligibilityNotes": {
+            "type": "string",
+            "description": "The reviewer's own note explaining that decision. Where it contradicts a finding, the note wins."
+          },
+          "in_PreviousClaimsJSON": {
+            "type": "string",
+            "description": "Claims already settled against this policy in the current policy period, as a JSON document. An empty priorClaims array means none, which is an answer rather than missing data."
           }
         }
       },
@@ -44,8 +56,8 @@
         ],
         "properties": {
           "out_PayoutChecksJSON": {
-            "description": "Results of payout analysis  Check envelope — see CoreKitchen/check-envelope.md. Every string is shown to a human reviewer.",
             "type": "object",
+            "description": "Results of payout analysis  Check envelope — see contracts/check-envelope.md. Every string is shown to a human reviewer.",
             "required": [
               "verdict",
               "headline",
@@ -55,16 +67,15 @@
             "properties": {
               "verdict": {
                 "type": "string",
+                "description": "pass when nothing needs a human; attention when a reviewer should look; fail when this analysis blocks the claim.",
                 "enum": [
                   "pass",
                   "attention",
                   "fail"
-                ],
-                "description": "pass when nothing needs a human; attention when a reviewer should look; fail when this analysis blocks the claim."
+                ]
               },
               "headline": {
                 "type": "string",
-                "maxLength": 80,
                 "description": "One line the reviewer can act on. States the reason, not the outcome."
               },
               "summary": {
@@ -73,16 +84,12 @@
               },
               "flags": {
                 "type": "array",
-                "maxItems": 5,
                 "items": {
-                  "type": "string",
-                  "maxLength": 60
+                  "type": "string"
                 }
               },
               "checks": {
                 "type": "array",
-                "minItems": 1,
-                "maxItems": 8,
                 "description": "One entry per thing you checked, reported whether it passed or not.",
                 "items": {
                   "type": "object",
@@ -95,32 +102,28 @@
                   "properties": {
                     "id": {
                       "type": "string",
-                      "maxLength": 40,
                       "description": "Stable snake_case key."
                     },
                     "label": {
                       "type": "string",
-                      "maxLength": 30,
                       "description": "Sentence case, written for a claims reviewer. Never a payload field name."
                     },
                     "status": {
                       "type": "string",
+                      "description": "warn when satisfied only with a caveat, or when data needed for the check was unavailable.",
                       "enum": [
                         "pass",
                         "warn",
                         "fail"
-                      ],
-                      "description": "warn when satisfied only with a caveat, or when data needed for the check was unavailable."
+                      ]
                     },
                     "verdict": {
                       "type": "string",
-                      "maxLength": 80,
                       "description": "The one-line result shown beside the label."
                     },
                     "details": {
                       "type": "array",
-                      "maxItems": 6,
-                      "description": "Supporting evidence. Not displayed for a passing check.",
+                      "description": "Supporting evidence for this check, up to 6 rows. Supply it for every check, passing ones included — a reviewer can expand a passing check to see what was compared.",
                       "items": {
                         "type": "object",
                         "required": [
@@ -129,16 +132,130 @@
                         ],
                         "properties": {
                           "label": {
-                            "type": "string",
-                            "maxLength": 30
+                            "type": "string"
                           },
                           "value": {
-                            "type": "string",
-                            "maxLength": 120
+                            "type": "string"
                           }
                         }
                       }
                     }
+                  }
+                }
+              }
+            }
+          },
+          "out_SettlementJSON": {
+            "type": "object",
+            "description": "The settlement table — see contracts/settlement-table.md. Every amount is a JSON number, never a formatted string; the currency is stated once. Declared but not required: a table that fails to arrive is reported by the app as a contract violation, whereas a missing required output faults the whole job.",
+            "required": [
+              "currency",
+              "recommended"
+            ],
+            "properties": {
+              "currency": {
+                "type": "string",
+                "description": "ISO code for every amount in this table, e.g. RON, EUR, HKD, INR. Stated once; never repeated per row."
+              },
+              "recommended": {
+                "type": "object",
+                "description": "What this agent calculates. Never edited by anyone downstream — an assessor's changes become a separate 'final' block written by the app.",
+                "required": [
+                  "rows",
+                  "subtotalABC",
+                  "deductible",
+                  "lossOfUse",
+                  "net"
+                ],
+                "properties": {
+                  "rows": {
+                    "type": "array",
+                    "description": "One row per damage item on the claim, in the claim's order. Every item gets a row, covered or not. Omit Coverage D rows when no additional living expenses were claimed.",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "section",
+                        "label",
+                        "claimed",
+                        "covered",
+                        "payable"
+                      ],
+                      "properties": {
+                        "section": {
+                          "type": "string",
+                          "description": "Your judgement, not a lookup from the claim's category text. A garage, shed, fence, gate or pathway is B even when its category reads 'Structure - …'.",
+                          "enum": [
+                            "A",
+                            "B",
+                            "C",
+                            "D"
+                          ]
+                        },
+                        "label": {
+                          "type": "string",
+                          "description": "Short human-facing name for the item, from the claim. Never a payload field name."
+                        },
+                        "detail": {
+                          "type": "string",
+                          "description": "The item as the claimant described it."
+                        },
+                        "claimed": {
+                          "type": "number",
+                          "description": "The claimed amount with all formatting stripped: 28000, never '28,000.00 lei'."
+                        },
+                        "assessorEstimate": {
+                          "type": "number",
+                          "description": "The assessor's figure for this same item, matched on meaning rather than position. Omit when the assessor did not price it, and say so in item_valuation."
+                        },
+                        "cap": {
+                          "type": "number",
+                          "description": "The limit that actually binds this row."
+                        },
+                        "capSource": {
+                          "type": "string",
+                          "description": "Which limit 'cap' is: the section limit, a Coverage C special sublimit, or what earlier claims have left.",
+                          "enum": [
+                            "limit",
+                            "sublimit",
+                            "remaining"
+                          ]
+                        },
+                        "covered": {
+                          "type": "boolean"
+                        },
+                        "exclusionReason": {
+                          "type": "string",
+                          "description": "Required when covered is false. Never express an exclusion as a cap of 0 — a reader cannot tell that from an exhausted limit."
+                        },
+                        "payable": {
+                          "type": "number",
+                          "description": "This row's amount BEFORE the deductible. Never spread the deductible across rows."
+                        },
+                        "basis": {
+                          "type": "string",
+                          "enum": [
+                            "RCV",
+                            "ACV"
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "subtotalABC": {
+                    "type": "number",
+                    "description": "Sum of payable across Coverage A, B and C rows."
+                  },
+                  "deductible": {
+                    "type": "number",
+                    "description": "Applied once to subtotalABC, never to loss of use."
+                  },
+                  "lossOfUse": {
+                    "type": "number",
+                    "description": "Coverage D total, 0 when nothing was claimed."
+                  },
+                  "net": {
+                    "type": "number",
+                    "description": "subtotalABC - deductible + lossOfUse, never negative. If the deductible exceeds subtotalABC those coverages pay nothing and net is lossOfUse alone — a valid covered claim paying zero, not a denial."
                   }
                 }
               }

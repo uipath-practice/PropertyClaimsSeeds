@@ -6,6 +6,9 @@ and lets a clean claim through untouched.
 **Read.** `7-testing/spec.md` (what to test and what a pass is) · `7-testing/cookbook.md` (the commands) ·
 `pdd.md` §9 (the nine planted problems) · your own traceability table from `2-design/`
 
+**Skill.** `uipath-platform` to start runs and read state; `uipath-troubleshoot` when one fails and you need
+to know why. Not `uipath-test` — that drives Test Manager, which this exercise does not use.
+
 **Must hold.**
 
 - **Aim every run.** Pin the scenario and the discrepancy. An unpinned run that goes green proves one claim

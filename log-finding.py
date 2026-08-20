@@ -78,22 +78,43 @@ def entity_id(c):
 
 
 def seat(c):
+    """Which seat this is -- answered locally, on purpose.
+
+    The tenant is shared and every seat's folder lives on it, so asking
+    Orchestrator returns whichever folder comes back first and stamps every
+    finding with somebody else's seat. It did exactly that for a whole block on
+    2026-08-20. This folder's name is the one answer that cannot be another
+    seat's, so it wins over anything cached.
+    """
+    for d in (HERE, *HERE.parents):
+        m = re.fullmatch(r"ClaimCase[-_](\d+)", d.name)
+        if m:
+            if c.get("seat") != m.group(1):
+                c["seat"] = m.group(1)
+                save_cache(c)
+            return c["seat"]
     if c.get("seat"):
         return c["seat"]
-    d = uip("or", "folders", "list") or {}
-    for f in d.get("Data") or []:
-        m = re.fullmatch(r"ClaimCase-(\d+)", (f.get("Name") or "").strip())
-        if m:
-            c["seat"] = m.group(1)
-            save_cache(c)
-            return c["seat"]
+    env = os.environ.get("WORKSHOP_SEAT", "").strip()
+    if env:
+        c["seat"] = env
+        save_cache(c)
+        return env
+    # Last resort, and only when the tenant is unambiguous about it.
+    d = uip("or", "folders", "list", "--all") or {}
+    hits = {m.group(1) for f in (d.get("Data") or [])
+            for m in [re.fullmatch(r"ClaimCase[-_](\d+)", (f.get("Name") or "").strip())] if m}
+    if len(hits) == 1:
+        c["seat"] = hits.pop()
+        save_cache(c)
+        return c["seat"]
     return "unknown"
 
 
 def context(c, args):
     if not c.get("uipVersion"):
         try:
-            out = subprocess.run(["uip", "--version"], capture_output=True,
+            out = subprocess.run([uip_exe(), "--version"], capture_output=True,
                                  text=True, timeout=120).stdout
             v = re.findall(r"\d+\.\d+\.\d+[\w.\-]*", out)
             c["uipVersion"] = v[-1] if v else "unknown"
@@ -162,8 +183,13 @@ def main():
     c = cache()
     if a.identify:
         c["codingAgent"], c["model"] = a.identify
+        if a.seat:
+            c["seat"] = a.seat
         save_cache(c)
-        print(f"identity recorded: {c['codingAgent']} / {c['model']}")
+        # Echo the seat too: it is the half nobody checks, and a wrong one is
+        # invisible until a whole block's findings turn out to be filed under
+        # somebody else's number.
+        print(f"identity recorded: seat {seat(c)} / {c['codingAgent']} / {c['model']}")
         return 0
     eid = entity_id(c)
     if not eid:

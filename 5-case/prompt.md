@@ -8,6 +8,9 @@ parallel, and every binding — then deploy it and put a clean claim through, en
 arguments, types, behaviour) · `contracts/claim-entity.md` (what each stage writes) · `5-case/cookbook.md` (the
 platform traps — read the first section before editing anything) · `CONFIG.md` (folders, names, Windows)
 
+**Skill.** `uipath-maestro-case`, plus `uipath-solution` to pack and deploy. **Not `uipath-maestro-bpmn`** —
+different product; the only thing drawing you there is that your compiled plan is named `.bpmn`.
+
 **This block is the longest one here. Do it in three passes, finishing each before starting the next**, so a
 pass that goes wrong costs a pass rather than the block. Between passes write down where you are — you will
 lose your working context during this block, and that note is what makes the next hour cheap.

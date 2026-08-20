@@ -125,6 +125,27 @@ and worthless. It is the test oracle, and it is yours in block 7 only.
 document, this one included. Where they disagree with a cookbook, the tool wins — and that disagreement is worth
 logging.
 
+**Load the right skill for the block, and only that one.** UiPath ships a skill per surface, and several have
+names close enough that an agent picks the wrong one and follows instructions for a different product:
+
+| Block | The skill | |
+|---|---|---|
+| 1 Extraction | `uipath-ixp` | |
+| 2 Design | `uipath-planner` | writes the SDD from a PDD |
+| 3 Claim record | `uipath-platform` | Data Fabric lives here, not in a skill of its own |
+| 4 Agents | `uipath-agents` | |
+| 5 Case | **`uipath-maestro-case`** | plus `uipath-solution` to pack, publish and deploy |
+| 6 App | `uipath-coded-apps` | |
+| 7 Testing | `uipath-platform` to run, `uipath-troubleshoot` to explain a failure | |
+
+Three near-misses, all of which have cost time:
+
+- **`uipath-maestro-bpmn` is not block 5.** It authors Process Orchestration `.bpmn` *projects*. Your case
+  compiles to a file called `caseplan.json.bpmn`, which is not the same thing and is not authored by hand — the
+  name collision is the whole trap.
+- **`uipath-maestro-flow` is not used in this exercise at all.** It triggers on `.flow` files; there are none.
+- **`uipath-test` is not block 7.** It drives Test Manager. Block 7 runs the case and reads the result.
+
 **Verify, do not assume.** Nearly every "not found" here is a wrong folder, a wrong tenant, a wrong scope or a
 stale cache rather than an absent resource. `uip login status` before believing anything is missing, and read
 `known-issues/` before believing a `list` that comes back empty.

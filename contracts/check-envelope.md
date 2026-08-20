@@ -48,6 +48,25 @@ can only ever show internal names. The fix is not to relabel in the UI, it is to
 | `checks[].details` | 6 × 120 | Supplied for **every** check, passing ones included. A `pass` row renders collapsed and a `warn`/`fail` renders open, but a reviewer must still be able to expand a green check and see its evidence — the address-match example is a `pass` that carries three addresses. **Corrected 2026-08-09:** the prompts originally said not to bother with details on passing checks, which left green rows unexpandable. |
 | `checks` | 8 | — |
 
+## Declare it as an `object`, never as a `string`
+
+The envelope is a **structured output**: `"type": "object"` with these properties spelled out in the schema. The
+tempting alternative — declaring `out_CoverageChecksJSON` as a `string` because the entity column that stores it
+is text — undoes the whole point of this document. A string has no properties, so nothing above can be enforced,
+and the shape falls back to living in prose inside seven separate prompts. That is precisely the state described
+under *Why it exists*, and it is what put `recommend_review` on a reviewer's screen.
+
+Measured 2026-08-20: of three independent builds, the one that chose `string` produced seven agents with **no
+pinned envelope in any schema** and passed every gate in block 4 regardless.
+
+The conversion is the case plan's job and it is one expression each way — `"value": "coverageChecksJson"` writing
+out, `"=js:(vars.coverageChecksJson || {})"` reading back in. Two payloads are **not** yours to choose, because a
+provided process fixes them: `in_ClaimIXPDataJSON` arrives as an object and `in_PreviousClaimsJSON` as a string
+(`provided-processes.md`).
+
+Whatever you do, be consistent across all seven. An agent that emits an object into a payload the next agent
+declares as a string packs, deploys, and faults on a live claim.
+
 ## Rules
 
 1. **Labels: agent supplies, app overrides.** The agent sends both `id` and `label`. The app prefers its own label for

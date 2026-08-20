@@ -42,6 +42,35 @@ uip agent debug <project-dir> --output json     # run it on one pinned input, no
 uip agent review <project-dir> --output json    # deterministic checks + a letter grade
 ```
 
+### `agent debug` only finds an agent that sits directly under the solution
+
+Put the seven agent projects at the **top level** of `Build/ClaimCase-<NN>/`, one folder each. Group them in a
+subfolder — `agents/Coverage`, the tidier-looking layout — and `uip agent debug` refuses with:
+
+```
+No enclosing .uipx solution found for 'agents/Coverage'.
+Create one with 'uip solution init' and add the agent to it.
+```
+
+The message is wrong about the cause: the solution exists, the manifest declares the nested path correctly, and
+`agent validate`, `agent review` and `solution pack` all accept it. Only `debug` searches a single level up.
+Two of three builds hit this and one lost an hour re-registering projects; measured on `1.199.0-preview.119`.
+
+### `agent debug` caps all its inputs at 10,000 characters *together*
+
+```
+The field InputArguments must be a string or array type with a maximum length of 10000
+```
+
+This is the whole serialized input of the debug job, not one field, so it bites the agents that read four or
+five payloads at once — the decision analysis first. It is rejected before the model is invoked, so it costs
+nothing but tells you nothing either. Trim the *fixture's* prose to get under it; do not change the agent's own
+per-payload budget to suit a test harness, and do not conclude the agent is too big.
+
+There is also no `--inputs-file`: the JSON goes on the command line, and on Windows that runs into the command
+length limit and into PowerShell rewriting the quoting. Pass it from a small script (`subprocess` with an argv
+list) rather than from a shell variable.
+
 `agent review` is the cheapest quality signal in this build: it is free, it is objective, and it returns the same
 answer for everyone, which makes it worth running before you think you are finished rather than after.
 

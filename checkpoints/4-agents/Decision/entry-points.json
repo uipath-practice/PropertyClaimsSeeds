@@ -42,10 +42,23 @@
             "description": "Payout calculation results from Payout Calculation Agent",
             "properties": {}
           },
+          "in_SettlementJSON": {
+            "type": "object",
+            "description": "The settlement table from the Payout Calculation Agent — see contracts/settlement-table.md. Carries recommended.net as a number, which is what the 20%-of-Coverage-A escalation rule compares against. Deliberately not required: if it fails to arrive the rule cannot be evaluated, and the prompt then requires escalation rather than a silent pass.",
+            "properties": {}
+          },
           "in_CredibilityChecksJSON": {
             "type": "object",
             "description": "Credibility assessment results from Credibility Assessment Agent",
             "properties": {}
+          },
+          "in_EligibilityDecision": {
+            "type": "string",
+            "description": "The human reviewer's decision at the eligibility gateway. An approval makes every finding in in_EligibilityChecksJSON a granted exception, not an open breach."
+          },
+          "in_EligibilityNotes": {
+            "type": "string",
+            "description": "The reviewer's own note explaining that decision. Where it contradicts a finding, the note wins."
           }
         }
       },
@@ -53,16 +66,21 @@
         "type": "object",
         "required": [
           "out_FinalDecision",
-          "out_DecisionJSON"
+          "out_DecisionJSON",
+          "out_ReviewRequired"
         ],
         "properties": {
           "out_FinalDecision": {
             "type": "string",
             "description": "Final claims decision: approve, partial_approve, deny, or escalate"
           },
+          "out_ReviewRequired": {
+            "type": "boolean",
+            "description": "Whether a human must see this claim before any money moves. false sends it straight to settlement with nobody reading the amounts, so it is required rather than optional: a missing value would read as false and auto-settle an unchecked claim, whereas a required output that never arrives faults the job loudly. The case plan routes on this alone."
+          },
           "out_DecisionJSON": {
-            "description": "Full decision output including escalation flags, deny reasons, payout reference, and confidence level Check envelope — see CoreKitchen/check-envelope.md. Every string is shown to a human reviewer.",
             "type": "object",
+            "description": "Full decision output including escalation flags, deny reasons, payout reference, and confidence level Check envelope — see contracts/check-envelope.md. Every string is shown to a human reviewer.",
             "required": [
               "verdict",
               "headline",
@@ -72,16 +90,15 @@
             "properties": {
               "verdict": {
                 "type": "string",
+                "description": "pass when nothing needs a human; attention when a reviewer should look; fail when this analysis blocks the claim.",
                 "enum": [
                   "pass",
                   "attention",
                   "fail"
-                ],
-                "description": "pass when nothing needs a human; attention when a reviewer should look; fail when this analysis blocks the claim."
+                ]
               },
               "headline": {
                 "type": "string",
-                "maxLength": 80,
                 "description": "One line the reviewer can act on. States the reason, not the outcome."
               },
               "summary": {
@@ -90,16 +107,12 @@
               },
               "flags": {
                 "type": "array",
-                "maxItems": 5,
                 "items": {
-                  "type": "string",
-                  "maxLength": 60
+                  "type": "string"
                 }
               },
               "checks": {
                 "type": "array",
-                "minItems": 1,
-                "maxItems": 8,
                 "description": "One entry per thing you checked, reported whether it passed or not.",
                 "items": {
                   "type": "object",
@@ -112,32 +125,28 @@
                   "properties": {
                     "id": {
                       "type": "string",
-                      "maxLength": 40,
                       "description": "Stable snake_case key."
                     },
                     "label": {
                       "type": "string",
-                      "maxLength": 30,
                       "description": "Sentence case, written for a claims reviewer. Never a payload field name."
                     },
                     "status": {
                       "type": "string",
+                      "description": "warn when satisfied only with a caveat, or when data needed for the check was unavailable.",
                       "enum": [
                         "pass",
                         "warn",
                         "fail"
-                      ],
-                      "description": "warn when satisfied only with a caveat, or when data needed for the check was unavailable."
+                      ]
                     },
                     "verdict": {
                       "type": "string",
-                      "maxLength": 80,
                       "description": "The one-line result shown beside the label."
                     },
                     "details": {
                       "type": "array",
-                      "maxItems": 6,
-                      "description": "Supporting evidence. Not displayed for a passing check.",
+                      "description": "Supporting evidence for this check, up to 6 rows. Supply it for every check, passing ones included — a reviewer can expand a passing check to see what was compared.",
                       "items": {
                         "type": "object",
                         "required": [
@@ -146,12 +155,10 @@
                         ],
                         "properties": {
                           "label": {
-                            "type": "string",
-                            "maxLength": 30
+                            "type": "string"
                           },
                           "value": {
-                            "type": "string",
-                            "maxLength": 120
+                            "type": "string"
                           }
                         }
                       }

@@ -6,6 +6,8 @@ and the reviewer's screen has somewhere to read from.
 **Read.** `contracts/claim-entity.md` · `pdd.md` §8 (why the record exists at all) · `CONFIG.md` ·
 `3-claim-record/cookbook.md`
 
+**Skill.** `uipath-platform` — Data Fabric has no skill of its own.
+
 **Must hold.**
 
 - Every payload your design produces has a column, and the column types match the contract.

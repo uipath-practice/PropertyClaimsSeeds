@@ -5,7 +5,9 @@ that explains the solution to a person. Nothing is created on the platform in th
 
 **Read.** `pdd.md` — all of it, once, before writing anything · `contracts/` (the shapes that must match across
 components) · `2-design/spec.md` (what the tables must contain) · `2-design/cookbook.md` (how to write them
-here, and how the `uipath-planner` skill fits) · `CONFIG.md`
+here) · `CONFIG.md`
+
+**Skill.** `uipath-planner` — `2-design/cookbook.md` says what to keep from what it writes.
 
 **Why this block exists.** Everything after it is assembly, and assembly against a table you wrote is an order
 of magnitude cheaper than assembly against a document you re-read each time. Blocks 4 and 5 in particular are

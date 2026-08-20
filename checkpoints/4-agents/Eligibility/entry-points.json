@@ -109,7 +109,7 @@
           },
           "out_EligibilityChecksJSON": {
             "type": "object",
-            "description": "The eligibility check envelope. Every string in it is shown to a human reviewer, so labels must be human-readable, never payload field names. See CoreKitchen/check-envelope.md.",
+            "description": "The eligibility check envelope. Every string in it is shown to a human reviewer, so labels must be human-readable, never payload field names. See contracts/check-envelope.md.",
             "required": [
               "verdict",
               "headline",
@@ -119,16 +119,15 @@
             "properties": {
               "verdict": {
                 "type": "string",
+                "description": "pass when all five checks pass; fail when the claim cannot proceed; attention when a human should decide.",
                 "enum": [
                   "pass",
                   "attention",
                   "fail"
-                ],
-                "description": "pass when all five checks pass; fail when the claim cannot proceed; attention when a human should decide."
+                ]
               },
               "headline": {
                 "type": "string",
-                "maxLength": 80,
                 "description": "One line the reviewer can act on. States the reason, not the outcome."
               },
               "summary": {
@@ -137,16 +136,12 @@
               },
               "flags": {
                 "type": "array",
-                "maxItems": 5,
                 "items": {
-                  "type": "string",
-                  "maxLength": 60
+                  "type": "string"
                 }
               },
               "checks": {
                 "type": "array",
-                "minItems": 5,
-                "maxItems": 8,
                 "description": "Exactly the five eligibility checks, in order, reported whether they pass or fail.",
                 "items": {
                   "type": "object",
@@ -169,27 +164,24 @@
                     },
                     "label": {
                       "type": "string",
-                      "maxLength": 30,
                       "description": "Sentence case, written for a claims reviewer."
                     },
                     "status": {
                       "type": "string",
+                      "description": "warn when satisfied only with a caveat, e.g. a late filing with a stated justification.",
                       "enum": [
                         "pass",
                         "warn",
                         "fail"
-                      ],
-                      "description": "warn when satisfied only with a caveat, e.g. a late filing with a stated justification."
+                      ]
                     },
                     "verdict": {
                       "type": "string",
-                      "maxLength": 80,
                       "description": "The one-line result shown beside the label."
                     },
                     "details": {
                       "type": "array",
-                      "maxItems": 6,
-                      "description": "Supporting evidence. Not displayed for a passing check.",
+                      "description": "Supporting evidence for this check, up to 6 rows. Supply it for every check, passing ones included — a reviewer can expand a passing check to see what was compared.",
                       "items": {
                         "type": "object",
                         "required": [
@@ -198,12 +190,10 @@
                         ],
                         "properties": {
                           "label": {
-                            "type": "string",
-                            "maxLength": 30
+                            "type": "string"
                           },
                           "value": {
-                            "type": "string",
-                            "maxLength": 120
+                            "type": "string"
                           }
                         }
                       }
@@ -215,54 +205,41 @@
           },
           "out_ClaimDataJSON": {
             "type": "object",
-            "description": "Cleaned claim data without extraction metadata. Opens with a typed header block read directly into database columns; the rest keeps every field for downstream analysis.",
-            "required": [
-              "header"
-            ],
-            "properties": {
-              "header": {
-                "type": "object",
-                "description": "Typed scalars. These become filterable/sortable entity columns, so they must not be formatted for display.",
-                "required": [
-                  "claimantName",
-                  "incidentType",
-                  "totalClaimAmount",
-                  "currency"
-                ],
-                "properties": {
-                  "claimantName": {
-                    "type": "string"
-                  },
-                  "propertyCountry": {
-                    "type": "string"
-                  },
-                  "incidentType": {
-                    "type": "string"
-                  },
-                  "incidentDate": {
-                    "type": "string",
-                    "description": "ISO 8601 date, e.g. 2026-03-14. Not DD/MM/YYYY."
-                  },
-                  "dateOfSubmission": {
-                    "type": "string",
-                    "description": "ISO 8601 date."
-                  },
-                  "totalClaimAmount": {
-                    "type": "number",
-                    "description": "A number, not a formatted currency string. Strip any currency symbol and thousands separator."
-                  },
-                  "currency": {
-                    "type": "string",
-                    "description": "ISO 4217 code, e.g. HKD."
-                  }
-                }
-              }
-            }
+            "description": "Cleaned claim data without extraction metadata. Keeps every field for downstream analysis; the typed facts a database column needs are separate scalar outputs.",
+            "properties": {}
           },
           "out_PolicyDataJSON": {
             "type": "object",
             "description": "Policy Data converted from PDF to JSON. Keep every field and every clause from Policy file for downstream analysis.",
             "properties": {}
+          },
+          "out_ClaimantName": {
+            "type": "string",
+            "description": "Claimant name. Own column, so plain text — no titles or annotations."
+          },
+          "out_PropertyCountry": {
+            "type": "string",
+            "description": "Country of the insured property."
+          },
+          "out_IncidentType": {
+            "type": "string",
+            "description": "Incident type, e.g. Water damage."
+          },
+          "out_IncidentDate": {
+            "type": "string",
+            "description": "ISO 8601 date, e.g. 2026-03-14. Not DD/MM/YYYY."
+          },
+          "out_DateOfSubmission": {
+            "type": "string",
+            "description": "ISO 8601 date the claim was submitted."
+          },
+          "out_TotalClaimAmount": {
+            "type": "number",
+            "description": "A number, not a formatted currency string. Strip the symbol and thousands separator."
+          },
+          "out_Currency": {
+            "type": "string",
+            "description": "ISO 4217 code, e.g. HKD."
           }
         }
       }
