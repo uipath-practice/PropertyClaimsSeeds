@@ -84,9 +84,9 @@ names, and the wrong pick binds cleanly and fails at run time. Check
 `--help` accepting `process` — it looks in the wrong index and reports no entry found. You do not need it:
 `contracts/provided-processes.md` gives every argument and type.
 
-## You do not need Studio Web — and opening it has a cost
+## Build locally; open Studio Web to review
 
-The whole loop is local:
+**The build loop needs no designer:**
 
 1. Edit `caseplan.json`.
 2. `python3 5-case/check_caseplan.py caseplan.json`
@@ -94,13 +94,27 @@ The whole loop is local:
 4. `grep -c` your token in the `.bpmn` to prove the recompile happened.
 5. `uip solution pack` / `deploy`.
 
-Open the designer to *look* at your plan by all means. Just know that the sync runs in **one direction only**:
-opening the project in Studio Web writes the tenant's state *down* over your local folder, wholesale, and
-nothing ever pushes local work up for you. Upload before you open it, or lose whatever local is ahead by.
+**Reviewing is a different thing, and worth doing.** A case plan is much easier to read on a canvas than in
+JSON, and the designer is where you show someone what you built. But deploying does not put your solution
+there — **`uip solution upload <solution-dir>` does**, and it is a deliberate step:
 
-It also **saves the plan minified onto a single line**, and may write a schema version newer than the CLI can
-pack — which is how a working local loop stops working after one visit to the canvas. Pretty-print after any
-round trip; formatting is inert.
+```bash
+uip solution upload Build/ClaimCase-<NN>            # first time: imported as new
+uip solution upload Build/ClaimCase-<NN> --force    # afterwards: replaces it, wiping its version history
+```
+
+Three things to know before you click:
+
+- **Upload before you open, every time.** The sync runs in **one direction only** — opening the project writes
+  the tenant's state *down* over your local folder, wholesale, and nothing ever pushes local work up for you.
+  Open the designer while local is ahead and local is what you lose.
+- **The designer may write a newer schema than the CLI can pack.** If `case pack` starts refusing your plan
+  with *"not a valid Case Management JSON of any previous version"* after a visit to the canvas, that is what
+  happened, and `uip maestro case debug` becomes your compile step instead.
+- **It saves the plan minified onto one line.** Pretty-print after any round trip; formatting is inert.
+
+So the cheap order is: **build and deploy locally, upload once when the block is done, and review there.** If
+you want to look mid-build, upload first and expect the local loop to need the fallback afterwards.
 
 ## Deploying, and the traps in order
 

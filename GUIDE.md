@@ -113,6 +113,10 @@ found at the end costs the block.
 Its acceptance run is **a claim with nothing wrong with it**. That is the only claim that can run the whole
 lifecycle without a human, which is what makes it provable before the app exists in block 6.
 
+**You build it locally and review it in the browser.** Nothing in the loop needs the designer any more — but
+`uip solution upload` puts your solution into Studio Web, where a case plan is far easier to read, and that is
+worth doing at the end of the block. Deploying does not upload; they are separate steps on purpose.
+
 ## When a block goes wrong — checkpoints
 
 `checkpoints/` holds a working version of a block's output. Restore one and carry on.

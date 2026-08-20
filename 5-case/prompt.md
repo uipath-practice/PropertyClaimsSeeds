@@ -8,10 +8,9 @@ parallel, and every binding — then deploy it and put a clean claim through, en
 arguments, types, behaviour) · `contracts/claim-entity.md` (what each stage writes) · `5-case/cookbook.md` (the
 platform traps — read the first section before editing anything) · `CONFIG.md` (folders, names, Windows)
 
-**This block is the longest one here. Do it in three passes, and finish each before starting the next.** Every
-pass ends in a command that either passes or does not, so a pass that goes wrong costs one pass rather than the
-block. Between passes, write down where you are: what is built, what is next, what surprised you. You will lose
-your working context at some point during this block, and that note is what makes the next hour cheap.
+**This block is the longest one here. Do it in three passes, finishing each before starting the next**, so a
+pass that goes wrong costs a pass rather than the block. Between passes write down where you are — you will
+lose your working context during this block, and that note is what makes the next hour cheap.
 
 ## Pass 1 — the skeleton
 
@@ -30,20 +29,20 @@ uip maestro case validate <caseplan.json> --skeleton --output json     # Valid
 
 ## Pass 2 — the tasks and the wiring
 
-- **Bind the plumbing; do not build it.** Six processes are already deployed. Read what they are for in
-  `contracts/provided-processes.md`, and read their exact arguments from the platform —
-  `uip or packages entry-points "<PackageId>:<Version>"` — before binding. If you are about to write a bucket
-  download, an IXP call or a PDF-to-text step, you have missed one.
+- **Bind the plumbing; do not build it.** Six processes are already deployed — read what they are for in
+  `contracts/provided-processes.md` and their exact arguments from the platform,
+  `uip or packages entry-points "<PackageId>:<Version>"`. If you are about to write a bucket download, an IXP
+  call or a PDF-to-text step, you have missed one.
 - **Match the types.** One retrieval returns an object, another a string, three return files. A type mismatch
   packs and deploys cleanly and faults on a live claim.
-- **One solution, named for your seat**, holding the case and all seven agents. A case cannot bind an agent that
+- **One solution, `ClaimCase-<NN>`**, holding the case and all seven agents. A case cannot bind an agent that
   lives in another solution.
 - Parallel work is *grouped*, not sequenced.
 - Every stage writes what it produced to the claim record, and nothing it did not — through the shared Data
   Fabric connection, using the **V3 activities** your folder-scoped entity needs (`5-case/cookbook.md`).
-- Build **without the two human gateway tasks** — the app does not exist yet and a case cannot deploy binding an
-  app that is not built. **Keep both human-decision stages in place and shaped**; block 6 drops a task into each.
-  `5-case/spec.md` explains the two passes and what "shaped" has to mean.
+- Build **without the two human gateway tasks** — a case cannot deploy binding an app that is not built, and the
+  app is block 6. **Keep both human-decision stages in place and shaped**; `5-case/spec.md` says what "shaped"
+  has to mean.
 
 ```bash
 python3 5-case/check_caseplan.py <caseplan.json>       # 0 problems
@@ -67,10 +66,13 @@ has the shell-quoting trick if you are on Windows).
 carries a row written stage by stage. A claim sitting in `Running (With Faults)`, or a stage whose tasks are all
 green while the next stage never started, is a failure.
 
-**If the clean claim gets flagged for review, the case plan is not what is wrong.** It has parked at the review
-stage exactly as designed, because an analysis said something was off with a claim that has nothing wrong with
-it. Go back to that agent's prompt and fix the over-flagging — `7-testing/spec.md` says how to find which one.
-A workshop-day claim that always needs a human is a solution nobody would ship.
+**If the clean claim gets flagged, the case plan is not what is wrong.** It parked at the review stage exactly
+as designed, because an analysis found fault with a claim that has none. Fix that agent's prompt —
+`7-testing/spec.md` says how to find which one.
+
+**Then make it reviewable.** `uip solution upload Build/ClaimCase-<NN>` puts the plan on the Studio Web canvas,
+where it is far easier to read; deploying alone does not. Read `5-case/cookbook.md`, *Build locally; open Studio
+Web to review*, first — the sync runs one way only.
 
 **Where it goes.** Generated code into `Build/ClaimCase-<NN>/` — one solution for the whole build. Notes and
 documents you write for this block go in this block's folder.
