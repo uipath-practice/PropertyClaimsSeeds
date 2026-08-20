@@ -90,7 +90,9 @@ def context(c, args):
         save_cache(c)
     seed = "unknown"
     try:
-        seed = (HERE / "VERSION").read_text().strip().splitlines()[0]
+        # Both lines: the date alone cannot tell two seeds of the same day apart,
+        # and the commit is what a finding has to be attributable to.
+        seed = " ".join((HERE / "VERSION").read_text().split())
     except Exception:
         pass
     return {
@@ -165,7 +167,8 @@ def main():
         items = [{"block": a.block, "category": a.category, "summary": s}]
 
     ctx = context(c, a)
-    rows = [{**ctx, **{k: i[k] for k in ("block", "category", "summary") if k in i}}
+    rows = [{**ctx, "processed": False,
+             **{k: i[k] for k in ("block", "category", "summary") if k in i}}
             for i in items]
 
     if eid:
