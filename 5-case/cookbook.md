@@ -1,7 +1,88 @@
 # Block 5 — getting the case plan built and deployed
 
 The spec is `5-case/spec.md`. This is the platform friction, and there is more of it here than in any other
-block. Read the first section before you edit anything: it is the one that costs a day if you meet it cold.
+block. Read the first two sections before you edit anything: one is what three builds actually lost time to, the
+other is the trap that costs a day if you meet it cold.
+
+## Where the time actually goes — read this first
+
+Three builds finished this block. One took **13 solution versions and five authoring bugs**; the other two were
+not far off. Every bug had the same shape: **the plan packs, deploys, passes every gate, and then something
+binds to nothing.** Not one produced an error naming the thing that was wrong.
+
+So the habit that makes this block cheap is not care while authoring — everyone is careful. It is this:
+
+> **After every run, read the claim record before you read the plan.** An empty column is the shortest path to
+> the defect there is. Two of the five bugs below were found that way in a minute each; the two that were not
+> cost nine deploy cycles and a wrong conclusion about the platform.
+
+```bash
+uip df records query <entity-id> --folder-key <your-seat-folder-key> --output json
+```
+
+A stage that went green and left its column empty is a binding that resolved to nothing. A stage missing from
+the record altogether never ran, whatever the case's own status says — a case can reach an ending with a stage
+that never started, and the record is the only place that shows it.
+
+**Run `check_caseplan.py` after every edit, not before every pack.** It now catches four of the five, in about a
+second, without a tenant. The two gates are not substitutes for each other and neither is a substitute for
+reading the record:
+
+| | catches |
+|---|---|
+| `check_caseplan.py` | binding shape, orphan stages, unwritten payloads, exit/entry mismatch |
+| `uip maestro case validate` | schema, and `=vars.X` references by their real id |
+| the claim record | everything else, which is most of it |
+
+### The five, in the order they were found
+
+1. **A task output that dropped the `out_` prefix** — every binding in the plan resolved to nothing.
+2. **Connector inputs written with `value` instead of `target`/`body`** — the activity dispatched with no
+   parameters, reported as a missing entity.
+3. **A required input bound to an empty-string literal** — dropped from the job entirely, not sent as empty.
+4. **`response.X` read from a root-scoped custom output** — silently `undefined`, so every claim looked flagged.
+5. **A payload drafted and never written** — the letter reached the claimant's notification and never the record.
+
+The first two are below under *A task's inputs and outputs*; the rest are under *Bindings that resolve to
+nothing*.
+
+## Bindings that resolve to nothing, and what each looks like from outside
+
+### An empty string is not an empty value
+
+Binding a required agent input to `""` does not send an empty string — **the runtime drops the key from
+`InputArguments` altogether**, and the agent faults at startup on `pydantic: Field required`, naming an input you
+did bind. It bites the four analyses downstream of the eligibility gateway, because in pass 1 no human has spoken
+yet and `in_EligibilityNotes` has nothing to carry.
+
+Bind a short non-empty literal instead — `"none recorded"` says the true thing and survives the trip. Prove which
+keys arrived rather than guessing:
+
+```bash
+uip or jobs get <job-key> --output json        # InputArguments as the job actually received them
+```
+
+### `response.X` belongs to connector tasks only
+
+A custom output computing a value from an agent's result must read it from the **case variable**, not from
+`response`:
+
+```
+=js:JSON.parse(vars.decisionJson || '{}').outcome        ✓
+=js:JSON.parse(response.DecisionJSON || '{}').outcome     ✗ — undefined on an agent task
+```
+
+`response` resolves only inside an `execute-connector-activity`. Elsewhere it is `undefined`, `JSON.parse(...)`
+falls back to `{}` via the `||`, and the expression returns a confident wrong answer. One build shipped
+`d.outcome !== 'approve'` this way: every claim came out `reviewRequired: true`, including a clean one the agent
+had explicitly approved with high confidence. Nothing errored, and the case parked at review exactly as designed.
+
+### A payload with no write task
+
+An agent produced it, the task went green, and no Data Fabric write body mentions it. The claimant's letter went
+this way — drafted, used for a notification subject, and never stored, so the record showed a settled claim with
+an empty `claimResponseJson`. `check_caseplan.py` warns on every produced payload that reaches no write body;
+three of those warnings are expected (raw extraction, prior claims, the poll flag) and a fourth is a bug.
 
 ## `caseplan.json` is not what runs — and how to make it run
 
@@ -52,19 +133,8 @@ it refuses on the version, do not downgrade your plan to satisfy it; that is a s
 overwrite. Either way **log `uip --version`**, because this is the class of result that
 is undiagnosable afterwards.
 
-**The gate that always works is the script shipped beside this file:**
-
-```bash
-python3 5-case/check_caseplan.py caseplan.json
-```
-
-It runs in about a second, needs no tenant, and catches the three classes that fail silently at run time: a
-`vars.X` nothing declares, an id pointing at something that no longer exists, and a stage entering on
-`exited(...)` from a stage that marks itself complete. Run it after **every** edit, before every pack.
-
-One failure is worth knowing by name: **a stage with no `layout.nodes` entry crashes the Studio Web designer on
-load**, with an error naming nothing in your plan (`Cannot read properties of undefined (reading 'x')`). If the
-canvas dies after you added a stage, that is why.
+**The gate that always works is `check_caseplan.py`, shipped beside this file** — no tenant, about a second,
+and every class it catches is one that fails silently at run time. The two gates overlap barely; run both.
 
 ## Resolving the processes you bind
 
@@ -163,12 +233,6 @@ difference between those two, so reach for it early.
 
 Reading execution history, expect generated elements you did not author — re-entry counters, variable resets,
 parallel gateway markers, per-stage completion trackers. Your own task ids appear verbatim alongside them.
-
-## What a green run does not prove
-
-A case can reach an ending with a stage that never started. Check the stages, not just the outcome: every stage
-the claim entered should show complete, and the claim record should carry columns written by each of them. A gap
-in the record is a stage that was skipped, and it is invisible anywhere else.
 
 ## A task's inputs and outputs are addressed by name, and the names are not yours
 
@@ -276,22 +340,15 @@ unquoted `&` is a command separator in every shell you might be using.
 
 ## Redeploy under the same name, every time
 
-`CONFIG.md`, *One deployment, reused*, pins the two names. They never change:
-
-```bash
-uip solution deploy uninstall ClaimCase-<NN> --output json
-uip solution deploy run --name ClaimCase-<NN> --folder-name ClaimCase-<NN>-Deploy \
-  --parent-folder-path ClaimCase-<NN> --package-name ClaimCase-<NN> --package-version <v>
-```
-
-`deploy uninstall` takes the deployment **name** as a positional argument and rejects `--deployment-key`, which
-is the reverse of most commands here. And **an uninstalled deployment never leaves the tenant's Solutions view** —
-so a name per attempt is not untidiness you can clear up later, it is permanent.
+`CONFIG.md`, *One deployment, reused*, has the two pinned names and the uninstall-then-deploy pair. Two things
+that section cannot tell you until you are here: `deploy uninstall` takes the deployment **name** as a positional
+argument and rejects `--deployment-key`, the reverse of most commands in this CLI; and **an uninstalled
+deployment never leaves the tenant's Solutions view**, so a name per attempt is permanent, not untidiness you
+clear up later.
 
 ## Make the canvas readable
 
-A reviewer opening your case in Studio Web should see a process. Two things decide whether they do, and neither
-is what most builds reach for first.
+A reviewer opening your case in Studio Web should see a process. Two things decide whether they do.
 
 ### Do not author edges — they are retired
 
@@ -313,7 +370,8 @@ endings beside the stage that starts them, waiting stages inline with the main p
 For a plan someone has to *review*, write the map.
 
 **Every node needs an entry or the designer crashes on load** with `Cannot read properties of undefined
-(reading 'x')`, which is why `check_caseplan.py` fails an incomplete map rather than an absent one.
+(reading 'x')` — an error naming nothing in your plan, so if the canvas dies right after you added a stage, that
+is why. `check_caseplan.py` fails an incomplete map for this reason, and accepts an absent one.
 
 The arrangement that reads well, and the one the reference solution uses:
 

@@ -37,7 +37,14 @@ for node in doc['nodes']:
     for group in (node['data'].get('tasks') or []):
         for task in group:
             for out in (task['data'].get('outputs') or []):
-                declared.add(out.get('var') or out.get('id'))
+                # Both, not one or the other. `var` is the display name and `id` is what
+                # `=vars.X` resolves against, and they diverge whenever two tasks write the
+                # same payload -- the second gets a suffixed id and keeps the shared var.
+                # Preferring `var` reported that suffixed id as undeclared (a false alarm) and,
+                # worse, hid a systematic id-casing bug that cost a build a deploy cycle.
+                declared.add(out.get('var'))
+                declared.add(out.get('id'))
+            declared.discard(None)
 
 # The case's own arguments. A task output is not the only way a `vars.X` comes to
 # exist: an In-argument declares three entries — a formal slot the caller writes at
@@ -174,7 +181,11 @@ for node in doc['nodes']:
                 continue
             for out in (task['data'].get('outputs') or []):
                 name = out.get('name') or ''
-                if name in ENGINE_SUPPLIED:
+                # A `custom` output is a value the plan computes from other variables --
+                # its source is an expression, not an argument the automation declares --
+                # so the naming rule below does not apply to it. Skipping these was added
+                # 2026-08-20 after the check fired twice on a plan that was correct.
+                if name in ENGINE_SUPPLIED or out.get('custom'):
                     continue
                 if not name.startswith('out_'):
                     kind = task.get('type')
@@ -205,6 +216,37 @@ for node in doc['nodes']:
                           f'needs {{"target": "{inp.get("name")}", "body": {{...}}}}, not "value"; as written '
                           f'the activity is dispatched without it')
                     problems.append(inp.get('name'))
+
+# ------------------------------------------- a payload produced and never written down
+#
+# The Response agent drafted a claimant letter, its task went green, and no write task
+# carried `claimResponseJson` into the record -- drafted, then silently discarded, with the
+# case still reporting Completed. "Read by nothing" would not have caught it: the letter was
+# read, by the notification's subject line. What it never reached was a Data Fabric write.
+#
+# Some payloads legitimately never land in a column -- raw extraction, prior claims, a poll
+# flag -- so this is a warning. On a correct plan it names three; a fourth is worth a look.
+write_bodies = []
+produced = set()
+for node in doc['nodes']:
+    for group in (node['data'].get('tasks') or []):
+        for task in group:
+            kind = task.get('type')
+            if kind in ('process', 'rpa', 'agent'):
+                for out in (task['data'].get('outputs') or []):
+                    if out.get('custom') or (out.get('name') or '').endswith('Error'):
+                        continue
+                    produced.add(out.get('id') or out.get('var'))
+            elif kind == 'execute-connector-activity':
+                for inp in (task['data'].get('inputs') or []):
+                    if inp.get('target') == 'body' or inp.get('name') == 'body':
+                        write_bodies.append(json.dumps(inp.get('body') or inp.get('value') or {}))
+
+blob = ' '.join(write_bodies)
+for name in sorted(n for n in produced if n):
+    if not re.search(r'\bvars\.' + re.escape(name) + r'\b', blob):
+        print(f'WARNING  vars.{name} is produced but reaches no write body — if it belongs on '
+              f'the claim record, nothing is carrying it there')
 
 # ------------------------------------------------------------- reachability: orphan stages
 #
