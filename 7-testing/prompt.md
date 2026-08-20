@@ -1,31 +1,68 @@
-# Block 7 — testing
+# Block 7 — does it actually work?
 
-**Goal.** Prove the solution catches what it is supposed to catch, in the right place, for the right reason —
-and lets a clean claim through untouched.
+**Goal.** You have built a claims process. Now find out whether it would survive contact with real claims —
+before someone else does.
 
-**Read.** `7-testing/spec.md` (what to test and what a pass is) · `7-testing/cookbook.md` (the commands) ·
-`pdd.md` §9 (the nine planted problems) · your own traceability table from `2-design/`
+**Read.** `pdd.md` §9 (the nine things that go wrong with real property claims) · `2-design/` (your own
+traceability table — which of your checks you made responsible for each) · `7-testing/spec.md` (what counts as a
+pass, and why) · `7-testing/cookbook.md` (how to run it here)
 
-**Skill.** `uipath-platform` to start runs and read state; `uipath-troubleshoot` when one fails and you need
-to know why. Not `uipath-test` — that drives Test Manager, which this exercise does not use.
+**Before you start:** the reviewer's screen from block 6 has to be built and working. Most of these claims are
+supposed to stop and wait for a person, and without somewhere for that person to decide, they will sail past and
+close — which looks like your analyses failing when it is only the screen missing.
 
-**Before you start:** the app from block 6 must be built, deployed and bound. Both gateways are app tasks, so
-without it eight of the nine pinned runs fail on a solution that is working exactly as block 5 left it.
+## What the business is asking for
 
-**Must hold.**
+A claims manager is not going to sign this off because it ran. They are going to ask: *"what happens when
+somebody claims for a leak they have been ignoring for two years?"* — and expect you to know.
 
-- **Aim every run.** Pin the scenario and the discrepancy. An unpinned run that goes green proves one claim
-  passed, not that a check works.
-- **Assert against the manifest**, not against what looks reasonable. The generator writes down what it planted
-  and what must happen; that is the answer key, and this is the only block allowed to read it.
-- **The right analysis has to be the one that catches it.** A claim stopped for the wrong reason is a fail, and
-  it reads as a pass everywhere except the wording.
-- **At least two clean runs.** A solution that flags every claim has not passed.
-- Keep the failures. A results table with only successes cannot show whether the solution got better.
+`pdd.md` §9 lists nine such things: a policy that had lapsed, an address that does not match, an inflated
+estimate, a story that does not hold together, a prior claim that has eaten most of the annual limit. Every one
+of them happens, and each has a right answer — sometimes reject, sometimes reduce and flag, sometimes pause and
+ask a human.
 
-**Done when.** A results table with a row per run: what was aimed at, where the claim stopped, which analysis
-caught it, what the claimant was told, and pass or fail. Nine pinned runs, two clean runs, then twenty on
-`random`.
+**You are being asked to demonstrate, one claim at a time, that your solution gets each of them right.**
+
+## What a pass actually means
+
+It is not "the claim stopped". Four things have to be true together, and the third is the one that separates a
+working solution from a lucky one:
+
+- **It stopped in the right place** — at the screening gateway or the adjuster's, whichever the problem calls
+  for. A claim caught too late has already had a surveyor sent out for nothing.
+- **The right check caught it.** If the coverage analysis flags something the credibility analysis owns, the
+  outcome is right and the solution is wrong: on the next claim the same mistake produces the wrong answer, and
+  nobody will know why.
+- **A reviewer could act on what it says.** The finding has to name the actual problem — *"the policy lapsed
+  eleven days before the incident"* — not the rule that fired.
+- **The claimant was told something true.** The letter has to match what was decided. A claim approved and a
+  letter saying it remains under review is a complete failure that every other check passes.
+
+And the one that catches most solutions:
+
+- **A claim with nothing wrong with it must go through untouched.** Run more than one. A solution that finds
+  something to query on every claim has not learned to be thorough, it has learned to always say yes — and it
+  costs a claims team more time than it saves.
+
+## Done when
+
+You can show a claims manager one table: nine known problems, what your solution did with each, whether that was
+right, plus clean claims that went through unattended.
+
+**Keep the failures in it.** A results table with only successes cannot show anyone that the solution improved,
+and it is the failures that tell you what to fix.
+
+## How to test it
+
+Every run is **aimed** — you decide which problem the claim carries before you send it in, so you know what
+should happen. An unaimed run that goes green tells you one claim passed, not that a check works.
+`7-testing/cookbook.md` has the exact call.
+
+Judge each run against what was actually planted rather than against what looks reasonable. The generator writes
+down what it put in every claim and what should happen to it — **this is the one block allowed to read that**,
+because here it is the answer key rather than a shortcut.
+
+Then, once the nine behave, send in twenty unaimed claims and see what a normal week looks like.
 
 **Where it goes.** The results table in this block's folder. Generated code, as ever, in `Build/ClaimCase-<NN>/`.
 

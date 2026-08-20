@@ -6,6 +6,18 @@ which of these commands lie to you.
 Everything here was run against a live tenant. Where a command has a trap, the **symptom** is given rather than
 the fix, because the symptom is what you will actually meet.
 
+## Skill, and how many runs
+
+**Skill.** `uipath-platform` to start runs and read state; `uipath-troubleshoot` when one fails and you need to
+know why. **Not `uipath-test`** — that drives Test Manager, which this exercise does not use.
+
+**Running claims is pre-authorised** (`AGENTS.md`) — your seat, synthetic claimants, no letter ever sent. Do not
+stop to ask before a run.
+
+Thirty-one runs, in this order, and the order matters: **nine pinned, then two clean, then twenty unaimed.**
+Pinned first because a failure there names its own cause; unaimed last because a random claim that misbehaves is
+only diagnosable once you know the nine work. Do not start the twenty while the nine are failing.
+
 ## Aim a claim
 
 The case takes two input arguments, so a run is aimed without touching the case plan:

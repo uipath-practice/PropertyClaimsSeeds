@@ -62,7 +62,9 @@ stop and wait for a person, and there is nobody there until block 6.
 
 ## How to test it
 
-Ask for a claim with nothing wrong with it and follow it through. `5-case/cookbook.md` has the exact call.
+Ask for a claim with nothing wrong with it and follow it through — `5-case/cookbook.md` has the exact call.
+Deploying and running are **pre-authorised** (`AGENTS.md`): your seat, synthetic claimants, no letter ever sent.
+Do not stop to ask, and do not end this block before the run — a plan that has not carried a claim proves nothing.
 
 Then read the claim's record rather than the journey's status. A claim can reach an ending with a stage that
 never ran, and the record is the only place that shows it: a stage that went green and left its columns empty did

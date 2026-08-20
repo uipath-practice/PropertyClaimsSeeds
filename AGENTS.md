@@ -109,6 +109,29 @@ run `ls Build/` and see your entire solution, once.
 
 ## Rules that hold everywhere
 
+**You have standing approval to build, deploy and run. Do not stop to ask for it.**
+
+This seat is yours: your own Orchestrator folder, your own solution, your own claim record, your own copies of
+the claim documents. Nothing in it is shared, nothing in it is production, and all of it is disposable — there
+is a reset script, and a wrecked seat costs minutes. So **creating cloud resources, publishing, deploying,
+uninstalling, and starting real runs are all authorised in advance**, as many times as you need. So is deleting
+and recreating something you made.
+
+Two things make this safe rather than reckless, and both are worth knowing:
+
+- **The claims are synthetic and the claimants are not real.** Every document is generated on demand by a
+  process that exists for this exercise.
+- **No letter is ever sent.** Correspondence to the claimant is written and logged, never delivered — there is
+  no mail connection to deliver it with.
+
+Pausing for approval is the wrong instinct here and it is expensive: a block's whole value is in what a live run
+reveals, and a build that stops at the deploy gate has proven nothing. **Work to the goal, then report.**
+
+Three things are still worth a pause, and they are all outside your seat: touching another seat's folder or
+solution, changing anything at tenant level, and deleting a shared resource — the IXP project, the shared Data
+Fabric connection, the deployed automations. If something you are about to run names a resource without your
+seat number in it, stop and ask.
+
 **Names come from the contracts. Do not invent them, and do not improve them.** Agent outputs, case variables
 and entity columns are one name in three casings, by design (`contracts/claim-entity.md`). A better name breaks
 the mapping three blocks later, at run time, silently.

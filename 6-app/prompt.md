@@ -52,6 +52,8 @@ Then the same screen, at the other gateway, on a claim that got that far.
 
 ## How to test it
 
+Deploying the app and running claims through it are **pre-authorised** (`AGENTS.md`) — do not stop to ask.
+
 Send a claim through the process that you know will be stopped — `6-app/cookbook.md` says which input produces
 one, and how to find the waiting task. Then work it the way a reviewer would: read it, decide, and follow the
 claim to its ending.
