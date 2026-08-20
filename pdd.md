@@ -98,12 +98,18 @@ written afterwards is one nobody can see (§8).
 
 **Two endings, and a claim reaches exactly one.**
 
-- **Approved** — draft the approval letter, then **in parallel** pay the settlement and notify the claimant, then
-  close the file.
+- **Approved** — draft the approval letter, then **in parallel** authorise the settlement and notify the claimant,
+  then close the file.
 - **Denied** — draft the refusal letter, then **in parallel** notify the claimant and record the denial.
 
 They have the same shape on purpose: *write the letter → send it → record the outcome*. Approval carries the extra
-money steps. A claim denied at the eligibility gateway goes straight here, having had no analysis at all.
+money step. A claim denied at the eligibility gateway goes straight here, having had no analysis at all.
+
+**Authorising the settlement means writing the approved amount to the claim record, and nothing else.** There is
+no payment system in this exercise and no process that pays one — an insurer's disbursement runs through a
+finance system that is out of scope here, exactly as the claimant's letter is written and logged rather than
+emailed. The approved figure and who approved it are what the process owes the next system; making the payment
+is that system's job.
 
 **Missing details** — *a stage that waits, not a stage that works.* A real claim sometimes lacks a required
 document: the claimant is asked for it and the claim waits. Build this stage as a placeholder — it must exist in the

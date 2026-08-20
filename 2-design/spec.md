@@ -11,27 +11,6 @@ if you make it write the result down rather than hold it in its head.
 case tooling at `pdd.md` directly; what the tables change is how much you have to reconstruct each time you come
 back to the work.
 
-## The `uipath-planner` skill, and what to keep from it
-
-**Use it.** It is the UiPath skill for exactly this step, it reads a PDD and writes an SDD, and it asks the
-questions a design should answer — exceptions, escalations, what happens when a document never arrives — that
-are easy to skip when you are writing to a template of your own. Most agents load it by themselves the moment
-they see a `pdd.md`; that is by design, not a misfire.
-
-Two things to know before it runs, because both change what you get:
-
-- **Its template is a hard superset contract.** It will produce every section the template names — RACI matrix,
-  SLA rules, DEV/UAT/PROD environments, compliance constraints — whether or not this exercise has any. Let it.
-  Then judge the result by *our* gate, not by its section count: **the four tables and the three questions are
-  what block 3, 4, 5 and 7 read**, and a design that has all seventeen sections and a thin Table 3 has failed
-  the part that matters. Do not pad a section to satisfy a heading, and do not delete our tables to satisfy one.
-- **It marks gaps `[SME REVIEW]` and expects a human to resolve them.** There is no SME here. Resolve what
-  `pdd.md` answers, and for anything it genuinely leaves open — a production SLA, a payment interface — say so
-  in one line and move on. An unresolved marker is an honest design; a rule invented to clear one is not.
-
-If your agent does not load the skill, you are not at a disadvantage: everything required is in this document.
-**Say which route you took** when you log this block, because that is a comparison worth having.
-
 ## Table 1 — stages
 
 | Stage | Primary or secondary | A claim enters when | The stage ends when | Ends the case |

@@ -144,8 +144,12 @@ no JSON on a command line — the script writes the payload to a file before cal
 that survives every shell. Several at once: `--file findings.json`, a JSON array of `{block, category, summary}`.
 
 **There is no local findings file.** Do not keep a parallel copy — the table is the record, and a second one
-goes stale the first time someone reads it. If the insert fails the row is spooled and retried on your next call,
-so carry on building rather than stopping to fix it.
+goes stale the first time someone reads it. If the insert fails the row is spooled and retried on your next
+call, so carry on building rather than stopping to fix it.
+
+**End every block with `python3 log-finding.py --flush`.** It costs one command and it is the difference between
+a spool that drains and a block's worth of findings nobody ever reads. If the flush still reports rows waiting,
+say so when you report the block — telemetry failing is itself the most interesting finding of the day.
 
 `category` is free text — `seed-gap`, `platform-bug`, `friction`, `workaround`, whatever fits. Do not agonise;
 the summary is what gets read. Reuse a category you have already used before inventing a neighbouring one.

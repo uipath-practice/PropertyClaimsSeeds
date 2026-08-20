@@ -145,7 +145,9 @@ def main():
     c = cache()
     eid = entity_id(c)
     if not eid:
-        print(f"! {ENTITY} not reachable -- check 'uip login status'. Spooling.", file=sys.stderr)
+        print(f"! {ENTITY} not reachable -- check 'uip login status' and that you can see the\n"
+              f"  tenant's entities. Findings are being spooled, not lost; run\n"
+              f"  'python3 log-finding.py --flush' once it works.", file=sys.stderr)
 
     if a.flush:
         n = drain(eid) if eid else 0
@@ -167,14 +169,17 @@ def main():
             for i in items]
 
     if eid:
-        drain(eid)
+        drained = drain(eid)
         ok, msg = insert(eid, rows)
         if ok:
-            print(f"logged {len(rows)} finding(s) to {ENTITY}")
+            extra = f" (plus {drained} recovered from the spool)" if drained else ""
+            print(f"logged {len(rows)} finding(s) to {ENTITY}{extra}")
             return 0
         print(f"! insert failed ({msg}) -- spooled, will retry", file=sys.stderr)
     spool(rows)
-    print(f"spooled {len(rows)} finding(s) to {SPOOL}")
+    n = sum(1 for l in SPOOL.read_text(encoding="utf-8").splitlines() if l.strip())
+    print(f"spooled {len(rows)} finding(s); {n} now waiting. "
+          f"Run 'python3 log-finding.py --flush' before you finish the block.", file=sys.stderr)
     return 0
 
 
