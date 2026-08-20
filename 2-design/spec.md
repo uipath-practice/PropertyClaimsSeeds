@@ -11,6 +11,27 @@ if you make it write the result down rather than hold it in its head.
 case tooling at `pdd.md` directly; what the tables change is how much you have to reconstruct each time you come
 back to the work.
 
+## The `uipath-planner` skill, and what to keep from it
+
+**Use it.** It is the UiPath skill for exactly this step, it reads a PDD and writes an SDD, and it asks the
+questions a design should answer — exceptions, escalations, what happens when a document never arrives — that
+are easy to skip when you are writing to a template of your own. Most agents load it by themselves the moment
+they see a `pdd.md`; that is by design, not a misfire.
+
+Two things to know before it runs, because both change what you get:
+
+- **Its template is a hard superset contract.** It will produce every section the template names — RACI matrix,
+  SLA rules, DEV/UAT/PROD environments, compliance constraints — whether or not this exercise has any. Let it.
+  Then judge the result by *our* gate, not by its section count: **the four tables and the three questions are
+  what block 3, 4, 5 and 7 read**, and a design that has all seventeen sections and a thin Table 3 has failed
+  the part that matters. Do not pad a section to satisfy a heading, and do not delete our tables to satisfy one.
+- **It marks gaps `[SME REVIEW]` and expects a human to resolve them.** There is no SME here. Resolve what
+  `pdd.md` answers, and for anything it genuinely leaves open — a production SLA, a payment interface — say so
+  in one line and move on. An unresolved marker is an honest design; a rule invented to clear one is not.
+
+If your agent does not load the skill, you are not at a disadvantage: everything required is in this document.
+**Say which route you took** when you log this block, because that is a comparison worth having.
+
 ## Table 1 — stages
 
 | Stage | Primary or secondary | A claim enters when | The stage ends when | Ends the case |
@@ -21,7 +42,9 @@ back to the work.
 - **Every ending is a row.** A claim that is denied ends somewhere; so does one that settles.
 - **A waiting stage is a stage.** If the process waits for something that arrives on its own schedule, that wait
   has entry and exit conditions like anything else, and it is where a poll lives.
-- **No row without a way in.** A stage you cannot describe an entry for is a stage you have not designed.
+- **No row without a way in**, except the one `pdd.md` §3 asks you to leave unwired. A stage you cannot describe
+  an entry for is a stage you have not designed; mark the deliberate placeholder as deliberate, so block 5 can
+  tell it from an omission.
 
 ## Table 2 — work
 
@@ -49,6 +72,12 @@ neither the binding nor the name.
 
 - **One name, three casings** (`contracts/claim-entity.md`): agent output `out_EligibilityChecksJSON`, case
   variable `eligibilityChecksJson`, entity column `eligibilityChecksJson`. Do not improve any of the three.
+- **A payload with no column still has a name, and it is not yours to choose.** Some payloads are carried
+  between tasks and never stored — the raw extraction, the claims history. `claim-entity.md` cannot name those
+  because they have no column, so take the name from the argument that produces it:
+  `out_PreviousClaimsJSON` → `previousClaimsJson`. Read the argument rather than recalling it,
+  `uip or packages entry-points "<PackageId>:<Version>"`. A plausible synonym like `priorClaimsJson` costs
+  nothing here and everything in block 5, where bindings resolve by name at run time.
 - **Every column in `contracts/claim-entity.md` appears here with something that writes it.** A column nothing
   writes is either a design gap or a column that should not exist; both are worth knowing before block 3.
 - **Note the big ones.** Any payload that could run long has a size budget to respect

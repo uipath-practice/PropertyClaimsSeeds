@@ -90,10 +90,15 @@ event, two tests, nothing to race. `pdd.md` §3 states this as a process rule; t
 
 **Give each stage exactly one way in.** Two entry conditions that can both become true is a double execution.
 
-**And every stage has a way in at all.** A stage nothing enters — a placeholder for work you thought of but did
-not design, a branch you started and abandoned — is not free. It draws as a dead box on the canvas, it warns on
-every validation from here to the end of the build, and the next person cannot tell it from a transition you
-forgot to wire. If your design does not have it, the plan does not either.
+**And every stage has a way in at all — with exactly one exception, which `pdd.md` names.** A stage nothing
+enters is normally a defect: a branch you started and abandoned, or work you thought of and did not design. It
+draws as a dead box, and the next person cannot tell it from a transition you forgot to wire.
+
+The exception is **`Missing details`**. `pdd.md` §3 asks for it as a placeholder — *"it must exist in the
+lifecycle and must not do anything yet"* — so build it with no tasks and no wired entry, and expect
+`case validate` to warn about it on every run. **That warning is correct and you should not silence it**, by
+inventing an entry condition or by deleting the stage. Say in your design that it is deliberate; then a reviewer
+counting warnings knows which one is expected and which one is new.
 
 ## Rules make it run; edges make it legible
 

@@ -41,7 +41,7 @@ can only ever show internal names. The fix is not to relabel in the UI, it is to
 | `headline` | 80 | The grey box heading. The decision envelope's `headline` is also copied into the entity's `decisionReason`, the only reasoning text a dashboard row can show. |
 | `summary` | 10 000 | Absorbs the former `out_*AnalysisSummary` outputs — one self-describing blob per analysis, no loose strings alongside it. |
 | `flags` | 5 × 60 | Rendered above the checks, not inside them. |
-| `checks[].id` | snake_case | Stable key. The app owns the label for ids it knows. |
+| `checks[].id` | snake_case | Stable key. The app owns the label for ids it knows. **For the nine checks `pdd.md` §9 names, the id is that name in snake_case** — `policy status` → `policy_status`, `aggregate limit` → `aggregate_limit`. Not a synonym you prefer: two builds that call the same check `address_match` and `property_address` cannot be compared, and neither can be asserted by one test. |
 | `checks[].label` | 30 | Sentence case, human-facing. Never a payload field name. |
 | `checks[].status` | enum | `pass` renders collapsed and green; `warn`/`fail` render expanded, amber/red. |
 | `checks[].verdict` | 80 | The one-liner beside the label. |
