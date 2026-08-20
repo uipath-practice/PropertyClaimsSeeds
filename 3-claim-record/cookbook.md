@@ -22,6 +22,11 @@ and the check belongs in block 7, where a column whose length is exactly 10,000 
 **A `MULTILINE_TEXT` column with no `lengthLimit` defaults to 200 characters.** Same silent truncation, fifty
 times worse. Set it explicitly on every one.
 
+**`STRING` does the same thing, and it is easier to miss** because 200 characters looks generous until the value
+is a person's reasoning. `contracts/claim-entity.md` gives minimums for the five columns where it matters; the
+two reviewer-notes columns are the ones that hurt. Three builds guessed three different answers here, and two
+of them cut an adjuster's notes at 200 without reporting anything.
+
 ## Create the entity in your seat folder
 
 Data Fabric entities can live at tenant level or in an Orchestrator folder. **Yours goes in your seat folder**,

@@ -48,6 +48,24 @@ Types are Data Fabric's own. The suffix decides the two temporal ones: a column 
 (`DATE`), a column named `…At` is the instant something happened (`DATETIME_WITH_TZ`). Six further types are
 accepted by the server and unusable in the UI — `3-claim-record/cookbook.md` names them.
 
+**Every `STRING` needs an explicit `lengthLimit`, and two of them need a large one.** A `STRING` created without
+one defaults to **200 characters** and truncates past it silently, exactly as `MULTILINE_TEXT` does. That is
+harmless for a policy number and destructive for a human's reasoning:
+
+These are **minimums, not exact values** — larger is fine anywhere, and only the first row is load-bearing:
+
+| Column | At least | Why |
+|---|---|---|
+| `eligibilityNotes`, `reviewerNotes` | **4000** | a reviewer's own words, and the only place their reasoning survives. 200 cuts a paragraph mid-sentence and tells nobody. |
+| `claimFormPdfName`, `policyPdfName`, `assessmentReportPdfName` | 500 | bucket filenames, comfortably |
+
+The rest are yours, as long as you choose them rather than inherit them. **Tighter than the default is often
+right** — a currency code needs 20, not 200 — and a limit you picked is one you will recognise when a value hits
+it.
+
+Three parallel builds produced three different answers here before this paragraph existed, and two of them
+capped a reviewer's notes at 200 characters without noticing.
+
 ### Written at intake, when the row is created
 
 | Column | Type | Source |
