@@ -117,6 +117,10 @@ the mapping three blocks later, at run time, silently.
 — because the tenant is shared and one name is what makes your work findable and removable. `CONFIG.md`,
 *One name, everywhere*, has the table and the single exception the platform forces.
 
+**Leave one deployment behind, not one per attempt.** Uninstall before you redeploy, and always under the same
+name — `CONFIG.md`, *One deployment, reused*. An uninstalled deployment stays in the tenant's Solutions view
+permanently and there is no CLI verb that removes it, so a name per attempt is not mess you can tidy later.
+
 **Do not read the answer key.** The generator drops a `manifest.json` beside the documents naming the problems
 it planted and the outcome it expects. Nothing you build may read it — an analysis that consults it is brilliant
 and worthless. It is the test oracle, and it is yours in block 7 only.

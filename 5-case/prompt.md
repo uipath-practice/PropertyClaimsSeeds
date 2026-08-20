@@ -22,7 +22,10 @@ Stages, entry and exit conditions, edges. No tasks yet.
 - Every stage from your design, each with **exactly one way in**.
 - Every stage exit names its finishing task or group, and every downstream entry matches how that stage
   leaves — completed against completed, exited against exited. A mismatch is silent at deploy and fatal at run.
-- **Draw an edge for every transition your rules allow.** Rules make it run; edges make it readable.
+- **Draw an edge for every transition your rules allow, and place every stage.** Rules make it run; edges and
+  `layout.nodes` make it readable — main path left to right, waiting stages beneath the stage they hang off,
+  endings stacked at the right. Your case skill will tell you to emit `edges: []` and `layout: {}` and let the
+  canvas work it out; it does not, and the result is a wall of disconnected boxes (`5-case/cookbook.md`).
 - **No stage that is not in your design.** An empty stage nothing enters is not a placeholder for later work —
   it is a dead box on the canvas and a warning in every validation from here on.
 
@@ -36,6 +39,8 @@ uip maestro case validate <caseplan.json> --skeleton --output json     # Valid
   `contracts/provided-processes.md` and their exact arguments from the platform,
   `uip or packages entry-points "<PackageId>:<Version>"`. If you are about to write a bucket download, an IXP
   call or a PDF-to-text step, you have missed one.
+- **A published RPA automation is task type `rpa`.** `process` also validates, also runs, and draws every robot
+  step with an agentic-process icon — so nobody can tell your six automations from your seven agents.
 - **Match the types, and copy the names exactly.** One retrieval returns an object, another a string, three
   return files. A task output keeps the automation's own `out_` prefix, and a connector input carries its
   payload under `target`/`body` rather than `value` — get either wrong and every binding in the plan resolves
@@ -68,7 +73,9 @@ Then deploy into your seat folder and start one aimed run (`7-testing/spec.md` h
 has the shell-quoting trick if you are on Windows).
 
 **Done when** a clean claim reaches an ending, every stage it entered shows complete, and the claim record
-carries a row written stage by stage. A claim sitting in `Running (With Faults)`, or a stage whose tasks are all
+carries a row written stage by stage. **One clean claim is the whole gate** — do not run the pinned discrepancy
+set yet. Every one of those stops at a gateway, both gateways are app tasks, and the app is block 7's
+prerequisite, not this block's. A claim sitting in `Running (With Faults)`, or a stage whose tasks are all
 green while the next stage never started, is a failure.
 
 **If the clean claim gets flagged, the case plan is not what is wrong.** It parked at the review stage exactly

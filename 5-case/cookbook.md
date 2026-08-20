@@ -274,22 +274,88 @@ If that succeeds and the case task does not, the connector and your permissions 
 the difference is in how the task is written — not in the platform. Quote the query string; an
 unquoted `&` is a command separator in every shell you might be using.
 
-## Redeploy into the same folder, not a new one
+## Redeploy under the same name, every time
 
-`solution deploy run` refuses a folder that already holds the solution, and the tempting answer — deploy `1.0.2`
-into `ClaimCase-02-v102`, `1.0.3` into `-v103` — leaves a folder per attempt, each with fourteen processes, and
-by the fifth iteration it is genuinely unclear which one you last ran.
-
-Uninstall, then deploy into the same name:
+`CONFIG.md`, *One deployment, reused*, pins the two names. They never change:
 
 ```bash
-uip solution deploy uninstall <solution-name> --output json
-uip solution deploy run --package-name <pkg> --package-version <v> \
-  --folder-name <same-name-every-time> --parent-folder-path ClaimCase-<NN>
+uip solution deploy uninstall ClaimCase-<NN> --output json
+uip solution deploy run --name ClaimCase-<NN> --folder-name ClaimCase-<NN>-Deploy \
+  --parent-folder-path ClaimCase-<NN> --package-name ClaimCase-<NN> --package-version <v>
 ```
 
 `deploy uninstall` takes the deployment **name** as a positional argument and rejects `--deployment-key`, which
-is the reverse of most commands here.
+is the reverse of most commands here. And **an uninstalled deployment never leaves the tenant's Solutions view** —
+so a name per attempt is not untidiness you can clear up later, it is permanent.
+
+## Make the canvas readable — the skill says the frontend will, and it does not
+
+Three things decide whether a reviewer opening your case in Studio Web sees a process or a wall of boxes. All
+three are cheap, and on the current frontend **all three have to be authored by hand**.
+
+### Draw the edges
+
+`uipath-maestro-case` Rule 20 says edges are retired, `schema.edges` stays `[]`, and the frontend auto-derives
+canvas connectors from the entry conditions. **It does not** — measured 2026-08-20 on two independent builds,
+both of which emitted `edges: []` exactly as instructed and both of which render as disconnected boxes with no
+line between any two stages.
+
+Author one edge per stage-to-stage transition. It costs a few lines, it changes nothing at run time — reachability
+really is condition-driven — and it is the difference between a diagram and an inventory:
+
+```json
+{ "id": "edge_intake_elig", "source": "Stage_Intake", "target": "Stage_Elig",
+  "sourceHandle": "Stage_Intake____source____right",
+  "targetHandle": "Stage_Elig____target____left",
+  "type": "case-management:Edge", "data": { "isIntersecting": false } }
+```
+
+The handle names are positional and literal: `<stageId>____source____<side>` and `<stageId>____target____<side>`,
+four underscores, sides `left` `right` `top` `bottom`. The trigger's edge is the same shape with
+`"type": "case-management:TriggerEdge"` and `"sourceHandle": "output"`.
+
+### Place the stages yourself
+
+Rule 18 says emit `layout: {}` and the frontend auto-lays-out on load. What it actually produces is a grid in
+declaration order, with terminal stages beside the stage that starts them and no reading direction. Write
+`layout.nodes` instead — **every node needs an entry or the designer crashes on load** with
+`Cannot read properties of undefined (reading 'x')`, which is why `check_caseplan.py` fails an incomplete map
+rather than an absent one.
+
+The shape that reads well, and the one the reference solution uses:
+
+| | x | y |
+|---|---|---|
+| trigger | 160 | 208 |
+| **the main path**, left to right | 320, then **+368** per stage | 224 |
+| **a waiting or side stage**, under the stage it hangs off | that stage's x | 768 |
+| **terminal stages**, stacked at the right end | last main x **+352** | 224, then **+400** each |
+
+```json
+"layout": {
+  "nodes": {
+    "trigger_1":    { "position": { "x": 160,  "y": 208 }, "style": { "width": 96, "height": 96 } },
+    "Stage_Intake": { "position": { "x": 320,  "y": 224 }, "style": { "width": 304 } },
+    "Stage_Elig":   { "position": { "x": 688,  "y": 224 }, "style": { "width": 304 } },
+    "Stage_Wait":   { "position": { "x": 688,  "y": 768 }, "style": { "width": 304 } },
+    "Stage_Apprvd": { "position": { "x": 1776, "y": 224 }, "style": { "width": 304 } },
+    "Stage_Denied": { "position": { "x": 1776, "y": 624 }, "style": { "width": 304 } }
+  },
+  "edges": { "edge_intake_elig": { "zIndex": 0 } }
+}
+```
+
+Stages are 304 wide; leave the height to the canvas, which measures it from the task count.
+
+### An Orchestrator automation is `rpa`, not `process`
+
+The task `type` enum holds both, the skill's own plugin index maps `process` to the process plugin, and nothing
+says which one an ordinary published RPA automation is. It is **`rpa`**. Choose `process` — the obvious reading
+of the word, since Orchestrator calls the thing a process — and it deploys and runs correctly while every one of
+those tasks renders on the canvas with an agentic-process icon. A reviewer then cannot tell the six robot steps
+from the seven agents, which is most of what the picture is for.
+
+`process` is for an agentic process. All six provided automations are `rpa`.
 
 ## The diagnostics that work, and the ones that do not
 

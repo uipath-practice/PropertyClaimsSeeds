@@ -70,6 +70,14 @@ problem. A test that only passes when your labels match ours is testing the labe
 Per claim, in this order. The third is the one that catches the defects the first two miss; the fourth catches
 the one that never announces itself at all.
 
+> **Run this block after block 6, not before.** Both gateways are app tasks, so on a case plan built at block 5
+> they do not exist: nothing stops at screening, no Action Center task is ever raised, and a claim carrying a
+> planted problem runs past its gateway and closes approved. A build measured before the app exists therefore
+> fails **eight of the nine pinned runs** and the table it produces says nothing about the solution — it says the
+> app is missing, which you already knew. Measured 2026-08-20; one build spent a full pass discovering it.
+>
+> What *is* worth running at block 5 is the clean claim, alone, which is that block's own acceptance gate.
+
 **1. It stopped where it should.** Every claim reaches the **screening gateway** — that one is never skipped, not
 even for a clean claim. A claim carrying anything flagged must *also* reach the **adjuster gateway**. A clean
 claim must not: it settles unattended after screening is approved, and an adjuster task appearing for it is a

@@ -37,7 +37,8 @@ and it is what lets a teardown script find everything you made.
 | Orchestrator folder | `ClaimCase-07` |
 | Local build folder | `Build/ClaimCase-07/` |
 | Solution, and every package it publishes | `ClaimCase-07` |
-| Solution folder you deploy into | `ClaimCase-07` under your seat folder |
+| **Deployment** (`deploy run --name`) | `ClaimCase-07` — **exactly one, for the whole exercise** |
+| Solution folder you deploy into (`--folder-name`) | `ClaimCase-07-Deploy`, under your seat folder |
 | IXP project, if you build your own | title it `ClaimCase-07` |
 | **Data Fabric entity** | **`ClaimCase_07`** — the one exception |
 
@@ -45,6 +46,26 @@ and it is what lets a teardown script find everything you made.
 start with a letter, so the hyphen that works everywhere else is rejected — at create time, with a message about
 the name rather than about the seat. Underscore there, hyphen everywhere else, and nowhere at all is it
 `ClaimCase07`.
+
+### One deployment, reused — never a name per attempt
+
+**You redeploy many times. The deployment name never changes.** Uninstall the one you have, then deploy again
+under the same name:
+
+```bash
+uip solution deploy uninstall ClaimCase-07 --output json
+uip solution deploy run --name ClaimCase-07 --folder-name ClaimCase-07-Deploy \
+  --parent-folder-path ClaimCase-07 --package-name ClaimCase-07 --package-version <v>
+```
+
+The tempting alternative — `-v103`, `-v104`, `-Run`, `-CaseRun2`, `-Block5` — is how one tenant reached **33
+deployments for four seats**, each with its own folder and its own copy of every process. By the fifth attempt
+nobody could say which one was running, and a `list` gives no clue: an uninstalled deployment stays in the
+tenant's Solutions view forever.
+
+The rule earns its keep at teardown. Because the name is derivable from the seat number and nothing else,
+removing your work is one command that **cannot reach another seat's**. A name with an attempt suffix in it can
+only be cleaned up by reading the list and guessing.
 
 ## Data Fabric: your entity is folder-scoped, the connection is shared
 

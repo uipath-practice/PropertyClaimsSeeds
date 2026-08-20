@@ -9,6 +9,9 @@ and lets a clean claim through untouched.
 **Skill.** `uipath-platform` to start runs and read state; `uipath-troubleshoot` when one fails and you need
 to know why. Not `uipath-test` — that drives Test Manager, which this exercise does not use.
 
+**Before you start:** the app from block 6 must be built, deployed and bound. Both gateways are app tasks, so
+without it eight of the nine pinned runs fail on a solution that is working exactly as block 5 left it.
+
 **Must hold.**
 
 - **Aim every run.** Pin the scenario and the discrepancy. An unpinned run that goes green proves one claim
