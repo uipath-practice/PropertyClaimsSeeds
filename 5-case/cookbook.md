@@ -4,6 +4,58 @@ The spec is `5-case/spec.md`. This is the platform friction, and there is more o
 block. Read the first two sections before you edit anything: one is what three builds actually lost time to, the
 other is the trap that costs a day if you meet it cold.
 
+## Skill, and the three passes in commands
+
+**Skill.** `uipath-maestro-case`, plus `uipath-solution` to pack and deploy. **Not `uipath-maestro-bpmn`** —
+different product; the only thing drawing you there is that your compiled plan is named `.bpmn`.
+
+**Pass 1 — the journey.** Stages, entry and exit conditions, no tasks.
+
+- Every stage from your design, each with **exactly one way in**.
+- Every stage exit names its finishing task or group, and every downstream entry matches how that stage
+  leaves — completed against completed, exited against exited. A mismatch is silent at deploy and fatal at run.
+- **`edges` stays `[]`** — flow is the conditions, and a stage with no entry condition is unreachable, not
+  merely undrawn. **Place every stage in `layout.nodes`** (*Make the canvas readable*, below).
+- **No stage that is not in your design**, with one exception `pdd.md` §3 asks for by name.
+
+```bash
+uip maestro case validate <caseplan.json> --skeleton --output json     # Valid
+```
+
+**Pass 2 — the work and the wiring.**
+
+- Read the deployed automations' exact arguments from the platform, not from memory:
+  `uip or packages entry-points "<PackageId>:<Version>"`.
+- **A published RPA automation is task type `rpa`**, not `process` (*An Orchestrator automation is `rpa`*, below).
+- **One solution, `ClaimCase-<NN>`**, holding the case and all seven agents — a case cannot bind an agent living
+  in another solution.
+- Parallel work is *grouped*, not sequenced.
+- Every stage writes what it produced to the claim record and nothing it did not, through the shared connection,
+  using the **V3 activities** a folder-scoped entity needs (*Writing to a folder-scoped entity*, below).
+
+```bash
+python3 5-case/check_caseplan.py <caseplan.json>       # 0 problems
+uip maestro case validate <caseplan.json> --output json
+```
+
+**Pass 3 — deploy and run a clean claim.**
+
+```bash
+uip maestro case pack <case-project-dir> <throwaway-dir>       # recompiles caseplan.json.bpmn
+grep -c "<a-token-your-edit-introduced>" caseplan.json.bpmn    # not 0 — the runtime has your change
+```
+
+Then deploy (*Redeploy under the same name*) and start one aimed run — `in_Scenario: auto-settle`, no
+discrepancy, which is the generator's "nothing wrong with this claim" setting. `CONFIG.md` has the shell-quoting
+trick if you are on Windows.
+
+A claim sitting in `Running (With Faults)`, or a stage whose tasks are all green while the next stage never
+started, is a failure however the status reads.
+
+**Then make it reviewable.** `uip solution upload Build/ClaimCase-<NN>` puts the plan on the Studio Web canvas,
+which is far easier to read; deploying alone does not. Read *Build locally; open Studio Web to review* first —
+the sync runs one way only.
+
 ## Where the time actually goes — read this first
 
 Three builds finished this block. One took **13 solution versions and five authoring bugs**; the other two were
@@ -285,8 +337,7 @@ the case deploys cleanly, then faults on the first row with:
 [102003] Integration Services bad request — Entity 'ClaimCase_<NN>' not found at tenant level
 ```
 
-The fix is the V3 form of the same two activities. **Do not hand-author these — generate them**, and
-paste the result in:
+The fix is the V3 form of the same two activities. **Do not hand-author these — generate them:**
 
 ```bash
 uip maestro case spec --type activity --activity-type-id <dfd2bc7a-…> \
@@ -295,8 +346,8 @@ uip maestro case spec --type activity --activity-type-id <dfd2bc7a-…> \
                     "folderEntityName_folderPath":"ClaimCase-07"},"bodyParameters":{…}}'
 ```
 
-Ask for the V3 objects by name — the case type cache advertises only V2, and `spec` will build them
-anyway. What the generated task carries:
+Ask for the V3 objects by name: the type cache advertises only V2 and `spec` builds them anyway. What comes
+back:
 
 | | create | update |
 |---|---|---|
@@ -364,10 +415,9 @@ for exactly this reason.
 
 ### Place the stages yourself
 
-`layout` is canvas state and has no effect on execution, which is why it is tempting to emit `layout: {}` and let
-the frontend auto-lay-out on load — Rule 18 says you may. What that produces is a grid in declaration order:
-endings beside the stage that starts them, waiting stages inline with the main path, and no reading direction.
-For a plan someone has to *review*, write the map.
+`layout` is canvas state and has no effect on execution, so Rule 18 lets you emit `layout: {}` and leave it to the
+frontend. What that produces is a grid in declaration order — endings beside the stage that starts them, waiting
+stages inline with the main path, no reading direction. For a plan someone has to *review*, write the map.
 
 **Every node needs an entry or the designer crashes on load** with `Cannot read properties of undefined
 (reading 'x')` — an error naming nothing in your plan, so if the canvas dies right after you added a stage, that

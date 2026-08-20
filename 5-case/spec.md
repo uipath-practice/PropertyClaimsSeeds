@@ -50,7 +50,11 @@ which of the two you are looking at, so decide it before you run anything:
 - the flagged path has **no** exit yet, and no invented substitute — an auto-approve "for now", a timer that
   gives up, a second exit that fires on the same completion, are each a thing block 6 has to find and remove;
 - **the acceptance run is a claim that takes the clean path.** A flagged claim parking forever proves nothing
-  either way, which is why `auto-settle` is what closes this block.
+  either way, which is why a claim with nothing wrong with it is what closes this block.
+
+**Gateway 1 gets the same treatment**, and this has caught a build out. The section above reads as though it is
+only about the final review, but the acceptance run requires *no human asked at either gateway* — so eligibility
+screening also needs a clean, conditional exit in pass 1 and no invented substitute, and block 6 replaces both.
 
 That is not a workaround. Proving the spine before inserting the humans is the cheaper order: a stuck claim in
 pass 1 has one possible cause, and you will have learned the edit loop before you need it under pressure.

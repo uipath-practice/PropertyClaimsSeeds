@@ -6,6 +6,32 @@ what the tooling will do to you along the way.
 Nothing in this block touches the platform, which makes it the one block where a mistake costs only your own
 time. It is also the block whose mistakes are cheapest to fix and most expensive to leave.
 
+## Skill
+
+`uipath-planner`. It auto-triggers on `pdd.md`, so which agent loads it is not really a choice — read the next
+section for what to keep from what it produces.
+
+Everything you need is in this folder if it does not load; you are not at a disadvantage without it.
+
+## The four tables, and why they are the deliverable
+
+`2-design/spec.md` states what the design has to answer. In practice it lands as **four tables plus prose**, and
+naming them here saves you inventing a structure:
+
+| Table | One row per | Columns that earn their place |
+|---|---|---|
+| **Stages** | stage | how a claim enters · what ends it · primary or secondary |
+| **Work** | task | which stage · what kind of component · what it needs · what it produces |
+| **Data** | payload | produced by · case variable name · entity column · read by |
+| **Traceability** | planted problem | which check owns it · what it reports · where a human sees it |
+
+The **Data** table is the one that pays for the block. Names have to match across three surfaces — agent output,
+case variable, entity column — in three casings (`contracts/claim-entity.md`, *One name, three casings*), and a
+name improved in one place breaks silently in another two blocks later.
+
+The prose around them is the SDD, and it is a real deliverable: it is what explains the solution to a person who
+was not here. Nothing downstream parses it.
+
 ## The `uipath-planner` skill, and what to keep from it
 
 **Use it.** It is the UiPath skill for exactly this step, it reads a PDD and writes an SDD, and it asks the

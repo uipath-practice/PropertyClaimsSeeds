@@ -3,6 +3,40 @@
 Friction other builds met, and the commands that show you what is actually happening. Not a tutorial: it assumes
 you can read the SDK and CLI docs and are stuck on something they do not mention.
 
+## Skill, and the rules that are mechanics rather than judgement
+
+**Skill.** `uipath-agents`.
+
+Five constraints that come from the platform rather than from the claims process. Each one fails silently or
+late, which is why they are here and not in the prompt:
+
+- **No `maxLength`, `maxItems` or `minItems` in an output schema.** They are hard validation, not clamps: one
+  over-long string faults the whole job and discards every other output the agent produced. `enum` and `required`
+  are safe and worth using.
+- **Budget each JSON payload at 8,000 characters, in the prompt text.** The column it lands in holds 10,000 and
+  truncates past that silently; through the connector it is louder and worse — the whole case faults with
+  `The provided value for field [<column>] is longer than length limit 10000`. Since the schema cannot enforce a
+  length without faulting the agent, the prompt is the only place the limit can live.
+- **Every declared input must appear in the prompt text.** An input the schema declares and the prompt never
+  interpolates does not reach the model — see the next section, which is the most common silent failure here.
+- **All three gateway inputs on all four post-gateway analyses** — the findings, the decision, and the reviewer's
+  words. A grade will not catch a missing one.
+- **Every payload name matches `contracts/claim-entity.md`.** One name, three casings; a better name breaks the
+  mapping two blocks later.
+
+## Proving each one
+
+```bash
+uip agent validate <project-dir> --output json   # all seven
+uip agent review   <project-dir> --output json   # all seven — grade B or better, zero errors
+uip agent debug    <project-dir> --output json   # the five that take no attachment
+```
+
+**Two of the seven cannot be run from the CLI at all.** `agent debug` has no mechanism for supplying a job
+attachment, so the two document readers are validated and reviewed here and first *run* in block 5, on a real
+job. That is a testing limitation, not your build being wrong — do not redesign the input to make a CLI run
+possible.
+
 ## An input the prompt never names does not arrive
 
 The symptom is distinctive and misleading: the model says the data is missing, and the job faults — while the

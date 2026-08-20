@@ -1,33 +1,29 @@
-# Block 1b — use the shared extraction project
+# Block 1b — use the shared reader
 
-**Goal.** Point your build at the shared IXP project instead of training your own, and confirm it returns what
-later blocks expect.
+**Goal.** Use the extraction model the team already has, rather than training your own, and satisfy yourself it
+reads a claim form properly before the rest of your build depends on it.
 
-Take this route when time is short, or when your own project is not producing clean fields. **It is a supported
-path, not a penalty** — the shared project is the same model, and every block after this one is identical.
+**Read.** `1-extraction/spec.md` (what has to come out of it) · `1-extraction/cookbook.md`, *Adopting the shared
+project* (where it is and how to point at it)
 
-**Read.** `1-extraction/spec.md` (the contract the extraction must satisfy) · `CONFIG.md` (the shared project's name)
+## Why this route exists
 
-**Do.**
+Training a document reader is a craft, and it is not what this exercise is about. Reading the claim form feeds
+every later step, so a half-trained model of your own is worse than a working one someone else built. **Take
+this route whenever extraction has stopped being the interesting part of your day** — every block after this one
+is identical either way.
 
-1. Confirm you can see the shared project and that it has a live model version.
-2. Generate one claim, run the form through the shared model, and read the output.
-3. Record the project name and model version in your notes — later blocks bind to it, and your solution's
-   documentation should say which extraction it used.
+## What has to be true
 
-**Must hold.**
+- **It returns every field group the claims team asked for**, under the agreed names.
+- **The damage list keeps its rows** — a claim listing five damaged items comes back as five.
+- **You know which model you used, and can say so.** A later reader of your solution has to be able to tell
+  where the extracted data came from; write the project and version into your notes.
 
-- The output carries all six field groups named exactly as `1-extraction/spec.md` lists them.
-- A claim with several damage rows returns one `ClaimDamageInventory` occurrence per row.
+## Done when
 
-**Done when.**
-
-```bash
-uip ixp projects list --output json                            # the shared project is visible
-uip ixp projects list-models <project-name> --output json      # it has a version tagged live
-```
-
-Plus: one generated claim form extracts all six groups, with the right number of damage rows.
+You have run a real claim form through it and seen every field the later steps need come back correctly, with
+the right number of damage rows.
 
 **Where it goes.** Generated code into `Build/ClaimCase-<NN>/` — one solution for the whole build. Notes and
 documents you write for this block go in this block's folder.

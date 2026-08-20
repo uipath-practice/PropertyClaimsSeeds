@@ -2,6 +2,53 @@
 
 Friction other builds met, and the commands that show what is actually happening.
 
+## Skills, and the order that works
+
+**Skill.** `uipath-ixp`.
+
+Six steps, and the last one has no CLI equivalent:
+
+1. **Generate 10–15 sample claims** and download the claim-form PDFs from the `Claims` bucket. Do not pin a
+   scenario — you want the natural mix of countries, currencies, incident types and damage-row counts. *(Only the
+   claim form is extracted; the policy and the assessor's report are read as documents later, not extracted.)*
+2. **Create the project blank and import the taxonomy** — `--skip-taxonomy`, then `import-taxonomy` with
+   `1-extraction/taxonomy.json`, verbatim.
+3. **Label every document** — confirm what is right, leave what is wrong unannotated.
+4. **Iterate on the low scorers** by improving a field's instructions and letting it retrain (~2 min a round),
+   rather than by labelling more documents.
+5. **Publish** the model and tag it live.
+6. **Bind it to your folder in the IXP interface.** No CLI equivalent exists, and until you do it the model is
+   not callable from an automation — which surfaces two blocks later as an extraction that returns nothing.
+
+**Title the project `ClaimCase-<NN>`**, the same string as everything else you create (`CONFIG.md`, *One name,
+everywhere*).
+
+**Field types come from the imported taxonomy and are deliberate.** Most are `Exact Text`; do not "improve" them.
+
+## Proving it is done
+
+```bash
+uip ixp projects get-metrics <project-name> --output json     # a real score, not "not validated yet"
+uip ixp projects list-models <project-name> --output json     # a version tagged live
+```
+
+Neither is the real test — run an unseen claim form through and read the six groups yourself. A score is the
+model agreeing with its own training.
+
+## Adopting the shared project
+
+`CONFIG.md` names it. Nothing has to be created, and nothing about the shared project is yours to change — other
+seats are reading the same model.
+
+```bash
+uip ixp projects list --output json                            # it is visible to you
+uip ixp projects list-models <project-name> --output json      # it has a version tagged live
+```
+
+Then run one generated claim form through it and read the six groups. Record the project name and the model
+version in your notes: later blocks bind to it, and your solution's own documentation should say which
+extraction it used.
+
 ## Use the project's `Name`, never its `Title`
 
 `projects list` returns both. `Title` is what you typed (`Claim_Forms`); `Name` is a lowercase slug with a UUID

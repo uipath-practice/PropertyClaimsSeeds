@@ -1,52 +1,53 @@
-# Block 1a — build your own extraction project
+# Block 1a — reading the claim form
 
-**Goal.** Create, train and publish an IXP project that turns the claim submission form into the six field
-groups every later block consumes.
+**Goal.** Claims arrive as a submitted form, on paper as far as the process is concerned. Teach the system to
+read one, so everything downstream works with fields instead of a PDF.
 
-**Read.** `1-extraction/spec.md` (what to build and what "done" means) · `1-extraction/taxonomy.json` (import this verbatim) and
-`1-extraction/taxonomy.md` (what is in it) · `1-extraction/cookbook.md` (the traps) · `CONFIG.md` (your folder)
+**Read.** `1-extraction/spec.md` (what has to come out, and what "good enough" means) · `1-extraction/taxonomy.md`
+(the fields the business needs) · `1-extraction/cookbook.md` (how to build it here, and the traps)
 
-**Skill.** `uipath-ixp`.
+## What the business is asking for
 
-**Do.**
+A claimant fills in a claim form. Somewhere in it are the things the rest of the process cannot proceed without:
+who is claiming, against which policy, on what property, what happened and when, and an itemised list of what
+they say was damaged and what they think it is worth.
 
-1. **Generate samples.** Run the provided `Retrieve Property Claim` process 10–15 times without pinning a
-   scenario, so you get the natural mix of countries, currencies, incident types and damage-row counts. Download
-   the claim-form PDFs from the `Claims` bucket. *(The policy and assessor report are not extracted — skip them.)*
-2. **Create the project blank and import the taxonomy** — `--skip-taxonomy`, then `import-taxonomy` with
-   `1-extraction/taxonomy.json`. Do not accept a suggested taxonomy: it will be close, and close fails at the
-   consumer.
-3. **Label every document.** Review each prediction against the document and confirm what is correct. Leave
-   wrong predictions unannotated — never type the right answer in.
-4. **Iterate on the low scorers.** Where a field scores badly, improve its instructions and let it retrain
-   (~2 min per round), rather than labelling more.
-5. **Publish** the model and tag it live.
-6. **Bind it to your folder in the IXP interface.** This one step has no CLI equivalent — the model is not
-   callable from an automation until you do it.
+Today a person reads that form. You are replacing that reading step — not the judgement that follows it, which
+is what the rest of the exercise builds.
 
-**Must hold.**
+**The fields are already agreed.** Someone has been through the form with the claims team and settled which of
+them matter and what each is called; that list is `1-extraction/taxonomy.md` and it is not yours to improve.
+Every later component was designed against those names, so renaming one to something better breaks a build three
+steps away, silently.
 
-- The six group names match `1-extraction/taxonomy.md` exactly. A renamed group is a broken build three blocks later.
-- **Title the project for your seat** — `ClaimCase-<NN>`, the same string as everything else you create
-  (`CONFIG.md`, *One name, everywhere*). The platform derives its own lowercase slug `Name` from your title, and
-  that slug is what every later command wants.
-- A five-row claim returns five occurrences of `ClaimDamageInventory`. Confirm those **per occurrence** — the
-  plain form confirms a field in every occurrence, including the ones that extracted wrong.
-- Field types match the imported taxonomy. Most are `Exact Text` deliberately; do not "improve" them.
-- You confirmed values you actually checked. A blind-confirmed field scores 1.00 and is still wrong.
+## What has to be true
 
-**Done when.**
+- **Every field group comes back on a form the system has never seen.** A model that works on the examples it
+  was trained on has learned those examples.
+- **The damage list keeps its rows.** A claim listing five damaged items comes back as five items — not one, not
+  a merged blob. This is the part that most often looks right and is not.
+- **What you confirmed, you actually checked.** Training this means agreeing or disagreeing with what it read,
+  one field at a time, against the document in front of you. Waving through a field you did not look at produces
+  a model that scores perfectly and is wrong in production, and you will not find that out here.
 
-```bash
-uip ixp projects get-metrics <project-name> --output json     # a real score, not "not validated yet"
-uip ixp projects list-models <project-name> --output json     # a version tagged live
-```
+## Done when
 
-Plus, by inspection: a claim form the project has never seen returns all six groups, with the right number of
-damage rows.
+You can hand the system a claim form it has never seen and get back every field the claims team asked for, with
+the right number of damage rows — and you would be comfortable letting the next step act on the result.
 
-**If it stalls, switch.** Use `1-extraction/prompt-shared.md` and move on. Extraction feeds everything downstream, so a
-half-trained project is worse than a borrowed one — and the rest of the exercise is identical either way.
+## How to test it
+
+Generate a few fresh claims and read the extracted fields **beside the document**, not as a score. A score tells
+you the model agrees with what it was taught; you are asking whether it agrees with the form.
+
+Vary them. Claims come from different countries in different currencies with different numbers of damaged items,
+and a model trained on a narrow sample fails on the first claim that is not like the others.
+
+## If it stalls, switch
+
+Use `1-extraction/prompt-shared.md` and move on. **A supported route, not a penalty.** Reading the form feeds
+everything downstream, so a half-trained model is worse than a borrowed one, and every block after this one is
+identical either way. The interesting part of this exercise is not here.
 
 **Where it goes.** Generated code into `Build/ClaimCase-<NN>/` — one solution for the whole build. Notes and
 documents you write for this block go in this block's folder.

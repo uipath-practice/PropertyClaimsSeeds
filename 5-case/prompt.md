@@ -1,94 +1,78 @@
-# Block 5 — the case
+# Block 5 — the claim's journey
 
-**Goal.** Build the case plan that runs the claim: the stages, what happens in each, what waits, what runs in
-parallel, and every binding — then deploy it and put a clean claim through, end to end, unattended.
+**Goal.** Make a claim actually move. Everything built so far is a component sitting on its own; this is the
+thing that runs a claim from the moment it arrives to the moment it closes.
 
-**Read.** `2-design/` (your own design — the stage, task and binding tables you already wrote) ·
-`5-case/spec.md` (what must be true) · `contracts/provided-processes.md` (the six processes you bind —
-arguments, types, behaviour) · `contracts/claim-entity.md` (what each stage writes) · `5-case/cookbook.md` (the
-platform traps — read the first section before editing anything) · `CONFIG.md` (folders, names, Windows)
+**Read.** `2-design/` (your own design — the journey you mapped out) · `5-case/spec.md` (the design decisions
+this has to honour) · `contracts/provided-processes.md` (the automations already running that you connect to) ·
+`contracts/claim-entity.md` (what gets recorded, and when) · `5-case/cookbook.md` (how to build it here — read
+the first two sections before you edit anything)
 
-**Skill.** `uipath-maestro-case`, plus `uipath-solution` to pack and deploy. **Not `uipath-maestro-bpmn`** —
-different product; the only thing drawing you there is that your compiled plan is named `.bpmn`.
+## What the business is asking for
 
-**This block is the longest one here. Do it in three passes, finishing each before starting the next**, so a
-pass that goes wrong costs a pass rather than the block. Between passes write down where you are — you will
-lose your working context during this block, and that note is what makes the next hour cheap.
+A claim arrives. Over the next hours or days it gets read, screened, inspected, analysed, decided and closed, and
+at two points a person has to look at it. Right now none of that is joined up.
 
-## Pass 1 — the skeleton
+You are building the thing that runs it: **the stages a claim passes through, what happens in each, what waits
+for the outside world, what can happen at the same time, and where the record gets written.**
 
-Stages, entry and exit conditions, edges. No tasks yet.
+Three things about how the business works, which the shape has to reflect:
 
-- Every stage from your design, each with **exactly one way in**.
-- Every stage exit names its finishing task or group, and every downstream entry matches how that stage
-  leaves — completed against completed, exited against exited. A mismatch is silent at deploy and fatal at run.
-- **No edges — `edges` stays `[]`.** Flow is expressed only through entry and exit conditions, so a stage with
-  no entry condition is not a missing line on a picture, it is a stage nothing can reach.
-- **Place every stage in `layout.nodes`** — main path left to right, waiting stages beneath the stage they hang
-  off, endings stacked at the right (`5-case/cookbook.md`). The canvas will auto-arrange if you leave it empty,
-  and what it produces is unreadable.
-- **No stage that is not in your design.** An empty stage nothing enters is not a placeholder for later work —
-  it is a dead box on the canvas and a warning in every validation from here on.
+- **Some of the work already exists and is running.** Generating the claim documents, reading the form,
+  fetching the policy, pulling the claim history, chasing the surveyor's report, writing to the claimant — those
+  are automations the team already operates. You connect to them; you do not rebuild them. If you find yourself
+  writing a document download or a PDF-to-text step, you have missed one (`contracts/provided-processes.md`).
+- **A claim waits for the outside world.** A surveyor has to visit the property. The process cannot hurry that
+  and must not fail because of it — it holds, and picks up when the report arrives.
+- **Independent work happens at the same time.** Coverage, payout and credibility are three people's jobs done
+  in parallel in a real claims team, and a claim that queues them takes four times as long for no reason.
 
-```bash
-uip maestro case validate <caseplan.json> --skeleton --output json     # Valid
-```
+## The two people are not in place yet
 
-## Pass 2 — the tasks and the wiring
+The eligibility reviewer and the claims adjuster each need a screen, and that is the next block. So the two
+stages where they belong get built **now, in their right places, shaped and waiting** — with no task in them yet.
 
-- **Bind the plumbing; do not build it.** Six processes are already deployed — read what they are for in
-  `contracts/provided-processes.md` and their exact arguments from the platform,
-  `uip or packages entry-points "<PackageId>:<Version>"`. If you are about to write a bucket download, an IXP
-  call or a PDF-to-text step, you have missed one.
-- **A published RPA automation is task type `rpa`.** `process` also validates, also runs, and draws every robot
-  step with an agentic-process icon — so nobody can tell your six automations from your seven agents.
-- **Match the types, and copy the names exactly.** One retrieval returns an object, another a string, three
-  return files. A task output keeps the automation's own `out_` prefix, and a connector input carries its
-  payload under `target`/`body` rather than `value` — get either wrong and every binding in the plan resolves
-  to nothing, silently, until a live claim faults several tasks later (`5-case/cookbook.md`).
-- **One solution, `ClaimCase-<NN>`**, holding the case and all seven agents. A case cannot bind an agent that
-  lives in another solution.
-- Parallel work is *grouped*, not sequenced.
-- Every stage writes what it produced to the claim record, and nothing it did not — through the shared Data
-  Fabric connection, using the **V3 activities** your folder-scoped entity needs (`5-case/cookbook.md`).
-- Build **without the two human gateway tasks** — a case cannot deploy binding an app that is not built, and the
-  app is block 6. **Keep both human-decision stages in place and shaped**; `5-case/spec.md` says what "shaped"
-  has to mean.
+That is deliberate and it is the cheaper order. A stage merged away or made to complete instantly has to be
+rebuilt rather than extended, and the wiring around it is the expensive part. `5-case/spec.md` says exactly what
+"shaped and waiting" has to mean, because the difference between *correctly waiting* and *broken* is invisible
+from the outside.
 
-```bash
-python3 5-case/check_caseplan.py <caseplan.json>       # 0 problems
-uip maestro case validate <caseplan.json> --output json
-```
+## Do it in three passes
 
-## Pass 3 — deploy, and run a clean claim
+This is the longest block. Finish each pass before starting the next, so a pass that goes wrong costs a pass
+rather than the block — and **write down where you are between them.** You will lose your working context
+partway through this; that note is what makes the next hour cheap, and the block after this one begins by
+reading it.
 
-The acceptance run is **a claim with nothing wrong with it**: `scenario=auto-settle`, no discrepancy. It must
-reach an ending on its own, with no human asked and no Action Center task raised.
+1. **The journey.** Every stage, how a claim enters it, what ends it. No work in them yet.
+2. **The work, and the wiring.** What happens in each stage, connected to the components you have built and the
+   automations already running, with the record written as the claim moves.
+3. **Run a claim through it.**
 
-```bash
-uip maestro case pack <case-project-dir> <throwaway-dir>       # recompiles caseplan.json.bpmn
-grep -c "<a-token-your-edit-introduced>" caseplan.json.bpmn    # not 0 — the runtime has your change
-```
+## Done when
 
-Then deploy into your seat folder and start one aimed run (`7-testing/spec.md` has the aiming, and `CONFIG.md`
-has the shell-quoting trick if you are on Windows).
+**A straightforward claim goes in one end and comes out settled, with nobody touching it.**
 
-**Done when** a clean claim reaches an ending, every stage it entered shows complete, and the claim record
-carries a row written stage by stage. **One clean claim is the whole gate** — do not run the pinned discrepancy
-set yet. Every one of those stops at a gateway, both gateways are app tasks, and the app is block 7's
-prerequisite, not this block's. A claim sitting in `Running (With Faults)`, or a stage whose tasks are all
-green while the next stage never started, is a failure.
+Nothing wrong with the claim, nothing for a reviewer to query: it should be read, screened, inspected, analysed,
+approved, the claimant told, and the file closed — and its record should show each stage's work as that stage
+did it.
 
-**If the clean claim gets flagged, the case plan is not what is wrong.** It parked at the review stage exactly
-as designed, because an analysis found fault with a claim that has none. Fix that agent's prompt —
-`7-testing/spec.md` says how to find which one.
+That is the whole gate for this block. **Do not run the problem claims yet** — every one of those is supposed to
+stop and wait for a person, and there is nobody there until block 6.
 
-**Then make it reviewable.** `uip solution upload Build/ClaimCase-<NN>` puts the plan on the Studio Web canvas,
-where it is far easier to read; deploying alone does not. Read `5-case/cookbook.md`, *Build locally; open Studio
-Web to review*, first — the sync runs one way only.
+## How to test it
 
-**Where it goes.** Generated code into `Build/ClaimCase-<NN>/` — one solution for the whole build. Notes and
-documents you write for this block go in this block's folder.
+Ask for a claim with nothing wrong with it and follow it through. `5-case/cookbook.md` has the exact call.
+
+Then read the claim's record rather than the journey's status. A claim can reach an ending with a stage that
+never ran, and the record is the only place that shows it: a stage that went green and left its columns empty did
+not do its job, whatever the status says.
+
+**If the clean claim gets stopped for review, the journey is not what is wrong.** It parked exactly where it was
+told to, because one of your analyses found fault with a claim that has none. That is a block 4 fix.
+
+**Where it goes.** Generated code into `Build/ClaimCase-<NN>/` — one solution for the whole build, holding the
+journey and all seven analyses. Notes and documents you write for this block go in this block's folder.
 
 **Log as you go.** `python3 log-finding.py --block 5-case --category <kind> --summary "..."` — every retry,
 every surprise, everything these instructions failed to explain, and anything that took longer than it should

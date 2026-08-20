@@ -2,6 +2,9 @@
 
 Friction from real builds. The spec is `contracts/claim-entity.md`; this is how to get it onto the platform.
 
+**Skill.** `uipath-platform` — Data Fabric has no skill of its own, and this is the one place its
+preview-then-confirm gate fires on a schema that is already agreed (`3-claim-record/prompt.md` grants it).
+
 ## The JSON columns are `MULTILINE_TEXT`, and the limit is real
 
 A larger field type (`MULTILINE_MAX`, 128 KB) exists but is in private preview and gated per tenant. If you try
@@ -154,11 +157,12 @@ uip df entities create ClaimCase_<seat> --file entity.json --output json
 Write the definition to a file rather than inlining it. Thirty-odd fields on a command line is unreadable, and
 you will want to diff it when block 5 reports a column it cannot find.
 
-## Done when
+## Proving it is done
 
 ```bash
-uip df entities list --output json          # the entity exists, carrying your seat token
-uip df entities get <entity-id> --output json   # every column from the contract, with the type the contract gives
+uip df entities list --native-only --folder-key <your-seat-folder-key> --output json   # the entity exists
+uip df entities get <entity-id> --folder-key <your-seat-folder-key> --output json      # every contract column
+uip is connections list uipath-uipath-dataservice --refresh --all-folders --output json  # the shared connection
 ```
 
 Then check no column is capped at 200 by accident — every `MULTILINE_TEXT` in the output should carry

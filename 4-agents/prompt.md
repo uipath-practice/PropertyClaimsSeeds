@@ -1,54 +1,78 @@
-# Block 4 — the analysis agents
+# Block 4 — the analyses
 
-**Goal.** Build the seven analyses that read a claim and report what they found, and prove each one on a pinned
-input. **Nothing is published in this block** — the agents ship inside the solution your case plan deploys in
-block 5, so a `solution upload` here is work you do not need to do.
+**Goal.** Seven questions have to be answered about every claim, and answering them is what a claims handler
+spends their day on. Build the things that answer them.
 
-**Read.** `2-design/` (your own tables — which analysis owns which problem, and what each one is called) ·
-`pdd.md` §5 (what each analysis decides) · `4-agents/spec.md` (the set and the answer shape) ·
-`contracts/check-envelope.md` (the payload every one returns) · `4-agents/cookbook.md` ·
-`7-testing/spec.md` (what a pass looks like — read it before you write prompts, not after)
+**Read.** `pdd.md` §5 (what each analysis has to decide) and §9 (the nine problems that turn up in real claims) ·
+`2-design/` (your own tables — which analysis you made responsible for what) · `4-agents/spec.md` (the set, and
+the shape every answer takes) · `contracts/check-envelope.md` (that shape, in detail) ·
+`4-agents/cookbook.md` (how to build them here)
 
-**Skill.** `uipath-agents`.
+## What the business is asking for
 
-**Must hold.**
+Seven questions, each owned by one analysis:
 
-- The two agents that read a source document — the policy, the assessor's report — take it as a **job
-  attachment**, not as text. `4-agents/spec.md` says why, and what it costs at test time.
-- One analysis per agent. Where two analyses touch the same fact, the one that does not own it defers **in
-  words** — naming the owner in its own text — and never by reading the other's payload: the three parallel
-  analyses cannot see each other's output at all.
-- Every agent returns the pinned envelope. No length or item-count limits in any output schema.
-- **Each payload has a size budget, and it belongs in the prompt.** The columns that store them cut at 10,000
-  characters — silently in the entity, and *loudly* through the connector, which faults the whole case with
-  `The provided value for field [<column>] is longer than length limit 10000`. Aim each at 8,000 in the prompt
-  text. A `maxLength` in the schema is not the same thing: it is hard validation and it faults the agent.
-- **Nothing is flagged that the process did not ask about.** An analysis that finds fault with a clean claim
-  passes every check in this block and fails block 5's acceptance run — read `7-testing/spec.md`,
-  *What a clean claim proves*, before you write a single check.
-- Every declared input is named in the prompt text. An input the prompt does not interpolate does not reach
-  the model.
-- Each agent reports **every** check it evaluated, passes included — not only the failures.
-- Build and test **one** agent end to end before generating the other six. They share a shape, so a mistake in
-  the first is a mistake in all seven.
+| | Asks |
+|---|---|
+| **Eligibility** | Should we be looking at this claim at all? |
+| **Report validation** | Is the surveyor's report usable, and what does it actually say? |
+| **Coverage** | Does the policy respond to this loss? |
+| **Payout** | What is payable, and how was that figure reduced? |
+| **Credibility** | Does the claimant's account hold together? |
+| **Decision** | Given all of the above, what do the rules recommend? |
+| **Response** | What do we tell the claimant? |
 
-**Done when.**
+**None of them decides the claim.** They report; a person decides. That separation is the whole design
+(`pdd.md` §4), and an analysis that quietly settles something on its own removes the decision a human is
+accountable for.
 
-```bash
-uip agent validate <project-dir> --output json   # all seven
-uip agent review   <project-dir> --output json   # all seven — grade B or better, zero errors
-uip agent debug    <project-dir> --output json   # the five that take no attachment
-```
+## What a good analysis produces
 
-**A grade is a floor, not a pass.** Review scores structure and wording; it has no idea what this pipeline is, so
-it cannot see a missing input or a wrong name. Read the schemas yourself: every analysis after the eligibility
-gateway declares all three gateway inputs, and every payload name matches `contracts/claim-entity.md`.
+Everything here follows from one idea: **a person reads this.** Two of them, in fact — an eligibility reviewer
+and a claims adjuster — and what they can see determines whether they can decide.
 
-Plus, by inspection: a clean claim produces five passing eligibility checks, and a claim with a planted problem
-produces a failing check *in the agent that owns it*, worded so a reviewer can see what is actually wrong.
+- **Show your work.** A verdict with no reasoning is not reviewable. Say what was checked, what was found, and
+  what in the documents supports it.
+- **Report the checks that passed, too.** A screen listing three problems does not tell a reviewer whether the
+  other twelve things were checked or skipped.
+- **Say it in a sentence, not a field name.** These strings go straight onto a screen a claims handler reads.
+- **Do not find fault where there is none.** An analysis that flags something on every claim has learned that
+  flagging looks thorough. It costs a human's attention every time, and a solution that stops a *clean* claim has
+  failed even though every individual check looks defensible.
+- **Stay in your lane.** Where two analyses touch the same fact, the one that does not own it says so and names
+  the owner, rather than raising it as its own finding. Three of these run at the same time and none of them can
+  see what the others found.
+- **Respect what a human already settled.** Every analysis after the eligibility gateway is told what the
+  reviewer decided and why. A finding they saw and accepted is closed — `pdd.md` §6 is the rule, and getting it
+  wrong asks a person the same question twice.
 
-**Where it goes.** Generated code into `Build/ClaimCase-<NN>/` — one solution for the whole build. Notes and
-documents you write for this block go in this block's folder.
+**Two of the seven read a document rather than extracted fields** — the policy and the surveyor's report. Those
+documents are prose whose meaning lives in specific sentences, and an analysis has to be able to quote the one it
+relied on. `4-agents/spec.md` says how they receive it and what that costs when you come to test them.
+
+## Done when
+
+Each analysis answers its own question, on a real claim, in language a claims handler could act on.
+
+Specifically: **a clean claim comes back clean** — every check run, every check passed, nothing flagged — and a
+claim with a known problem in it is caught **by the analysis that owns that problem**, worded so a reviewer can
+see what is actually wrong rather than which rule fired.
+
+## How to test it
+
+Build and test **one** analysis end to end before generating the other six. They share a shape, so a mistake in
+the first is a mistake in all seven, and finding it after you have built them all costs seven fixes.
+
+Then run each one on a pinned claim and read the output as a reviewer would. `4-agents/cookbook.md` has the
+commands, including which of the seven can be exercised on their own and which cannot until block 5.
+
+**A tooling grade is a floor, not a pass.** Your platform will score these agents and it has no idea what this
+pipeline is — it cannot tell that an analysis is missing an input it needs, or that two components spell the same
+payload differently. Read what you built.
+
+**Where it goes.** Generated code into `Build/ClaimCase-<NN>/` — one solution for the whole build. Nothing is
+published in this block: these ship inside the solution the case deploys in block 5. Notes and documents you
+write for this block go in this block's folder.
 
 **Log as you go.** `python3 log-finding.py --block <this-block> --category <kind> --summary "..."` — every
 retry, every surprise, everything these instructions failed to explain, and anything that took longer than it
