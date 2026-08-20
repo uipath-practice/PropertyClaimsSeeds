@@ -80,6 +80,11 @@ parallel** again: retrieve the policy, look up prior claims against it, and tell
 **Eligibility screening.** Run the five checks (§5.1), record the result, then **stop for the eligibility
 reviewer**. If they continue the claim, request an assessor inspection.
 
+**Requesting the inspection is the eligibility reviewer's act, and the process has nothing to send.** As with
+the settlement, the outbound system is out of scope here: the assessor is instructed outside this workflow, and
+what the process owns is the *waiting*. `Retrieve Inspection Report` returning not-ready is what "requested and
+outstanding" looks like from inside the case; there is no dispatch process to call and you should not build one.
+
 **Awaiting inspection.** The claim waits until the assessor's report is ready, then moves to analysis. Give this
 stage — and every stage — **exactly one way in**. Two entry conditions that can both become true is a double
 execution waiting to happen.

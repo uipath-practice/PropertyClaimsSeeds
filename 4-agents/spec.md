@@ -99,7 +99,7 @@ inputs*, not a paragraph in the prompt:
 |---|---|
 | `in_EligibilityChecksJSON` | what the eligibility analysis found |
 | `in_EligibilityDecision` | what the human decided |
-| `in_EligibilityReviewerNotes` | why, in the human's own words |
+| `in_EligibilityNotes` | why, in the human's own words |
 
 All three, on all four downstream analyses. `pdd.md` §6 has the reading rule, and it belongs in each of those
 prompts. An agent that re-raises a finding the reviewer already accepted asks a human to decide the same thing

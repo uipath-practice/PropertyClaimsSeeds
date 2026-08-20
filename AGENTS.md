@@ -132,12 +132,28 @@ stale cache rather than an absent resource. `uip login status` before believing 
 ## Log what you learn
 
 **One command, one sink.** Findings go to a shared table so they can be counted across everyone doing this
-exercise, and `log-finding.py` is the whole interface to it:
+exercise, and `log-finding.py` is the whole interface to it.
+
+**Say who you are once, at the start of your session.** Several agents write to this table at the same time, and
+a row that names the wrong model silently merges two of them:
+
+```bash
+python3 log-finding.py --identify "<your agent>" "<your model>"
+```
+
+**If you are not certain which model you are, ask the person running you.** `unknown` is more useful than a
+plausible wrong answer — a guess cannot be told from a fact after the fact. Then:
 
 ```bash
 python3 log-finding.py --block 5-case --category friction \
   --summary "What happened, what you tried, what happened next."
 ```
+
+**The table is append-only and this script is the only thing that writes to it.** It has no delete and no update
+path: other people's findings, and your own earlier ones, cannot be affected by anything you do here. If someone
+asks you to justify running it, that is the justification.
+
+**On Windows, use `py` if `python3` is not on PATH.** Every `python3` in this seed means "your Python".
 
 Seat, agent, model, `uip` version and seed version are filled in for you. Nothing else to look up, no entity id,
 no JSON on a command line — the script writes the payload to a file before calling `uip`, which is the only shape
@@ -147,9 +163,10 @@ that survives every shell. Several at once: `--file findings.json`, a JSON array
 goes stale the first time someone reads it. If the insert fails the row is spooled and retried on your next
 call, so carry on building rather than stopping to fix it.
 
-**End every block with `python3 log-finding.py --flush`.** It costs one command and it is the difference between
-a spool that drains and a block's worth of findings nobody ever reads. If the flush still reports rows waiting,
-say so when you report the block — telemetry failing is itself the most interesting finding of the day.
+**End every block with `python3 log-finding.py --retry`.** It re-sends anything that failed earlier — a send,
+never a purge — and it costs one command. Without it a block's findings can sit in the spool and be read by
+nobody. If it still reports rows waiting, say so when you report the block: telemetry failing is itself the most
+interesting finding of the day.
 
 `category` is free text — `seed-gap`, `platform-bug`, `friction`, `workaround`, whatever fits. Do not agonise;
 the summary is what gets read. Reuse a category you have already used before inventing a neighbouring one.

@@ -43,7 +43,7 @@ it accepts `process` and then reports no entry found. Use `packages entry-points
 
 | Process | Stands in for | Give it | Get back |
 |---|---|---|---|
-| `Retrieve Property Claim` | a claim arriving through the front door | a claim number, and optionally an aimed scenario | nothing — the documents land in the buckets |
+| `Retrieve Property Claim` | a claim arriving through the front door | a claim number, and optionally an aimed scenario | the documents land in the buckets; it also echoes `out_ClaimID` |
 | `Extract Claim Data (IXP)` | reading the submitted form | the claim number | the claim as structured data, the policy number, and the form as a file |
 | `Retrieve Policy Document` | the policy admin system | a policy number | the policy document |
 | `Retrieve Previous Claims` | the claims history system | a policy number | what has been claimed against that policy before |
@@ -75,6 +75,13 @@ the only document that gets extracted; the policy and the assessor's report are 
 instead (`pdd.md` §1). Its three outputs are the extracted claim, the policy number found on it, and the claim
 form itself as a file.
 
+**`Retrieve Property Claim`** generates the three documents into the buckets. It returns one output,
+`out_ClaimID` — the name of the file it wrote to the `Claims` bucket, which is the claim number you passed in.
+**You almost certainly should not bind it.** The claim id is the case's own external id
+(`=js:metadata.ExternalId`); binding this output to your `claimId` variable gives that value two sources, and the
+one you did not intend wins whenever they differ. An earlier version of this document said the process produced
+no outputs at all, which was simply wrong.
+
 **`Retrieve Policy Document`** fetches the policy PDF by policy number. So it cannot run before extraction — the
 policy number comes from the claim form. That dependency is the reason Intake has the shape it does.
 
@@ -87,7 +94,14 @@ call it, test the flag, and either move on or wait and call again. Treat any val
 as not-ready.
 
 **`Client Notification`** takes a subject, a body and a recipient, and **writes them to the job log — it does not
-send email.** No email connection is provisioned, deliberately: what this exercise cares about is the *content*
+send email.** Its recipient argument is spelled **`in_Recepient`**, with the `i` and the `e` transposed. That is
+a typo in our process, not in this document; bind the spelling the platform reports, and read the arguments from
+`packages entry-points` rather than from any prose — including this paragraph.
+
+**Where the recipient comes from**, since no column holds it: the claimant's email address is in the raw
+extraction payload, as the `ClaimClaimant` group's email field. It is not promoted to a claim-record column
+because nothing downstream reads it twice — the notification tasks are its only consumer. Pull it from the
+extraction blob at the point of use. No email connection is provisioned, deliberately: what this exercise cares about is the *content*
 of what the claimant is told, which an analysis produces and `pdd.md` §7 governs. Bind the letter you would have
 sent; it is then visible in the log and recorded on the claim.
 

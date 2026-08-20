@@ -3,6 +3,26 @@
 Each of these was met in a real build. In every case the command is wrong, not your solution — and each one
 costs a diagnostic detour if you take it at face value.
 
+## `--folder-key` takes a GUID, and a folder *name* fails silently
+
+```bash
+uip or processes list --folder-key ClaimCase-01     # looks fine. is not fine.
+```
+
+It does not error and does not return zero rows. It returns a **different, paginated, tenant-wide list** —
+other seats' processes included — and `HasMore: true`. Every later conclusion drawn from it is wrong, and
+nothing anywhere says so.
+
+Pass the GUID. `--folder-path` is the flag that takes a name:
+
+```bash
+FK=$(uip or folders list --all --name ClaimCase-<NN> --output json --output-filter "[0].Key")
+uip or processes list --folder-key "$FK" --output json
+```
+
+The general form is worth carrying: **any list that comes back bigger than you expected is scoped wrongly**, and
+a list that comes back with `HasMore: true` has not answered your question at all.
+
 ## `uip solution deploy list` returns 403
 
 ```

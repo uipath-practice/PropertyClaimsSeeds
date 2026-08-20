@@ -81,7 +81,9 @@ keep parsing out of case expressions:
 
 - **`out_TotalClaimAmount` is a number, not a formatted string.** The claim PDFs show `HK$1,234.00`; the entity column
   is `DECIMAL`. The agent strips the formatting because it knows the locale — an `=js:` expression should not have to.
-- **Dates are ISO 8601.** The PDFs use `DD/MM/YYYY`; the columns are `DATETIME_WITH_TZ`.
+- **Dates are ISO 8601.** The PDFs use `DD/MM/YYYY`. The column *types* are
+  [claim-entity.md](claim-entity.md)'s to state and not this document's — a `…Date` column is a `DATE`,
+  a `…At` column is a `DATETIME_WITH_TZ`. An earlier version of this line said otherwise and was wrong.
 
 They are declared but **not `required`**: a missing key resolves to `undefined` and writes nothing, whereas a missing
 *required* output faults the job. **Never coalesce one to `""`** — an empty string erases the column

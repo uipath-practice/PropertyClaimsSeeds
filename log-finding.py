@@ -15,7 +15,7 @@ Everything else -- seat, agent, model, uip version, seed version -- is filled in
 you. If the insert fails the row is spooled to .workshop/spool.jsonl and retried on
 the next call, so a finding is never lost to a network blip.
 """
-import argparse, json, os, pathlib, re, subprocess, sys
+import argparse, json, os, pathlib, re, shutil, subprocess, sys
 
 HERE = pathlib.Path(__file__).resolve().parent
 STATE = HERE / ".workshop"
@@ -24,11 +24,23 @@ SPOOL = STATE / "spool.jsonl"
 ENTITY = "WorkshopFindings"
 
 
+def uip_exe():
+    """`uip` on PATH is a shim, and on Windows Python cannot execute the bare name."""
+    for name in ("uip", "uip.cmd", "uip.exe", "uip.bat", "uip.ps1"):
+        found = shutil.which(name)
+        if found:
+            return found
+    return "uip"
+
+
 def uip(*args, timeout=180):
     """Run uip and return parsed JSON, or None. Never raises."""
+    exe = uip_exe()
+    cmd = [exe, *args, "--output", "json"]
+    if exe.lower().endswith(".ps1"):
+        cmd = ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", *cmd]
     try:
-        p = subprocess.run(["uip", *args, "--output", "json"],
-                           capture_output=True, text=True, timeout=timeout)
+        p = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
     except Exception:
         return None
     m = re.search(r"^\s*\{", p.stdout, re.M)
@@ -97,8 +109,8 @@ def context(c, args):
         pass
     return {
         "seat": args.seat or seat(c),
-        "codingAgent": args.agent or os.environ.get("WORKSHOP_AGENT", "unknown"),
-        "model": args.model or os.environ.get("WORKSHOP_MODEL", "unknown"),
+        "codingAgent": args.agent or c.get("codingAgent") or os.environ.get("WORKSHOP_AGENT", "unknown"),
+        "model": args.model or c.get("model") or os.environ.get("WORKSHOP_MODEL", "unknown"),
         "uipVersion": c["uipVersion"],
         "seedVersion": seed,
     }
@@ -141,19 +153,27 @@ def main():
     ap.add_argument("--summary-file", help="read the summary from a file instead")
     ap.add_argument("--file", help="a JSON array of {block, category, summary}")
     ap.add_argument("--seat"); ap.add_argument("--agent"); ap.add_argument("--model")
-    ap.add_argument("--flush", action="store_true", help="retry spooled rows and exit")
+    ap.add_argument("--identify", nargs=2, metavar=("AGENT", "MODEL"),
+                    help="record who you are, once, for every later finding")
+    ap.add_argument("--retry", "--flush", dest="retry", action="store_true",
+                    help="send rows that failed earlier; adds nothing new, deletes nothing")
     a = ap.parse_args()
 
     c = cache()
+    if a.identify:
+        c["codingAgent"], c["model"] = a.identify
+        save_cache(c)
+        print(f"identity recorded: {c['codingAgent']} / {c['model']}")
+        return 0
     eid = entity_id(c)
     if not eid:
         print(f"! {ENTITY} not reachable -- check 'uip login status' and that you can see the\n"
               f"  tenant's entities. Findings are being spooled, not lost; run\n"
-              f"  'python3 log-finding.py --flush' once it works.", file=sys.stderr)
+              f"  'python3 log-finding.py --retry' once it works.", file=sys.stderr)
 
-    if a.flush:
+    if a.retry:
         n = drain(eid) if eid else 0
-        print(f"flushed {n} spooled finding(s)")
+        print(f"sent {n} finding(s) that were waiting")
         return 0
 
     if a.file:
@@ -182,7 +202,7 @@ def main():
     spool(rows)
     n = sum(1 for l in SPOOL.read_text(encoding="utf-8").splitlines() if l.strip())
     print(f"spooled {len(rows)} finding(s); {n} now waiting. "
-          f"Run 'python3 log-finding.py --flush' before you finish the block.", file=sys.stderr)
+          f"Run 'python3 log-finding.py --retry' before you finish the block.", file=sys.stderr)
     return 0
 
 
