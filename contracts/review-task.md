@@ -62,3 +62,14 @@ review for Jane"*, *"Claim review for Jane"* — because twenty rows reading *"E
 apart, and a reviewer opening the wrong seat's claim is a confusing five minutes for two people.
 
 The title is set where the task is raised, in the case plan.
+
+## The casing depends on who completed the task
+
+The names in the table above are what the **app** sends. A task completed from the command line hands the same
+fields back to the case **PascalCased** — `reviewerNotes` arrives as `ReviewerNotes`. The outcome is unaffected,
+so routing is identical either way; only the data mapping differs.
+
+This matters at the block 5 / block 6 seam. Block 5 answers its tasks from the CLI to prove the four routes, and
+an output mapping written against the CLI's casing will fail the moment block 6's real screen submits. **Map the
+names in this contract**, and treat a `null` reviewer note during block 5 as expected rather than as a mapping
+bug. Observed on two independent seats, 2026-08-21.

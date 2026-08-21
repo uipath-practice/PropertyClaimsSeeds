@@ -229,8 +229,30 @@ uip tasks complete <task-id> --type AppTask --folder-id <folder-id> \
 would have kept, and the task can never be re-opened — which looks like an app bug in the next block and is not.
 Read the task first, merge your outputs into what is there, then complete.
 
-`tasks get` also **PascalCases every key** in the free-form `Data` blob, recursively — `triggerStage` reads back
-as `TriggerStage`. The values and their types are honest; only the key casing is not.
+**Never put `Action` inside `--data`.** Pass the outcome through `--action` only. Sending both faults the case
+at the action task with `170001 Failure mapping the data from the task result`.
+
+### What CLI completion proves, and what it cannot
+
+`tasks get` **PascalCases every key** in the free-form `Data` blob, recursively — `triggerStage` reads back as
+`TriggerStage`. That much is only a display artefact. **But a task completed from the command line hands those
+PascalCase keys back to the case as well**, so an output mapping sourcing `reviewerNotes` resolves to nothing:
+the decision routes correctly because it comes from the *outcome*, while the reviewer's notes arrive `null` and
+the next analysis faults on a required input it was promised. Both clean seats hit this independently on
+2026-08-21.
+
+So be precise about what this step is for:
+
+| | proven by answering from the CLI |
+|---|---|
+| all four routes reach the right ending | **yes** — the outcome carries it |
+| the identifiers survive a completed task | yes |
+| the reviewer's text reaches the record | **no** — block 6 proves that, through the app |
+
+**Do not "fix" this by re-pointing your output mappings at PascalCase.** It makes the CLI run go green and
+breaks block 6, where the real app sends the casing your schema actually declares. One seat did exactly that and
+carried the fault forward. If a downstream analysis requires a field the CLI cannot populate, make that input
+optional for now and note it — the gap closes when the screen exists.
 
 ## `caseplan.json` is not what runs — and how to make it run
 
