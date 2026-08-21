@@ -35,6 +35,9 @@ steps away, silently.
 You can hand the system a claim form it has never seen and get back every field the claims team asked for, with
 the right number of damage rows — and you would be comfortable letting the next step act on the result.
 
+**And you have read the cookbook back** — the two-sided review in `AGENTS.md`, *Before you finish a
+block*. Two minutes, and it is what keeps this seed from only ever growing.
+
 ## How to test it
 
 Generate a few fresh claims and read the extracted fields **beside the document**, not as a score. A score tells

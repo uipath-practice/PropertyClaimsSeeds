@@ -78,6 +78,9 @@ did not tell you, and anything left deliberately unfinished. Not a diary — the
 person taking over**, usually with none of this in mind. Reading it costs five minutes; reconstructing it from
 the plan file costs an hour.
 
+**And you have read the cookbook back** — the two-sided review in `AGENTS.md`, *Before you finish a
+block*. Two minutes, and it is what keeps this seed from only ever growing.
+
 ## How to test it
 
 `5-case/cookbook.md` has the exact calls, including how to answer a stop without a screen. Deploying and running

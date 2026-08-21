@@ -38,6 +38,9 @@ The record exists, and everything your design says a claim accumulates has somew
 table from block 2 against it: a payload with no home is a gap you will otherwise discover at run time in block
 5, when a write fails against a column nobody created.
 
+**And you have read the cookbook back** — the two-sided review in `AGENTS.md`, *Before you finish a
+block*. Two minutes, and it is what keeps this seed from only ever growing.
+
 ## One thing you will need later, so find it now
 
 The record is written by the case, and the case reaches it through a connection that **already exists and is

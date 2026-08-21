@@ -70,6 +70,9 @@ a case binds through the solution registry and can only see what the manifest li
 hours and needed the manifest rebuilt — the CLI refuses both `projects add` ("already exists") and
 `projects remove` ("not found") once the two disagree. One command here; a rebuild there.
 
+**And you have read the cookbook back** — the two-sided review in `AGENTS.md`, *Before you finish a
+block*. Two minutes, and it is what keeps this seed from only ever growing.
+
 ## How to test it
 
 Build and test **one** analysis end to end before generating the other six. They share a shape, so a mistake in

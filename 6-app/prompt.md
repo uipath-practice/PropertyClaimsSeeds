@@ -69,6 +69,9 @@ claim on it. Twice over:
 A blank page, an error, or a screen that works but logs errors underneath is not done. This is the one thing that
 cannot be established from the command line, and it is the reason to look.
 
+**And you have read the cookbook back** — the two-sided review in `AGENTS.md`, *Before you finish a
+block*. Two minutes, and it is what keeps this seed from only ever growing.
+
 ## How to test it
 
 Deploying the app and running claims through it are **pre-authorised** (`AGENTS.md`) — do not stop to ask.

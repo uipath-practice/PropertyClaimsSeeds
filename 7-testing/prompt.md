@@ -52,6 +52,9 @@ right, plus clean claims that went through unattended.
 **Keep the failures in it.** A results table with only successes cannot show anyone that the solution improved,
 and it is the failures that tell you what to fix.
 
+**And you have read the cookbook back** — the two-sided review in `AGENTS.md`, *Before you finish a
+block*. Two minutes, and it is what keeps this seed from only ever growing.
+
 ## How to test it
 
 Every run is **aimed** — you decide which problem the claim carries before you send it in, so you know what

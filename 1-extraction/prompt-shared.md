@@ -31,3 +31,7 @@ documents you write for this block go in this block's folder.
 **Log as you go.** `python3 log-finding.py --block <this-block> --category <kind> --summary "..."` — every
 retry, every surprise, everything these instructions failed to explain, and anything that took longer than it
 should have. Dead ends included; they are the point. `AGENTS.md` has the detail.
+
+**And you have read the cookbook back** — the two-sided review in `AGENTS.md`, *Before you finish a
+block*. Two minutes, and it is what keeps this seed from only ever growing.
+
