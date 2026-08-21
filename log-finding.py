@@ -179,7 +179,7 @@ def context(c, args):
         "effort": args.effort or c.get("effort") or os.environ.get("WORKSHOP_EFFORT", "unknown"),
         "uipVersion": c["uipVersion"],
         "skillsVersion": c["skillsVersion"],
-        "os": os_stamp(),
+        "osShell": os_stamp(),
         "seedVersion": seed,
     }
 
