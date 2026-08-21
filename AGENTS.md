@@ -186,8 +186,12 @@ exercise, and `log-finding.py` is the whole interface to it.
 a row that names the wrong model silently merges two of them:
 
 ```bash
-python3 log-finding.py --identify "<your agent>" "<your model>"
+python3 log-finding.py --identify "<your agent>" "<your model>" --effort "<your effort tier>"
 ```
+
+**Include the effort tier if your runtime has one** — `medium`, `high`, whatever it is called. The same model at
+two tiers is two different builders: one of them worked around a blocked deployment on its own and the other
+stopped and reported it. Without that word every comparison between runs is confounded.
 
 **If you are not certain which model you are, ask the person running you.** `unknown` is more useful than a
 plausible wrong answer — a guess cannot be told from a fact after the fact. Then:
@@ -218,6 +222,61 @@ interesting finding of the day.
 
 `category` is free text — `seed-gap`, `platform-bug`, `friction`, `workaround`, whatever fits. Do not agonise;
 the summary is what gets read. Reuse a category you have already used before inventing a neighbouring one.
+
+## A finding is not only a complaint
+
+This table's job is to make the next version of this seed better, and better is as often **shorter** as it is
+more complete. Three of the most useful things you can tell us are not problems at all:
+
+- **"This was already handled."** You read a page of our cookbook, then found that a skill, `uip <command>
+  --help`, or the product docs said the same thing. Ours is then a line we should delete — but we can only
+  delete it safely if we know what replaced it, so say where you found it.
+- **"This saved me."** A warning you read, believed, and would otherwise have walked straight into. Almost
+  nobody reports these, and they are what makes cutting safe: without them every cut is a guess.
+- **"This was in the wrong place."** The three layers are `prompt.md` (what the business wants) → `spec.md`
+  (what was decided, and why) → `cookbook.md` (how to get it done here). Build mechanics sitting in the business
+  ask, or a design decision buried in a list of commands, is worth one line.
+
+**A trap you never met is not proof the warning was unnecessary — it may be proof that it worked.** Say which of
+the two it was. That distinction is the whole value of the report.
+
+### Four fields that turn a finding into a recommendation
+
+All optional, and a plain friction report needs none of them.
+
+| | |
+|---|---|
+| `--source` | where the answer **actually** came from: `seed` · `skill` · `cli-help` · `docs` · `model` · `trial-error` |
+| `--ask` | what should change: `keep` · `cut` · `fix` · `add` · `move` · `none` |
+| `--artifact` | which file and section — `5-case/cookbook.md#Wiring an action task` |
+| `--evidence` | the exact error, the command that produced it, or the few lines that show it |
+
+```bash
+python3 log-finding.py --block 5-case --category redundancy \
+  --artifact "5-case/cookbook.md#Registering the stand-in app" --source skill --ask cut \
+  --summary "The skill's create-action-app.md walks the same publish sequence, including --type Action."
+```
+
+**`--source` is the one to get right, including when the honest answer is `model`** — you already knew, from
+neither of us. Over many runs it is how we watch the platform's own guidance improve and retire ours as it
+does, and `trial-error` marks what nobody has written down yet, ours or theirs.
+
+**`--evidence` is for what we cannot see.** We can read the tenant; we cannot read your disk. An error string
+verbatim, the command that produced it, the five lines of config that were wrong — each is worth more than a
+paragraph describing it, and it costs you a copy and paste. Two rules: **never paste a secret**, and never paste
+a whole file. This table is shared with everyone working on this tenant, and it is the few lines that matter
+that make a finding reproducible.
+
+### Before you finish a block
+
+Re-read the `cookbook.md` you were handed and log the two-sided answer:
+
+> **Up to three sections you never needed, and up to three you would have failed without.** One line each,
+> naming the section.
+
+Both halves, or neither. A list of what to cut with nothing to keep is an opinion; the two together are a
+measurement. If nothing stood out either way, say that too — `--ask none` is a real answer and more useful than
+an invented one.
 
 **Write it while the finding is fresh**, not in a batch at the end — an hour later it has lost the detail that
 made it useful.

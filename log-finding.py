@@ -7,15 +7,23 @@ live -- there is no local findings file to keep in step.
     python3 log-finding.py --block 5-case --category friction \
         --summary "uip maestro case validate passed but the deploy failed with ..."
 
-Batch (a JSON array of {block, category, summary}):
+Findings are not only complaints. Four optional fields turn one into a recommendation:
+
+    --source    where the answer actually came from -- seed | skill | cli-help |
+                docs | model | trial-error
+    --ask       what should change here -- keep | cut | fix | add | move | none
+    --artifact  which seed file and section, e.g. 5-case/cookbook.md#Wiring an action task
+    --evidence  the exact error, the command, or the few lines that show it
+
+Batch (a JSON array of {block, category, summary, ...}):
 
     python3 log-finding.py --file my-findings.json
 
-Everything else -- seat, agent, model, uip version, seed version -- is filled in for
-you. If the insert fails the row is spooled to .workshop/spool.jsonl and retried on
+Everything else -- seat, agent, model, effort, OS and shell, uip and skills
+versions, seed version -- is filled in for you. If the insert fails the row is spooled to .workshop/spool.jsonl and retried on
 the next call, so a finding is never lost to a network blip.
 """
-import argparse, json, os, pathlib, re, shutil, subprocess, sys
+import argparse, json, os, pathlib, platform, re, shutil, subprocess, sys
 
 HERE = pathlib.Path(__file__).resolve().parent
 STATE = HERE / ".workshop"
@@ -65,13 +73,20 @@ def save_cache(c):
 
 
 def entity_id(c):
-    """The insert wants the entity id, not its name."""
-    if c.get("entityId"):
+    """The insert wants the entity id, not its name.
+
+    We also remember the entity's column names. The table gains columns over time
+    and a seat may be running an older seed, so the row is filtered to what the
+    table actually has before it is sent -- an unknown column fails the whole
+    insert, taking the findings with it.
+    """
+    if c.get("entityId") and c.get("entityFields"):
         return c["entityId"]
     d = uip("df", "entities", "list", "--native-only") or {}
     for e in d.get("Data") or []:
         if e.get("Name") == ENTITY:
             c["entityId"] = e.get("Id")
+            c["entityFields"] = [f.get("Name") for f in (e.get("Fields") or []) if f.get("Name")]
             save_cache(c)
             return c["entityId"]
     return None
@@ -111,6 +126,32 @@ def seat(c):
     return "unknown"
 
 
+def skills_version():
+    """The uipath-* skills ship as one versioned bundle; that number is what tells
+    us, later, whether a cookbook line went redundant because the skills improved."""
+    for base in (pathlib.Path.home() / ".uipath" / ".skills",):
+        try:
+            return json.loads((base / "package.json").read_text()).get("version") or "unknown"
+        except Exception:
+            pass
+    d = uip("skills", "list") or {}
+    store = ((d.get("Data") or {}).get("StorePath") or "").strip()
+    if store:
+        try:
+            return json.loads((pathlib.Path(store) / "package.json").read_text()).get("version") or "unknown"
+        except Exception:
+            pass
+    return "unknown"
+
+
+def os_stamp():
+    """Shell as well as OS: PowerShell quoting alone has cost two seats a morning."""
+    shell = os.environ.get("SHELL") or os.environ.get("ComSpec") or ""
+    if os.environ.get("PSModulePath"):
+        shell = "powershell"
+    return f"{platform.system()} {platform.release()} / {pathlib.Path(shell).name or 'unknown'}"[:200]
+
+
 def context(c, args):
     if not c.get("uipVersion"):
         try:
@@ -128,18 +169,35 @@ def context(c, args):
         seed = " ".join((HERE / "VERSION").read_text().split())
     except Exception:
         pass
+    if not c.get("skillsVersion"):
+        c["skillsVersion"] = skills_version()
+        save_cache(c)
     return {
         "seat": args.seat or seat(c),
         "codingAgent": args.agent or c.get("codingAgent") or os.environ.get("WORKSHOP_AGENT", "unknown"),
         "model": args.model or c.get("model") or os.environ.get("WORKSHOP_MODEL", "unknown"),
+        "effort": args.effort or c.get("effort") or os.environ.get("WORKSHOP_EFFORT", "unknown"),
         "uipVersion": c["uipVersion"],
+        "skillsVersion": c["skillsVersion"],
+        "os": os_stamp(),
         "seedVersion": seed,
     }
 
 
-def insert(eid, rows):
-    """Insert via a temp file -- inline JSON does not survive PowerShell quoting."""
+def insert(eid, rows, known=None):
+    """Insert via a temp file -- inline JSON does not survive PowerShell quoting.
+
+    Filtered to the table's real columns at send time rather than at write time,
+    so a row spooled before a column existed still lands afterwards.
+    """
     STATE.mkdir(exist_ok=True)
+    if known:
+        k = set(known)
+        dropped = sorted({f for r in rows for f, v in r.items() if f not in k and v not in (None, "")})
+        if dropped:
+            print(f"note: this table has no column for {', '.join(dropped)} yet — "
+                  f"those values were not sent. Everything else was.", file=sys.stderr)
+        rows = [{f: v for f, v in r.items() if f in k} for r in rows]
     tmp = STATE / "insert.json"
     tmp.write_text(json.dumps(rows), encoding="utf-8")   # utf-8, no BOM
     d = uip("df", "records", "insert", eid, "--file", str(tmp))
@@ -174,7 +232,7 @@ def drain(eid):
     if not rows:
         claim.unlink()
         return 0
-    ok, _ = insert(eid, rows)
+    ok, _ = insert(eid, rows, cache().get("entityFields"))
     if ok:
         claim.unlink()
         return len(rows)
@@ -193,7 +251,13 @@ def main():
     ap.add_argument("--summary", help="what happened, what you tried, what happened next")
     ap.add_argument("--summary-file", help="read the summary from a file instead")
     ap.add_argument("--file", help="a JSON array of {block, category, summary}")
+    ap.add_argument("--source", help="where the answer came from: seed | skill | cli-help | docs | model | trial-error")
+    ap.add_argument("--ask", help="what should change in the seed: keep | cut | fix | add | move | none")
+    ap.add_argument("--artifact", help="which seed file and section, e.g. 5-case/cookbook.md#Wiring an action task")
+    ap.add_argument("--evidence", help="the exact error, the command, or the few lines that show it")
+    ap.add_argument("--evidence-file", help="read the evidence from a file instead")
     ap.add_argument("--seat"); ap.add_argument("--agent"); ap.add_argument("--model")
+    ap.add_argument("--effort", help="the reasoning/effort tier you are running at, e.g. medium, high")
     ap.add_argument("--identify", nargs=2, metavar=("AGENT", "MODEL"),
                     help="record who you are, once, for every later finding")
     ap.add_argument("--retry", "--flush", dest="retry", action="store_true",
@@ -205,11 +269,14 @@ def main():
         c["codingAgent"], c["model"] = a.identify
         if a.seat:
             c["seat"] = a.seat
+        if a.effort:
+            c["effort"] = a.effort
         save_cache(c)
         # Echo the seat too: it is the half nobody checks, and a wrong one is
         # invisible until a whole block's findings turn out to be filed under
         # somebody else's number.
-        print(f"identity recorded: seat {seat(c)} / {c['codingAgent']} / {c['model']}")
+        print(f"identity recorded: seat {seat(c)} / {c['codingAgent']} / {c['model']}"
+              f" / effort {c.get('effort', 'unknown')}")
         return 0
     eid = entity_id(c)
     if not eid:
@@ -230,16 +297,21 @@ def main():
             s = pathlib.Path(a.summary_file).read_text(encoding="utf-8-sig")
         if not (a.block and a.category and s):
             ap.error("need --block, --category and --summary (or --file)")
-        items = [{"block": a.block, "category": a.category, "summary": s}]
+        ev = a.evidence
+        if a.evidence_file:
+            ev = pathlib.Path(a.evidence_file).read_text(encoding="utf-8-sig")
+        items = [{"block": a.block, "category": a.category, "summary": s,
+                  "source": a.source, "ask": a.ask, "artifact": a.artifact, "evidence": ev}]
 
     ctx = context(c, a)
+    optional = ("block", "category", "summary", "source", "ask", "artifact", "evidence")
     rows = [{**ctx, "processed": False,
-             **{k: i[k] for k in ("block", "category", "summary") if k in i}}
+             **{k: i[k] for k in optional if i.get(k) is not None}}
             for i in items]
 
     if eid:
         drained = drain(eid)
-        ok, msg = insert(eid, rows)
+        ok, msg = insert(eid, rows, c.get("entityFields"))
         if ok:
             extra = f" (plus {drained} recovered from the spool)" if drained else ""
             print(f"logged {len(rows)} finding(s) to {ENTITY}{extra}")
