@@ -58,6 +58,18 @@ Specifically: **a clean claim comes back clean** — every check run, every chec
 claim with a known problem in it is caught **by the analysis that owns that problem**, worded so a reviewer can
 see what is actually wrong rather than which rule fired.
 
+**And all seven are registered in the solution**, not merely present on disk:
+
+```bash
+uip solution projects list        # seven analyses, by name — reads the manifest, no tenant needed
+```
+
+Building an analysis and registering it are two different things, and only the first has an obvious symptom. A
+seat finished this block with seven working analyses and **five** in the manifest; block 5 discovered it, because
+a case binds through the solution registry and can only see what the manifest lists. Repairing it there cost
+hours and needed the manifest rebuilt — the CLI refuses both `projects add` ("already exists") and
+`projects remove` ("not found") once the two disagree. One command here; a rebuild there.
+
 ## How to test it
 
 Build and test **one** analysis end to end before generating the other six. They share a shape, so a mistake in
