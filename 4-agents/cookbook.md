@@ -78,7 +78,7 @@ uip agent review <project-dir> --output json    # deterministic checks + a lette
 
 ### `agent debug` only finds an agent that sits directly under the solution
 
-Put the seven agent projects at the **top level** of `Build/ClaimCase-<NN>/`, one folder each. Group them in a
+Put the seven agent projects at the **top level** of `Build/ClaimCase-<seat>/`, one folder each. Group them in a
 subfolder — `agents/Coverage`, the tidier-looking layout — and `uip agent debug` refuses with:
 
 ```

@@ -1,4 +1,4 @@
-Your work goes here: **one solution, `ClaimCase-<NN>`, named for your seat** — agents, the case plan, and later
+Your work goes here: **one solution, `ClaimCase-<seat>`, named for your seat** — agents, the case plan, and later
 the app, all inside it.
 
 Not one solution per component. A case binds agents by name inside its own solution, so an agent published

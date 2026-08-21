@@ -19,18 +19,20 @@ it which it is. Two apps would double the work and guarantee they drift.
 **At the eligibility gateway the later sections must render as explicitly unavailable** — not as empty panels,
 not as errors. This is the single most common way this screen looks broken while working correctly.
 
-### Absent has two encodings and neither is an error
+### Absent is normal, and how it arrives depends on where you read from
 
-The case binds every downstream input at gateway 1, to an empty expression. So **no key is ever missing** — all
-of them arrive — and the value tells you:
+Two different encodings, and which one you meet is decided by the section below — read the claim from the record
+and you get the first, thread it through the task payload and you get the second.
 
-| Declared type | Arrives as |
+| Reading from | A value that does not exist yet arrives as |
 |---|---|
-| `json` | `""` |
-| `string` | `null` |
+| **the claim record** | **the key is absent from the object entirely** — not `null`, not `""` |
+| a task payload input | the key is always present; `json` reads `""`, `string` reads `null` |
 
-**"Is this section available" is a value test, never a key test.** An app that treats a missing discriminator as
-fatal reports a contract error on a task that is working exactly as designed.
+The record is the recommended source, so plan for the first: a plain truthy test on the field is the right check,
+and every "not yet available" section falls out of it without special-casing. What must **not** happen either way
+is a contract error — an app that treats an unwritten column as malformed reports a fault on a claim that is
+working exactly as designed, at the gateway where most of the claim legitimately does not exist yet.
 
 ## Where the claim comes from — the record, not the task
 
@@ -62,14 +64,30 @@ completion**, which is what lets a decided task still show what was decided.
 - Both must reach the claim record. A screen that completes the task and writes nothing to the record looks
   identical to one that works, right up until someone asks what was decided last week.
 
-### Anything the reviewer should still see afterwards must be declared `inOut`
+### A decided task must still open, and three separate things conspire against it
 
-Completing a task **drops its `inputs`**. Only `inOuts` and `outputs` survive. So a decided task re-opened shows
-whatever you put in those two places and nothing else.
+**This is the most-failed requirement in this block.** Every build so far produced a screen that worked while a
+task was waiting and showed an error, or nothing at all, once it had been decided. Three causes, and you have to
+handle all three:
 
-Size is not the constraint — the full second-gateway payload measures 37.7 KB and moves fine. The cost is that
-changing this is a **schema change**: the app has to be re-registered to refresh its contract, which clears the
-task's bindings and forces a rewire at both gateways. Decide it once, before the first deploy, not after.
+1. **Completion drops the task's `inputs`.** Only `inOuts` and `outputs` survive. So whatever identifies the
+   claim — the record id, the claim number, which gateway this was — has to be declared **`inOut`**, or a decided
+   task arrives with no idea which claim it belonged to.
+2. **Anything that writes task data *replaces* the payload rather than merging into it.** The in-app save, the
+   draft save and `uip tasks complete --data` all do this, so an `inOut` the platform would have preserved is
+   erased by your own write. Read the current payload, spread it, then write — at **every** call site. A build
+   that got rule 1 right and this one wrong looks exactly like a build that got rule 1 wrong.
+3. **A task decided before you fixed either of those stays broken for ever.** Its payload was written at
+   completion and nothing rewrites it. So do not judge a fix against an old task — decide a fresh one.
+
+Because of 3, the screen also needs a floor: **if a decided task arrives with nothing to identify it, say so in
+the reviewer's language and show the decision that did survive** — never a stack trace, never a blank page. That
+is not defensive parsing; it is a real state the platform can hand you.
+
+Getting the schema right early matters more here than elsewhere, because changing `inputs` to `inOuts` is a
+**schema change**: the app has to be re-registered to refresh its contract, which clears the task's bindings and
+forces a rewire at both gateways. Size is not the constraint — the full second-gateway payload measures 37.7 KB
+and moves fine. Decide it before the first deploy, not after.
 
 ## Reading it, in the reviewer's language
 
@@ -90,11 +108,83 @@ Two more that follow from the same principle:
 - **Guard every field against overflow.** Reviewer notes and analysis summaries are free text of unpredictable
   length.
 
+## The shape of the screen
+
+A reviewer opens this to make one decision, and the screen's job is to get them there. **Everything that decision
+turns on is visible without scrolling; everything else is one click away.**
+
+That is not a plea for brevity — a claim carries a lot of data and a reviewer sometimes needs all of it, so
+scrolling for detail is entirely fine. What is not fine is a screen where the reviewer has to scroll before they
+learn anything: who claimed, for how much, what the machine recommends, and what it thinks is wrong.
+
+```
+┌─ header ─────────────────────────────────────────────────────────────────────┐
+│ CLM-4675074 · J. Okafor · water damage · £48,200 · policy PL-99213            │
+│ Eligibility review for Jane          recommends: review required   [Documents]│
+├─ decision ───────────────────────────────────────────────────────────────────┤
+│ [ Approve ]  [ Deny ]      why: ▏                                            │
+├─ at a glance ────────────────────────────────────────────────────────────────┤
+│ ┌ Claim ───────┐ ┌ Policy ──────┐ ┌ Assessment ──┐ ┌ Settlement ──┐          │
+│ │ 3 to look at │ │ in force     │ │ not yet      │ │ £41,880 net  │          │
+│ └──────────────┘ └──────────────┘ └──────────────┘ └──────────────┘          │
+├─ the analyses ───────────────────────────────────────────────────────────────┤
+│  Eligibility │ Coverage │ Payout │ Credibility │ Decision                     │
+│  ▾ The policy lapsed 11 days before the incident date            not passed   │
+│  ▸ 12 other checks passed                                                     │
+└──────────────────────────────────────────────────────────────────────────────┘
+                              ▲ fold — a 1440×900 window ends about here
+```
+
+The regions are the contract; the styling is yours. What each one has to hold:
+
+| Region | Must carry | Must not |
+|---|---|---|
+| **header** | the claim in one line, who is reviewing it and at which gateway, the recommendation | be a logo bar |
+| **decision** | both outcomes and the reason field, always reachable | sit at the bottom of the page |
+| **at a glance** | one card per area, each stating its conclusion in a phrase | be four empty boxes at gateway 1 — say *"after the inspection"* |
+| **the analyses** | every check, failures open, passes collapsed to a count that expands | be a JSON dump, or a wall of green ticks |
+| **documents** | a button per document, opening over the page | render a PDF inline in the flow |
+
+Two habits that wreck this, both seen on real builds:
+
+- **A single column down the page.** Cards belong side by side and tabs belong across; a claim's four summaries
+  stacked vertically push the analyses off the screen and the decision off the bottom. Use the width.
+- **Inline PDFs.** A document viewer in the page flow is several screens tall and it is there on every claim,
+  whether or not anyone opens it.
+
+### It also has to look good, and that is a requirement
+
+Unusual to write in a spec, and it is here on purpose: **this screen is nearly all of what anyone will ever see
+of the solution.** Everything else is a job log. A reviewer who finds it ugly or cramped will not trust what it
+tells them, and neither will the person you demonstrate it to.
+
+So spend the effort: consistent spacing, a real type scale, restrained colour that means something (a failed
+check is not the same red as a delete button), aligned numbers, states that are obviously states. If it looks
+like a form generated from a schema, it is not finished — that is the same failure as rendering `recommend_review`
+one level up.
+
+## The claim view gets used twice — design it as a component
+
+Beyond this block there is an **operations app**: a portfolio view of every claim, where opening one shows the
+same claim — same summary, same checks, same documents — read-only, with no decision to make.
+
+That is the same view, minus the controls. So build it as a claim view that **takes a claim and a mode**, and let
+this block's screen be that view plus a decision panel. The two apps do not share a codebase and their data
+arrives by different routes, so this is not a runtime dependency — it is one design decision, made now, that
+stops the same screen being written twice and drifting.
+
+The practical consequence for this block: keep the fetch at the edge and the rendering pure. A claim view that
+calls the SDK from inside its panels cannot be reused by anything that gets its claim another way.
+
 ## The three documents
 
 The claim form, the policy and the surveyor's report are reachable two different ways, and they fail differently
-— `cookbook.md` compares them and recommends one. Two things are design decisions rather than mechanics:
+— `cookbook.md` compares them and recommends one. Three things are design decisions rather than mechanics:
 
+- **A document opens on demand, in an overlay — never rendered inline in the page.** A PDF embedded in the flow
+  of the screen pushes everything a reviewer actually decides on below the fold, and it does it on every claim
+  whether or not anyone wanted to read the document. A button per document, opening over the page, closing back
+  to where they were.
 - **A document that should not exist yet is not an error.** At the eligibility gateway no surveyor has been out.
   The screen says the report is not available, and does not offer a button that fails.
 - **When a document will not load, say what was looked for.** *"The policy document could not be retrieved"* is
@@ -112,7 +202,18 @@ The same instinct one level down: **never defensively re-parse or unwrap a paylo
 shape.** If it is wrong, the contract upstream is wrong — fix it there and say so. Defensive parsing in the UI
 converts a loud, findable bug into a quiet, permanent one.
 
+## The task has to be findable in a shared queue
+
+Action Center is one list, and on this tenant it holds everybody's tasks. A queue of twenty rows all reading
+*"Eligibility review"* is unusable, and it is what every build has produced so far.
+
+**Give each task a title that names both the gateway and the seat** — *"Eligibility review for Jane"*,
+*"Claim review for Jane"*. The title is set where the task is raised, in the case plan, not in the app. Put the
+claim number in it too if it fits; the seat is what makes the row yours, the claim number is what makes it the
+right one.
+
 ## Out of scope
 
 **The operations dashboard** — the portfolio view of every claim, with filters and KPIs — is a real part of the
-solution and is not this block. This block is the two gateways only.
+solution and is not this block, though *The claim view gets used twice* above is the decision that makes it cheap
+when it comes. This block is the two gateways only.

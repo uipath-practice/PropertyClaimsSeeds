@@ -44,7 +44,7 @@ The record is written by the case, and the case reaches it through a connection 
 shared across the team**. Confirm you can see it and that it answers, and note what it is called — block 5 binds
 to it. Do not create your own: authorising a connection needs a human at a browser, and one each buys nothing.
 
-**Where it goes.** Generated code into `Build/ClaimCase-<NN>/` — one solution for the whole build. Notes and
+**Where it goes.** Generated code into `Build/ClaimCase-<seat>/` — one solution for the whole build. Notes and
 documents you write for this block go in this block's folder.
 
 **Log as you go.** `python3 log-finding.py --block <this-block> --category <kind> --summary "..."` — every

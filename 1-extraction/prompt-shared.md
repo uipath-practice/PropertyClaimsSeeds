@@ -25,7 +25,7 @@ is identical either way.
 You have run a real claim form through it and seen every field the later steps need come back correctly, with
 the right number of damage rows.
 
-**Where it goes.** Generated code into `Build/ClaimCase-<NN>/` — one solution for the whole build. Notes and
+**Where it goes.** Generated code into `Build/ClaimCase-<seat>/` — one solution for the whole build. Notes and
 documents you write for this block go in this block's folder.
 
 **Log as you go.** `python3 log-finding.py --block <this-block> --category <kind> --summary "..."` — every

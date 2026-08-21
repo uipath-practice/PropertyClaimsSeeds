@@ -49,7 +49,7 @@ Use `1-extraction/prompt-shared.md` and move on. **A supported route, not a pena
 everything downstream, so a half-trained model is worse than a borrowed one, and every block after this one is
 identical either way. The interesting part of this exercise is not here.
 
-**Where it goes.** Generated code into `Build/ClaimCase-<NN>/` — one solution for the whole build. Notes and
+**Where it goes.** Generated code into `Build/ClaimCase-<seat>/` — one solution for the whole build. Notes and
 documents you write for this block go in this block's folder.
 
 **Log as you go.** `python3 log-finding.py --block <this-block> --category <kind> --summary "..."` — every

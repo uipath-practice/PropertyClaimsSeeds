@@ -20,7 +20,7 @@ Six steps, and the last one has no CLI equivalent:
 6. **Bind it to your folder in the IXP interface.** No CLI equivalent exists, and until you do it the model is
    not callable from an automation — which surfaces two blocks later as an extraction that returns nothing.
 
-**Title the project `ClaimCase-<NN>`**, the same string as everything else you create (`CONFIG.md`, *One name,
+**Title the project `ClaimCase-<seat>`**, the same string as everything else you create (`CONFIG.md`, *One name,
 everywhere*).
 
 **Field types come from the imported taxonomy and are deliberate.** Most are `Exact Text`; do not "improve" them.

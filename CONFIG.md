@@ -9,43 +9,60 @@ The values this build anchors on. Everything else you name yourself.
 | Environment | `https://cloud.uipath.com` |
 | Organization | `tpenlabs` |
 | Tenant | `CodingAgentsPractice` |
-| Your folder | `ClaimCase-<NN>` — the Orchestrator folder assigned to you |
+| Your folder | `ClaimCase-<seat>` — the Orchestrator folder assigned to you |
 
 ```bash
 uip login status --output json     # confirm before anything else
 ```
 
 **You share this tenant**, and not only with this workshop — other exercises publish here too. Prefix everything
-you create — solution, processes, agents, entity, app — with your seat number so twenty builds can coexist. A
+you create — solution, processes, agents, entity, app — with your seat name so twenty builds can coexist. A
 name without it is a collision waiting for the second participant to reach the same step.
 
-**Your seat number is the `NN` in your Orchestrator folder**, and nothing in this folder states it — confirm it
-rather than assume:
+**Your seat token is whatever follows `ClaimCase-` on your Orchestrator folder** — a number on some seats, a
+name on others (`ClaimCase-04`, `ClaimCase-John`). Nothing in this folder states it, so confirm it rather than
+assume:
 
 ```bash
 uip or folders list --output json --output-filter "[?starts_with(Name,'ClaimCase')].Name"
 ```
 
+If more than one comes back, the tenant is shared and you are seeing other people's — yours is the one whose
+name you were given.
+
 ### One name, everywhere
 
-**Your seat's name is `ClaimCase-<NN>`, and it is the same string in every surface.** Not a family of similar
+**Your seat's name is `ClaimCase-<seat>`, and it is the same string in every surface.** Not a family of similar
 names — the same one. It is what makes a folder, a package, a job and a log line attributable to you at a glance,
 and it is what lets a teardown script find everything you made.
 
+Written below with the seat token `Jane`; substitute your own.
+
 | Surface | Name |
 |---|---|
-| Orchestrator folder | `ClaimCase-07` |
-| Local build folder | `Build/ClaimCase-07/` |
-| Solution, and every package it publishes | `ClaimCase-07` |
-| **Deployment** (`deploy run --name`) | `ClaimCase-07` — **exactly one, for the whole exercise** |
-| Solution folder you deploy into (`--folder-name`) | `ClaimCase-07-Deploy`, under your seat folder |
-| IXP project, if you build your own | title it `ClaimCase-07` |
-| **Data Fabric entity** | **`ClaimCase_07`** — the one exception |
+| Orchestrator folder | `ClaimCase-Jane` |
+| Local build folder | `Build/ClaimCase-Jane/` |
+| Solution, and every package it publishes | `ClaimCase-Jane` |
+| **Deployment** (`deploy run --name`) | `ClaimCase-Jane` — **exactly one, for the whole exercise** |
+| Solution folder you deploy into (`--folder-name`) | `ClaimCase-Jane-Deploy`, under your seat folder |
+| IXP project, if you build your own | title it `ClaimCase-Jane` |
+| **Data Fabric entity** | **`ClaimCase_Jane`** — underscore, not hyphen |
+| **Coded app** | **`claim-review-jane`** — lower case, not hyphen-free |
+| Action task titles | `Eligibility review for Jane` · `Claim review for Jane` |
 
-**The entity name is the strict one.** Data Fabric takes letters, digits and underscores only, and the name must
-start with a letter, so the hyphen that works everywhere else is rejected — at create time, with a message about
-the name rather than about the seat. Underscore there, hyphen everywhere else, and nowhere at all is it
-`ClaimCase07`.
+**Two surfaces re-spell the token and both fail at create time, on a message about the name rather than about
+the seat.**
+
+- **The entity takes letters, digits and underscores only** and must start with a letter, so the hyphen that
+  works everywhere else is rejected. Underscore there, hyphen everywhere else, and nowhere at all is it
+  `ClaimCaseJane`.
+- **A coded app name is lower case.** `claim-review-jane`, not `claim-review-Jane`.
+
+Everything else is the token exactly as it appears on your folder.
+
+**The task titles are not cosmetic.** Action Center is one queue for the whole tenant, so twenty rows all reading
+*"Eligibility review"* cannot be told apart — and a reviewer opening the wrong seat's claim is a confusing five
+minutes for two people. The title is set in the case plan, where the task is raised.
 
 ### One deployment, reused — never a name per attempt
 
@@ -53,9 +70,9 @@ the name rather than about the seat. Underscore there, hyphen everywhere else, a
 under the same name:
 
 ```bash
-uip solution deploy uninstall ClaimCase-07 --output json
-uip solution deploy run --name ClaimCase-07 --folder-name ClaimCase-07-Deploy \
-  --parent-folder-path ClaimCase-07 --package-name ClaimCase-07 --package-version <v>
+uip solution deploy uninstall ClaimCase-Jane --output json
+uip solution deploy run --name ClaimCase-Jane --folder-name ClaimCase-Jane-Deploy \
+  --parent-folder-path ClaimCase-Jane --package-name ClaimCase-Jane --package-version <v>
 ```
 
 The tempting alternative — `-v103`, `-v104`, `-Run`, `-CaseRun2`, `-Block5` — is how one tenant reached **33
@@ -63,7 +80,7 @@ deployments for four seats**, each with its own folder and its own copy of every
 nobody could say which one was running, and a `list` gives no clue: an uninstalled deployment stays in the
 tenant's Solutions view forever.
 
-The rule earns its keep at teardown. Because the name is derivable from the seat number and nothing else,
+The rule earns its keep at teardown. Because the name is derivable from the seat token and nothing else,
 removing your work is one command that **cannot reach another seat's**. A name with an attempt suffix in it can
 only be cleaned up by reading the list and guessing.
 
@@ -72,7 +89,7 @@ only be cleaned up by reading the list and guessing.
 Two facts that decide how block 3 and block 5 are written. Neither is guessable and both fail late.
 
 **Your claim entity lives in your seat folder, not at tenant level.** Create it with `--folder-key`, the key of
-`ClaimCase-<NN>`. A tenant-level create is refused outright — `You don't have permission to access the entity,
+`ClaimCase-<seat>`. A tenant-level create is refused outright — `You don't have permission to access the entity,
 field or record` — which reads like a broken login and is really a scope you were never granted. Folder scope is
 also what gives you a space of your own: nobody else's build can see or touch your rows.
 
@@ -86,19 +103,72 @@ uip is connections list uipath-uipath-dataservice --refresh --all-folders --outp
 The cost of folder scope lands in one place — the case's Data Fabric writes need the V3 activities rather than
 the V2 ones the tooling reaches for by default. `5-case/cookbook.md` has the exact shape; it is six lines, and
 it is the difference between a case that writes rows and one that faults with
-`Entity 'ClaimCase_<NN>' not found at tenant level`.
+`Entity 'ClaimCase_<seat>' not found at tenant level`.
+
+## The reviewer's app signs in through a shared registration — do not create one
+
+The screen you build in block 6 reads Data Fabric and Orchestrator on behalf of whoever is looking at it, and
+that needs an OAuth client. **One already exists, it is shared by every seat, and you do not have permission to
+make another.**
+
+| | |
+|---|---|
+| Name | `Claim Case External App` |
+| **Client id** | **`24daf1c0-48be-4710-8d81-5467adfe7f15`** |
+| Kind | Non-confidential — a public client, no secret, and none to put in your code |
+| Scopes | `DataService.Schema.Read` `DataService.Data.Read` `OR.Folders.Read` `OR.Buckets.Read` `OR.Jobs.Read` |
+
+Put the client id and the scopes in your app's `uipath.json`, and pass the id again when you deploy:
+
+```json
+{
+  "clientId": "24daf1c0-48be-4710-8d81-5467adfe7f15",
+  "scope": "DataService.Schema.Read DataService.Data.Read OR.Folders.Read OR.Buckets.Read OR.Jobs.Read"
+}
+```
+
+```bash
+uip codedapp deploy -n claim-review-<seat> --client-id 24daf1c0-48be-4710-8d81-5467adfe7f15   --folder-key <your-seat-folder-key>
+```
+
+Three things about it are worth knowing before you meet them as errors:
+
+- **`uip admin external-apps create` will refuse you**, with `403`. That is not a broken login and not something
+  to work around — managing OAuth clients is a tenant-wide administrative right and this exercise does not grant
+  it. Use the id above.
+- **The scopes are user scopes, not application scopes.** The token the app gets is bound to the person looking
+  at the screen and can do nothing they could not do themselves. That is why one registration can be shared by
+  twenty people safely.
+- **They are read scopes only, deliberately.** The screen reads the claim record; the *case* writes it. If your
+  design has the app writing to Data Fabric directly, that is the thing to change — the decision belongs on the
+  record because a case task put it there, which is what makes it auditable.
+
+`deploy` registers your app's own redirect URL against this registration for you. You never edit the
+registration, and `uip admin external-apps update` would **replace** its redirect list rather than add to it —
+which on a shared client means breaking everyone else's app.
+
+## The reviewer's app is deployed to your seat folder, not your solution folder
+
+`ClaimCase-<seat>`, the folder that holds your buckets and processes — **not** `ClaimCase-<seat>-Deploy`, the
+one your solution deploys into.
+
+A coded app is not part of the `.uipx` and does not travel with the solution, so nothing puts it there for you.
+Publishing the same app name in two folder contexts made the platform register **two app identities** with the
+same name on one seat; the tasks already raised stayed pinned to the first, every subsequent deploy upgraded the
+second, and the app in Action Center stopped matching the app being fixed. It cost that seat an afternoon and it
+is invisible until you compare an existing task's `AppId` against your own `.uipath/app.config.json`.
 
 ## One solution, one name, one place on disk
 
 ```
-Build/ClaimCase-<NN>/             everything you generate — agents, the case, later the app
+Build/ClaimCase-<seat>/             everything you generate — agents, the case, later the app
 ```
 
 Not one solution per component. A case binds agents **by name inside its own solution**, so agents published in
 a different solution are not reachable from the case that needs them — and every extra solution is another
 package to version, deploy and uninstall in step. One solution, one deploy, one uninstall.
 
-The names *inside* it are yours, with one rule: **anything visible at tenant level carries your seat number.**
+The names *inside* it are yours, with one rule: **anything visible at tenant level carries your seat name.**
 `AGENTS.md` says where notes and documents go.
 
 ## What already exists — do not build these
@@ -120,12 +190,12 @@ about to build a bucket download, an IXP invocation or a PDF-to-text step, stop:
 No email connection is provisioned. `Client Notification` logs the letter rather than sending it, on purpose.
 
 **Deploy into your seat folder, never the tenant root.** `solution deploy run` creates a folder, and without
-`--parent-folder-path ClaimCase-<NN>` it creates it at the root — beside everyone else's, and outside the seat
+`--parent-folder-path ClaimCase-<seat>` it creates it at the root — beside everyone else's, and outside the seat
 that holds your processes and buckets.
 
 **And a solution folder is not the same folder.** The sub-folder it creates does **not** inherit its parent's
 buckets or processes. Anything in your case plan that calls one of the above needs
-its folder named explicitly — `ClaimCase-<NN>`, your seat folder — or it resolves to an empty folder and fails at
+its folder named explicitly — `ClaimCase-<seat>`, your seat folder — or it resolves to an empty folder and fails at
 run time. `uip or processes list --folder-key <key>` settles it in one call, and a count of zero is the whole
 diagnosis.
 

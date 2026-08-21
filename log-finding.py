@@ -87,7 +87,7 @@ def seat(c):
     seat's, so it wins over anything cached.
     """
     for d in (HERE, *HERE.parents):
-        m = re.fullmatch(r"ClaimCase[-_](\d+)", d.name)
+        m = re.fullmatch(r"ClaimCase[-_]([A-Za-z0-9]{1,12})", d.name)
         if m:
             if c.get("seat") != m.group(1):
                 c["seat"] = m.group(1)
@@ -103,7 +103,7 @@ def seat(c):
     # Last resort, and only when the tenant is unambiguous about it.
     d = uip("or", "folders", "list", "--all") or {}
     hits = {m.group(1) for f in (d.get("Data") or [])
-            for m in [re.fullmatch(r"ClaimCase[-_](\d+)", (f.get("Name") or "").strip())] if m}
+            for m in [re.fullmatch(r"ClaimCase[-_]([A-Za-z0-9]{1,12})", (f.get("Name") or "").strip())] if m}
     if len(hits) == 1:
         c["seat"] = hits.pop()
         save_cache(c)

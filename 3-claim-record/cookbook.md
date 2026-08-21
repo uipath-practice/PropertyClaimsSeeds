@@ -36,8 +36,8 @@ Data Fabric entities can live at tenant level or in an Orchestrator folder. **Yo
 which means one extra flag and one changed failure mode:
 
 ```bash
-FK=$(uip or folders list --all --name ClaimCase-<NN> --output json --output-filter "[0].Key")
-uip df entities create ClaimCase_<NN> --file <schema>.json --folder-key $FK --output json
+FK=$(uip or folders list --all --name ClaimCase-<seat> --output json --output-filter "[0].Key")
+uip df entities create ClaimCase_<seat> --file <schema>.json --folder-key $FK --output json
 uip df entities list --native-only --folder-key $FK --output json      # confirm
 ```
 
@@ -57,7 +57,7 @@ empty list. An empty list here means *wrong scope*, not *missing entity*.
 **The one consequence to carry forward:** in block 5 the case writes to this entity through the Data Fabric
 connector, and the connector's default activities resolve entity names **at tenant level only**. They will not
 find yours. `5-case/cookbook.md` has the six-line fix; know now that it exists, so the runtime error
-`Entity 'ClaimCase_<NN>' not found at tenant level` reads as expected rather than as a broken entity.
+`Entity 'ClaimCase_<seat>' not found at tenant level` reads as expected rather than as a broken entity.
 
 ## The Data Fabric connection is shared — find it, do not create it
 
@@ -103,7 +103,7 @@ survive. `--yes` is only needed for `removeFields`.
 
 ## Naming: the entity is the one place the hyphen is illegal
 
-Everything else you create is `ClaimCase-<NN>` — folder, solution, packages, build directory (`CONFIG.md`,
+Everything else you create is `ClaimCase-<seat>` — folder, solution, packages, build directory (`CONFIG.md`,
 *One name, everywhere*). Entity names take **letters, digits and underscores only, and must start with a
 letter**, so this one is `ClaimCase_07`. Not `ClaimCase-07`, which is rejected, and not `ClaimCase07`, which is
 accepted and then reads as somebody else's convention for the rest of the build.

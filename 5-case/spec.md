@@ -217,7 +217,7 @@ Name the parent explicitly, every time:
 
 ```bash
 uip solution deploy run --package-name <pkg> --package-version <v> \
-  --folder-name <solution-folder> --parent-folder-path ClaimCase-<NN>
+  --folder-name <solution-folder> --parent-folder-path ClaimCase-<seat>
 ```
 
 This is the same fact as *a solution folder is not the same folder*, seen from the other side: the deployment

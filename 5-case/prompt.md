@@ -73,7 +73,7 @@ not do its job, whatever the status says.
 **If the clean claim gets stopped for review, the journey is not what is wrong.** It parked exactly where it was
 told to, because one of your analyses found fault with a claim that has none. That is a block 4 fix.
 
-**Where it goes.** Generated code into `Build/ClaimCase-<NN>/` — one solution for the whole build, holding the
+**Where it goes.** Generated code into `Build/ClaimCase-<seat>/` — one solution for the whole build, holding the
 journey and all seven analyses. Notes and documents you write for this block go in this block's folder.
 
 **Log as you go.** `python3 log-finding.py --block 5-case --category <kind> --summary "..."` — every retry,

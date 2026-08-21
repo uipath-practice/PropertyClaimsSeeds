@@ -64,7 +64,7 @@ because here it is the answer key rather than a shortcut.
 
 Then, once the nine behave, send in twenty unaimed claims and see what a normal week looks like.
 
-**Where it goes.** The results table in this block's folder. Generated code, as ever, in `Build/ClaimCase-<NN>/`.
+**Where it goes.** The results table in this block's folder. Generated code, as ever, in `Build/ClaimCase-<seat>/`.
 
 **Log as you go.** `python3 log-finding.py --block 7-testing --category <kind> --summary "..."` — every retry,
 every surprise, everything these instructions failed to explain, and anything that took longer than it should

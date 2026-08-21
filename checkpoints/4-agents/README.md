@@ -1,6 +1,6 @@
 # Checkpoint — the seven analyses
 
-Seven working agent projects. Copy them into `Build/ClaimCase-<NN>/`, **one folder each at the top level**, and
+Seven working agent projects. Copy them into `Build/ClaimCase-<seat>/`, **one folder each at the top level**, and
 register them with `uip solution projects add`. Do not nest them under an `agents/` folder: `uip agent debug`
 only searches one level up and will tell you the solution does not exist (`4-agents/cookbook.md`).
 

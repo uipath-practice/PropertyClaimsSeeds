@@ -16,7 +16,7 @@ nothing anywhere says so.
 Pass the GUID. `--folder-path` is the flag that takes a name:
 
 ```bash
-FK=$(uip or folders list --all --name ClaimCase-<NN> --output json --output-filter "[0].Key")
+FK=$(uip or folders list --all --name ClaimCase-<seat> --output json --output-filter "[0].Key")
 uip or processes list --folder-key "$FK" --output json
 ```
 

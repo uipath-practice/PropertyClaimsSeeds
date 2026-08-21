@@ -70,7 +70,7 @@ commands, including which of the seven can be exercised on their own and which c
 pipeline is — it cannot tell that an analysis is missing an input it needs, or that two components spell the same
 payload differently. Read what you built.
 
-**Where it goes.** Generated code into `Build/ClaimCase-<NN>/` — one solution for the whole build. Nothing is
+**Where it goes.** Generated code into `Build/ClaimCase-<seat>/` — one solution for the whole build. Nothing is
 published in this block: these ship inside the solution the case deploys in block 5. Notes and documents you
 write for this block go in this block's folder.
 

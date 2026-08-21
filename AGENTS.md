@@ -90,11 +90,11 @@ Three places, and nothing anywhere else:
 
 | What you produce | Where it goes |
 |---|---|
-| **All generated code** — agents, the case, the app | `Build/ClaimCase-<NN>/` — **one solution**, named for your seat |
+| **All generated code** — agents, the case, the app | `Build/ClaimCase-<seat>/` — **one solution**, named for your seat |
 | **Notes and documents you write for a block** — a design, a decision about structure, an SDD | that block's folder, e.g. `2-design/sdd.md`, `5-case/notes.md` |
 | **Findings** | the shared table, via `log-finding.py` — never a local file |
 
-**One solution, and its name is fixed.** `Build/ClaimCase-<NN>/` holds everything: a case binds agents by name
+**One solution, and its name is fixed.** `Build/ClaimCase-<seat>/` holds everything: a case binds agents by name
 *inside its own solution*, so agents published in a solution of their own are unreachable from the case that
 needs them. Do not create a second solution for a component, and do not invent a name — every extra solution is
 another package to version, deploy and uninstall in step, and a name nobody chose is a name nobody can find.
@@ -130,13 +130,13 @@ reveals, and a build that stops at the deploy gate has proven nothing. **Work to
 Three things are still worth a pause, and they are all outside your seat: touching another seat's folder or
 solution, changing anything at tenant level, and deleting a shared resource — the IXP project, the shared Data
 Fabric connection, the deployed automations. If something you are about to run names a resource without your
-seat number in it, stop and ask.
+seat name in it, stop and ask.
 
 **Names come from the contracts. Do not invent them, and do not improve them.** Agent outputs, case variables
 and entity columns are one name in three casings, by design (`contracts/claim-entity.md`). A better name breaks
 the mapping three blocks later, at run time, silently.
 
-**Everything you create is called `ClaimCase-<NN>`** — folder, solution, packages, build directory, IXP project
+**Everything you create is called `ClaimCase-<seat>`** — folder, solution, packages, build directory, IXP project
 — because the tenant is shared and one name is what makes your work findable and removable. `CONFIG.md`,
 *One name, everywhere*, has the table and the single exception the platform forces.
 

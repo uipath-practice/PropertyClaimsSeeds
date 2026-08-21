@@ -1,9 +1,9 @@
 # Checkpoint — the claim record
 
-Restores block 3's output: the `ClaimCase_<NN>` entity, all 38 columns, correct types and length limits.
+Restores block 3's output: the `ClaimCase_<seat>` entity, all 38 columns, correct types and length limits.
 
 ```bash
-uip df entities create ClaimCase_<NN> --file entity.json --output json
+uip df entities create ClaimCase_<seat> --file entity.json --output json
 ```
 
 Verify it took:

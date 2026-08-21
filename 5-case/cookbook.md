@@ -27,7 +27,7 @@ uip maestro case validate <caseplan.json> --skeleton --output json     # Valid
 - Read the deployed automations' exact arguments from the platform, not from memory:
   `uip or packages entry-points "<PackageId>:<Version>"`.
 - **A published RPA automation is task type `rpa`**, not `process` (*An Orchestrator automation is `rpa`*, below).
-- **One solution, `ClaimCase-<NN>`**, holding the case and all seven agents — a case cannot bind an agent living
+- **One solution, `ClaimCase-<seat>`**, holding the case and all seven agents — a case cannot bind an agent living
   in another solution.
 - Parallel work is *grouped*, not sequenced.
 - Every stage writes what it produced to the claim record and nothing it did not, through the shared connection,
@@ -52,7 +52,7 @@ trick if you are on Windows.
 A claim sitting in `Running (With Faults)`, or a stage whose tasks are all green while the next stage never
 started, is a failure however the status reads.
 
-**Then make it reviewable.** `uip solution upload Build/ClaimCase-<NN>` puts the plan on the Studio Web canvas,
+**Then make it reviewable.** `uip solution upload Build/ClaimCase-<seat>` puts the plan on the Studio Web canvas,
 which is far easier to read; deploying alone does not. Read *Build locally; open Studio Web to review* first —
 the sync runs one way only.
 
@@ -200,7 +200,7 @@ uip maestro case registry search "<process name>" --type process --output json
 Without the pull you get a partial index — four of six processes, with no indication that two are simply
 missing. And **filter the results by folder**: the tenant is shared, other seats have processes with the same
 names, and the wrong pick binds cleanly and fails at run time. Check
-`Folders[0].FullyQualifiedName == "ClaimCase-<NN>"`.
+`Folders[0].FullyQualifiedName == "ClaimCase-<seat>"`.
 
 `uip maestro case tasks describe --type process` does **not** work for classic Orchestrator processes despite
 `--help` accepting `process` — it looks in the wrong index and reports no entry found. You do not need it:
@@ -221,8 +221,8 @@ JSON, and the designer is where you show someone what you built. But deploying d
 there — **`uip solution upload <solution-dir>` does**, and it is a deliberate step:
 
 ```bash
-uip solution upload Build/ClaimCase-<NN>            # first time: imported as new
-uip solution upload Build/ClaimCase-<NN> --force    # afterwards: replaces it, wiping its version history
+uip solution upload Build/ClaimCase-<seat>            # first time: imported as new
+uip solution upload Build/ClaimCase-<seat> --force    # afterwards: replaces it, wiping its version history
 ```
 
 Three things to know before you click:
@@ -334,7 +334,7 @@ activities resolve entity names at tenant level only.** Generate the write tasks
 the case deploys cleanly, then faults on the first row with:
 
 ```
-[102003] Integration Services bad request — Entity 'ClaimCase_<NN>' not found at tenant level
+[102003] Integration Services bad request — Entity 'ClaimCase_<seat>' not found at tenant level
 ```
 
 The fix is the V3 form of the same two activities. **Do not hand-author these — generate them:**

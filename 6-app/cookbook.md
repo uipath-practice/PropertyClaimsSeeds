@@ -27,47 +27,62 @@ The two that reliably cost an afternoon are 2 and 5, and both are invisible from
 
 | | |
 |---|---|
-| App name | `claim-review-<NN>` — the tenant is shared and app names collide |
-| Source | `Build/ClaimCase-<NN>/claim-review/` |
+| App name | `claim-review-<seat>`, **lower case** — the tenant is shared and app names collide |
+| Source | `Build/ClaimCase-<seat>/claim-review/` |
+| Deploy into | **`ClaimCase-<seat>`, your seat folder** — never `ClaimCase-<seat>-Deploy` |
 | Deployment | its own; a coded app is **not** part of the `.uipx` solution and deploys separately |
+
+**The folder is the one that bites.** Publishing the same app name while two folders could plausibly hold it —
+your seat folder and the solution folder your case deployed into — got one seat **two app identities under one
+name**. Tasks already raised stayed pinned to the first; every later deploy upgraded the second; the app being
+fixed and the app being opened were different apps, and nothing said so. The tell is
+`.uipath/app.config.json`'s `systemName` no longer matching the `AppId` on an existing task:
+
+```bash
+uip tasks get <task-id> --output json     # AppTasksMetadata.AppId
+cat .uipath/app.config.json               # systemName — these two must agree
+```
+
+If they have diverged, deploying again will not converge them. Stop and check before you publish a second time.
 
 The app is registered against the case's two gateway tasks, so the case plan gains a task at each gateway that
 binds to it. That is a case-plan edit — expect to go back to block 5's edit loop once, and read
 `5-case/cookbook.md`'s recompile step before you do, because the compiled plan is what runs.
 
-## An app that reads a new service needs its scope, and the error names neither
+## The OAuth client already exists — do not create one, and do not edit it
 
-Adding one SDK service to a working app can break the whole app, because each service needs its own OAuth scope
-and the refusal names neither the service nor the scope:
+The client id and the scopes are in `CONFIG.md`. Copy them into `uipath.json`, pass the id to `deploy`, and move
+on. Three separate builds each lost most of an hour here and none of it was necessary.
+
+```bash
+uip codedapp deploy -n claim-review-<seat> --client-id <the-id-from-CONFIG> --folder-key <seat-folder-key>
+```
+
+What you will otherwise walk into:
+
+- **`uip admin external-apps create` returns `403`.** Managing OAuth clients is a tenant-wide right this exercise
+  does not grant. This is the expected answer, not a login problem — and the skill's own troubleshooting will
+  encourage you to fix the registration yourself, which you cannot and must not.
+- **`uip admin external-apps list` may also `403`.** So you cannot confirm the grant by reading it. `CONFIG.md`
+  is the source of truth; treat it as read.
+- **The scope names in the skill's docs are wrong for this tenant.** `oauth-scopes.md` says
+  `DataFabric.Schema.Read` / `DataFabric.Data.Read`; there is no `DataFabric.*` scope here at all. The resource is
+  `DataServiceOpenApi` and the scopes are `DataService.*`. `uip admin scopes list` settles it.
+- **`deploy` registers your redirect URL on the shared client for you.** Never run
+  `uip admin external-apps update` — it **replaces** the redirect list rather than appending, so on a shared
+  client it breaks everybody else's app in one command.
+
+**If a call still fails on authorisation, the fault is in `uipath.json`, not in the registration.** The scope
+list travels *inside the app package*, so it is frozen at the version being served — a config you fixed locally
+and did not republish is not the config running. The message gives you nothing to go on:
 
 ```
 You are not authorized!
 ```
 
-That is the entire message, and it kills **every** service, not only the new one — asking for a scope the app
-does not hold fails the token fetch outright. So an app that worked, plus one Data Fabric call, equals an app
-that shows nothing at all.
-
-**Two separate things have to agree**, and this is where the afternoon goes:
-
-| | Where it lives | What it means |
-|---|---|---|
-| The **grant** | the External Application registration in Automation Cloud | what the app is *allowed* to ask for |
-| The **request** | `uipath.json`, which ships **inside** the app package | what it *does* ask for |
-
-Editing the registration alone changes nothing, because the deployed app still requests the old list — the config
-travels in the package, so the scopes are frozen at the version being served. Symptom: you fix the registration,
-reload, and get the identical error, repeatedly.
-
-The fix is both halves: grant it on the registration, **and** publish a new app version carrying the updated
-`uipath.json`.
-
-```bash
-uip admin external-apps get <client-id> --output json    # what is actually granted
-```
-
-The two drift quietly — one build had a scope granted that `uipath.json` did not list, so neither file was
-evidence for the other. Check both.
+That is the whole error, and it kills **every** service rather than the one that is short a scope, so an app that
+worked plus one new Data Fabric call is an app that shows nothing at all. Republish; do not go looking at the
+registration.
 
 ## Reading the task, and the session you are already in
 
@@ -125,7 +140,49 @@ uip or bucket-files list <bucket-key> --folder-key <folder>      # the paths act
 The second answers "is the app wrong, or is the file simply not there" — worth settling before reading any app
 code. Paths resolve with or without a leading slash.
 
+## Wiring the app into the case plan
+
+Two mechanical traps, each of which faulted a live run on a plan that packed and validated cleanly.
+
+**The task's app reference is a binding, not a literal.** `uip maestro case tasks add --type action` writes
+`data.name` and `data.folderPath` as plain strings, and that is wrong — like every other non-connector task, an
+action task resolves them through `=bindings.<id>` into the plan's root `bindings[]`:
+
+```json
+{ "id": "bClmRvName", "resource": "app", "resourceKey": "<folderPath>.<appName>" }
+```
+
+Literals pack, validate and deploy, then fault at run time with `[170015] No app:  found in folder: ` — both
+values empty, because nothing resolved them.
+
+**Recompile before you pack.** The compiled `caseplan.json.bpmn` is what runs, and `uip solution pack` only
+copies it. A stale one deploys happily with your new gateway tasks simply absent. `uip maestro case pack` first,
+then `uip solution pack` — `5-case/cookbook.md` has the full loop.
+
+**Finding the app's id, when the registry will not tell you.** `uip maestro case tasks describe --type action`
+wants the *action-app* id, which is not the `systemName` in `.uipath/app.config.json`. `registry pull --force`
+reports the node cached and `registry search`/`list` then return nothing for it, at any filter. Read the cache
+file directly — `~/.uip/case-resources/action-apps-index.json`, top-level `id`.
+
 ## How to test it
+
+### Park your tasks — this is the difference between an afternoon and a morning
+
+A full case run costs two to three minutes before your screen appears, and the instinct is to run one per change.
+Do not. **A waiting task stays waiting until you complete it, and you can reload the app against it as many times
+as you like.**
+
+So before you write any UI, send in **three claims to each gateway** and leave them parked. Now every iteration
+is a browser reload. Spend a task only when you are deliberately testing the decision itself, and you still have
+two left at that gateway.
+
+Two more that cut the loop further:
+
+- **Working on layout only?** Do it against a fabricated payload behind an explicit flag — `?preview` or
+  similar — dynamically imported so it is not in the bundle a real task loads. `spec.md` explains why the flag
+  has to be unreachable in the deployed app; within that rule it is the fastest surface there is.
+- **Working on the record read?** Query the entity from a script. The screen is not involved and neither is the
+  case.
 
 ### Make a claim stop at the eligibility gateway
 
@@ -167,3 +224,28 @@ the check builds skip.
 Approve one claim and reject another. A screen wired only for the happy answer looks finished and fails the first
 time a reviewer disagrees — and the denied path is a different ending in the case plan, so it exercises wiring the
 approval never touches.
+
+### If you complete a task from the command line, hand the identifiers back
+
+`uip tasks complete --data` **replaces** the whole payload with what you pass it. Send only the outputs and you
+have erased the `inOut` values that let the task be re-opened — producing exactly the bug in `spec.md`'s
+*A decided task must still open*, except you caused it from the terminal and the app gets the blame. Read the
+task first, merge, then complete.
+
+The same is true of every in-app write. There is more than one call site.
+
+## Open it in a browser — in both states — before you call this done
+
+**Every build so far reported this block finished on the strength of a clean TypeScript compile and a completed
+task, and every one of them had an app that did not render.** A blank screen with a console error looks identical
+to a working app from `uip tasks get`. So the last step is to look at it:
+
+1. **A waiting task** — the app loads, the claim is on screen, both decisions are available.
+2. **A completed task** — the app loads, shows what was decided, and offers nothing to press.
+
+Neither may show an error screen, an empty page, or anything in the browser console. If you cannot drive a
+browser yourself, `uipath-coded-apps`'s `debug.md` carries a Playwright reproduction script that opens the app,
+captures console output and screenshots the result; run it against both states and read what it captured.
+
+A completed task decided *before* you fixed the payload rules can never render — its data was written at
+completion and nothing rewrites it. Decide a fresh one and test against that.
