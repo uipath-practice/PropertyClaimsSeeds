@@ -251,6 +251,15 @@ uip tasks complete <task-id> --type AppTask --folder-id <folder-id> \
 would have kept, and the task can never be re-opened — which looks like an app bug in the next block and is not.
 Read the task first, merge your outputs into what is there, then complete.
 
+**Assign the task to yourself before completing it.** An unassigned `AppTask` refuses with
+`This action is no longer assigned to you`, which reads like a permissions problem and is not — nobody owns it
+yet:
+
+```bash
+uip tasks users <folder-id> --output json        # who may be assigned
+uip tasks assign <task-id> --user <email> --output json
+```
+
 **Never put `Action` inside `--data`.** Pass the outcome through `--action` only. Sending both faults the case
 at the action task with `170001 Failure mapping the data from the task result`.
 
@@ -270,6 +279,10 @@ So be precise about what this step is for:
 | all four routes reach the right ending | **yes** — the outcome carries it |
 | the identifiers survive a completed task | yes |
 | the reviewer's text reaches the record | **no** — block 6 proves that, through the app |
+
+**DocsAI will tell you to make the mapping match the returned field names, and it is right — about the CLI.**
+What it cannot know is that the returned casing depends on *who completed the task*, and that the screen arriving
+in block 6 returns the other one. Two seats reached that advice independently and one acted on it.
 
 **Do not "fix" this by re-pointing your output mappings at PascalCase.** It makes the CLI run go green and
 breaks block 6, where the real app sends the casing your schema actually declares. One seat did exactly that and
