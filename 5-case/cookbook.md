@@ -185,6 +185,28 @@ Four things that each cost somebody an afternoon:
   from the app's **original registration**, so the schema you register first is the one the case binds. This is
   the whole reason the shape is settled before you start.
 
+**Then tell the solution where the app already is — do not let it make its own.** The app now lives in your seat
+folder, but the case binds it and that makes it a solution resource too. Add it as a *remote* resource naming
+that folder:
+
+```bash
+uip solution resources add --source remote --kind App \
+  --name claim-review-<seat> --folder-path ClaimCase-<seat>
+```
+
+Skip this and the solution creates a local stub instead, which declares the app in `solution_folder` and pins
+whatever version was current when the stub was made. Deploy then installs a *second* copy into the solution
+folder while your case binding still says `ClaimCase-<seat>.claim-review-<seat>`, and the run fails with:
+
+```
+No app: claim-review-<seat> found in folder: ClaimCase-<seat>
+```
+
+which reads as though the app was never deployed. It was — just not where the solution put its copy. **Two seats
+hit this on 2026-08-21**, one of them after nine republishes chasing the wrong cause; a third symptom of the same
+split is `solution pack` reporting `Unauthorized` when it tries to download a pinned app version that no longer
+exists. Whenever you republish the app, re-add the resource rather than editing its package URL by hand.
+
 ## Wiring an action task
 
 Two mechanical traps, each of which faulted a live run on a plan that packed and validated cleanly.
