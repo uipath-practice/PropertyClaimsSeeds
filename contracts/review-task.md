@@ -22,7 +22,7 @@ task's bindings at both gateways**. Whatever you decide here, decide it once.
 | **inOut** | `triggerStage` | string | Which gateway this is. Two values, and the screen changes shape on it. |
 | **output** | `reviewerNotes` | string | The reviewer's reason, in their own words. Required at both gateways. |
 | **output** | `decidedAt` | string | ISO timestamp, set when they submit. |
-| **outcome** | two | — | What the case branches on. One means carry on, one means stop. |
+| **outcome** | **exactly two** | — | What the case branches on. One means carry on, one means stop. |
 
 Anything else the screen needs, it reads from the claim record (`claim-entity.md`) using `recordId`. **Do not
 thread the claim through the task payload** — that is seventeen bindings at the second gateway, each of which
@@ -30,6 +30,19 @@ can silently arrive empty, to carry data the record already holds.
 
 A design may add outputs — a settlement the adjuster edited, say. Add them as **outputs**; never move something
 out of the three inOuts.
+
+### Two outcomes, and not three
+
+**Exactly two at each gateway.** Carry on, or stop. Two gateways × two answers is **four routes**, and four is
+what block 5 proves and block 7 tests. A third outcome anywhere is not one more case — it multiplies the matrix
+every later block has to carry, for a distinction that is not a route.
+
+The tempting third is *partial approval*, and it is genuinely part of this process — but it is **a
+recommendation and a number, never a branch**. `pdd.md` §5.6 is explicit that the decision rules "produce a
+recommendation, not an outcome; nothing here closes a claim", and `settlement-table.md` already carries
+*approved / partially approved* as a property of the settlement. A reviewer who accepts a partial settlement is
+carrying the claim on; the partiality lives in the amounts, on the record, in the letter. Route on what the
+process does next, not on what the answer was about.
 
 ## The decision is an outcome, the reason is an output
 
