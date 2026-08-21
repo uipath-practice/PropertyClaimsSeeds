@@ -248,6 +248,16 @@ def insert(eid, rows, known=None, limits=None):
             print(f"note: this table has no column for {', '.join(dropped)} yet — "
                   f"those values were not sent. Everything else was.", file=sys.stderr)
         rows = [{f: v for f, v in r.items() if f in k} for r in rows]
+    if limits and any(isinstance(v, str) and (limits.get(f) or 0) and len(v) > limits[f]
+                      for r in rows for f, v in r.items()):
+        # About to trim -- so first make sure the limit is still real. The schema
+        # is cached, a column can be widened on the tenant afterwards, and a stale
+        # cache would go on trimming to a limit that no longer exists. Re-reading
+        # it costs a call only in the one case where the number matters.
+        fresh = cache()
+        fresh.pop("entityLimits", None)
+        entity_id(fresh)
+        limits = fresh.get("entityLimits") or limits
     rows = fit(rows, limits)
     tmp = STATE / "insert.json"
     tmp.write_text(json.dumps(rows), encoding="utf-8")   # utf-8, no BOM
