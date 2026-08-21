@@ -40,9 +40,8 @@ from the outside.
 ## Do it in three passes
 
 This is the longest block. Finish each pass before starting the next, so a pass that goes wrong costs a pass
-rather than the block — and **write down where you are between them.** You will lose your working context
-partway through this; that note is what makes the next hour cheap, and the block after this one begins by
-reading it.
+rather than the block — and **write down where you are between them**, in the notes this block ends with. You
+will lose your working context partway through, and that note is what makes the next hour cheap.
 
 1. **The journey.** Every stage, how a claim enters it, what ends it. No work in them yet.
 2. **The work, and the wiring.** What happens in each stage, connected to the components you have built and the
@@ -57,8 +56,16 @@ Nothing wrong with the claim, nothing for a reviewer to query: it should be read
 approved, the claimant told, and the file closed — and its record should show each stage's work as that stage
 did it.
 
-That is the whole gate for this block. **Do not run the problem claims yet** — every one of those is supposed to
-stop and wait for a person, and there is nobody there until block 6.
+**Do not run the problem claims yet** — every one of those is supposed to stop and wait for a person, and there
+is nobody there until block 6.
+
+**And the journey is written down**, in `5-case/notes.md`: the stages and how a claim moves between them, the two
+places a person will go, what you had to work out that the instructions did not tell you, and anything you left
+deliberately unfinished. Not a diary — the briefing you would give someone taking over.
+
+That second clause is a gate rather than good practice because **block 6 is the person taking over**, often in a
+fresh session with none of this in mind, and its first job is to replace the interim exits on the two stages you
+shaped and left waiting. Working that out from the plan file costs an hour. Reading it costs five minutes.
 
 ## How to test it
 
@@ -74,7 +81,8 @@ not do its job, whatever the status says.
 told to, because one of your analyses found fault with a claim that has none. That is a block 4 fix.
 
 **Where it goes.** Generated code into `Build/ClaimCase-<seat>/` — one solution for the whole build, holding the
-journey and all seven analyses. Notes and documents you write for this block go in this block's folder.
+journey and all seven analyses. Notes and documents you write for this block go in this block's folder, and
+`5-case/notes.md` is the one this block is not finished without.
 
 **Log as you go.** `python3 log-finding.py --block 5-case --category <kind> --summary "..."` — every retry,
 every surprise, everything these instructions failed to explain, and anything that took longer than it should
