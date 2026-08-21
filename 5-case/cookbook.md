@@ -394,19 +394,37 @@ find resources -type f -name "*_[0-9].json" -delete
 find resources -type f | wc -l          # know your clean baseline and check it
 ```
 
-**Uninstall refuses while any job is non-final — and it is the *job* that blocks, not the case instance.** An
-instance can read `Completed` while its job is still `Running`. Stop the job, and cancel any non-final instance;
-a faulted agent leaves a case `Running (With Faults)` forever.
+### `FailedUninstall`, reported as `Validation failed`
 
-**Raise the list limit or you will not see the blocking job.** `jobs list` returns 50 rows newest-first, and the
-parent case job starts *before* every task job it spawns — so its own children push it off the first page. If the
-row count equals the limit, the answer is truncated and means nothing.
+That bare phrase is the entire error. It names nothing, it is the single most expensive message in this exercise,
+and it almost always means **a job is still running**. Work down this ladder instead of re-reading your plan.
+
+**1. Find the non-final job — and it is the *job* that blocks, not the case instance.** An instance can read
+`Completed` while its job is still `Running`, and a faulted agent leaves a case `Running (With Faults)` forever.
+
+**Raise the list limit or you will not see it.** `jobs list` returns 50 rows newest-first, and the parent case
+job starts *before* every task job it spawns — so its own children push it off the first page. A row count equal
+to the limit is a truncated answer, not an answer.
 
 ```bash
 uip or jobs list --folder-key <f> --limit 200 --output json \
   | python3 -c "import json,sys,collections; r=json.load(sys.stdin)['Data']; \
                 print(len(r), collections.Counter(x['State'] for x in r))"
 ```
+
+**2. Stop the jobs, then cancel the instances.** A job already `Terminating` cannot be stopped; the one that
+clears a stuck case is `uip maestro case instance cancel <id> --folder-key <k>`, which goes `Canceling` →
+`Stopped` in seconds.
+
+**3. Retry with a pause.** A second uninstall issued while the first is still settling fails with the *same* bare
+message. Wait 15s, then 30s, then 45s before concluding anything.
+
+**4. If it still fails, the deployment record itself is stuck** — it survives even after every job and instance is
+final. You cannot inspect it either: `uip solution deploy list` returns `403` for a participant account, so do
+not spend time there. Deploy under **`ClaimCase-<seat>-v2`**, write that name in `5-case/notes.md`, and carry on.
+This is the one sanctioned departure from the pinned name (`CONFIG.md`, *One deployment, reused*) — it exists so
+you are never blocked, and because teardown matches on the `ClaimCase-<seat>` prefix it still finds your work.
+**Do not invent any other name**: a deployment nobody can predict is one nobody can clean up.
 
 **`Reason: Unauthorized` means "not found".** It appears when a solution pins a package version that is not in the
 feed. Nothing is wrong with your permissions and re-authenticating is wasted effort — check the version.

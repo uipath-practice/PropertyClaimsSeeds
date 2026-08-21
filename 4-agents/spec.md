@@ -19,6 +19,19 @@ sees them side by side and one concern reported three times reads as three probl
 | 6 | **Decision** | Which outcome do the rules recommend? (§5.6) | all four analyses |
 | 7 | **Response** | The letter to the claimant (§7) | the decision, the analyses, the reviewer's words |
 
+**Response is the one agent whose output a customer reads, and it has two failure modes the others do not.**
+
+- **It must work when the analyses are missing.** A claim denied at either gateway skips everything downstream,
+  so Response is asked for a denial letter with no coverage, payout or credibility to draw on. That is the normal
+  denial path, not a broken input: the human's decision and their written reason are sufficient, and are what the
+  letter is built from. An agent that treats their absence as an error fails every denial.
+- **The letter is in English, always.** Claimant names and addresses in this data are Romanian, and an agent
+  left to infer will write the letter in Romanian while its own summary stays English. Nothing downstream reads
+  the letter, so nothing catches it.
+
+And the rule underneath both: **if it cannot write the letter, it must fail where the process looks** — never
+produce fluent prose whose content is an apology for having no inputs. That reaches the claimant.
+
 Agents 3, 4 and 5 run **in parallel** and none reads another's output. Agent 2 runs before them and produces the
 structured assessment all three consume: one reader of the document, three consumers of the data.
 

@@ -78,6 +78,13 @@ did not tell you, and anything left deliberately unfinished. Not a diary — the
 person taking over**, usually with none of this in mind. Reading it costs five minutes; reconstructing it from
 the plan file costs an hour.
 
+**And you have read the letter.** Every route ends by writing correspondence to the claimant, and it is the
+second of the only two things a human ever sees. Open the one written on the denial route and read it as the
+claimant would: it must be in English, say why in plain words, and contain no internal codes, no stage names and
+no placeholder. **An analysis that could not do its job must say so where the process can see it — never in the
+letter.** One build produced a fluent letter whose entire content was the agent explaining it lacked the inputs
+to write one; every structural gate passed.
+
 **And you have read the cookbook back** — the two-sided review in `AGENTS.md`, *Before you finish a
 block*. Two minutes, and it is what keeps this seed from only ever growing.
 
