@@ -4,10 +4,12 @@ The spec is `5-case/spec.md`. This is the platform friction, and there is more o
 block. Read the first two sections before you edit anything: one is what three builds actually lost time to, the
 other is the trap that costs a day if you meet it cold.
 
-## Skill, and the three passes in commands
+## Skills, and the four passes in commands
 
-**Skill.** `uipath-maestro-case`, plus `uipath-solution` to pack and deploy. **Not `uipath-maestro-bpmn`** —
-different product; the only thing drawing you there is that your compiled plan is named `.bpmn`.
+**Skills.** `uipath-maestro-case`, plus `uipath-solution` to pack and deploy, and `uipath-coded-apps` for the
+one small thing in pass 3. **Not `uipath-maestro-bpmn`** — different product; the only thing drawing you there is
+that your compiled plan is named `.bpmn`. **Not `uipath-human-in-the-loop`** either — that authors approval nodes
+in Flow projects, and your stops are case stages.
 
 **Pass 1 — the journey.** Stages, entry and exit conditions, no tasks.
 
@@ -38,16 +40,33 @@ python3 5-case/check_caseplan.py <caseplan.json>       # 0 problems
 uip maestro case validate <caseplan.json> --output json
 ```
 
-**Pass 3 — deploy and run a clean claim.**
+**Pass 3 — the two stops.** Register the stand-in app, then wire a task into each gateway. Both halves are
+below: *Registering the stand-in app* and *Wiring an action task*. The app is fifteen minutes and has no design
+in it; the wiring is where the traps are.
+
+```bash
+python3 5-case/check_caseplan.py <caseplan.json>       # still 0 problems
+uip maestro case validate <caseplan.json> --output json
+```
+
+**Pass 4 — deploy and run every route.**
 
 ```bash
 uip maestro case pack <case-project-dir> <throwaway-dir>       # recompiles caseplan.json.bpmn
 grep -c "<a-token-your-edit-introduced>" caseplan.json.bpmn    # not 0 — the runtime has your change
 ```
 
-Then deploy (*Redeploy under the same name*) and start one aimed run — `in_Scenario: auto-settle`, no
-discrepancy, which is the generator's "nothing wrong with this claim" setting. `CONFIG.md` has the shell-quoting
-trick if you are on Windows.
+Then deploy (*Redeploy under the same name*) and run four claims:
+
+| Aim | `in_Scenario` | Should |
+|---|---|---|
+| the clean one | `auto-settle` | settle with nobody asked |
+| stop 1, agree | `eligibility-fail` | carry on into the inspection |
+| stop 1, disagree | `eligibility-fail` | end denied |
+| stop 2, either way | `review-fail` | end approved, and end denied |
+
+`CONFIG.md` has the shell-quoting trick if you are on Windows. *Answering a stop from the command line*, below,
+is how you complete a task with no screen.
 
 A claim sitting in `Running (With Faults)`, or a stage whose tasks are all green while the next stage never
 started, is a failure however the status reads.
@@ -135,6 +154,83 @@ An agent produced it, the task went green, and no Data Fabric write body mention
 this way — drafted, used for a notification subject, and never stored, so the record showed a settled claim with
 an empty `claimResponseJson`. `check_caseplan.py` warns on every produced payload that reaches no write body;
 three of those warnings are expected (raw extraction, prior claims, the poll flag) and a fourth is a bug.
+
+## Registering the stand-in app
+
+Fifteen minutes, no design. What you are producing is a registered app whose **contract** is final and whose page
+is blank, because that contract is what the case binds — `contracts/review-task.md` fixes the shape and it is not
+yours to change.
+
+```bash
+uip codedapp init claim-review-<seat>          # lower case; the tenant is shared
+# write action-schema.json to the shape in contracts/review-task.md
+npm install && npm run build                   # a page saying "review screen — block 6" is enough
+uip codedapp pack dist -n claim-review-<seat> --version 1.0.0
+uip codedapp publish -n claim-review-<seat> --version 1.0.0 --type Action
+uip codedapp deploy -n claim-review-<seat> --client-id <the-id-in-CONFIG.md> \
+  --folder-key <your-seat-folder-key>
+```
+
+Four things that each cost somebody an afternoon:
+
+- **`--type Action` on every publish**, first and subsequent. Without it the app registers as a Web app and stops
+  binding to Action Center tasks at all.
+- **`--folder-key` is your seat folder**, `ClaimCase-<seat>` — never the solution folder your case deploys into.
+  Publishing the same app name where two folders could hold it made one seat register **two app identities**: the
+  tasks stayed pinned to the first, every later deploy upgraded the second, and nothing said so.
+- **Do not create an OAuth client.** One exists and is shared; the id is in `CONFIG.md`, and
+  `uip admin external-apps create` will refuse you with `403`, which is the correct answer and not a login
+  problem.
+- **`action-schema.json` never reaches the package** — pack takes only `dist/`. The platform holds the contract
+  from the app's **original registration**, so the schema you register first is the one the case binds. This is
+  the whole reason the shape is settled before you start.
+
+## Wiring an action task
+
+Two mechanical traps, each of which faulted a live run on a plan that packed and validated cleanly.
+
+**The task's app reference is a binding, not a literal.** `uip maestro case tasks add --type action` writes
+`data.name` and `data.folderPath` as plain strings, and that is wrong — like every other non-connector task, an
+action task resolves them through `=bindings.<id>` into the plan's root `bindings[]`:
+
+```json
+{ "id": "bClmRvName", "resource": "app", "resourceKey": "<folderPath>.<appName>" }
+```
+
+Literals pack, validate and deploy, then fault at the first gateway with
+`[170015] Internal Server Error: "No app:  found in folder: "` — both values empty, because nothing resolved them.
+
+**A custom output read by the next stage must not sit on the task that closes this one.** Set the decision
+variable on the **action task**, not on the write task that also fires the stage's exit: a downstream entry
+condition evaluated off `selected-stage-completed` cannot reliably read a value written in the same completion
+batch. The symptom is a claim that carries the right decision on its record and routes as though it never
+happened.
+
+**Finding the app's id, when the registry will not tell you.** `uip maestro case tasks describe --type action`
+wants the *action-app* id, which is not the `systemName` in `.uipath/app.config.json`. `registry pull --force`
+reports the node cached and `registry search`/`list` then return nothing for it, at any filter. Read the cache
+file directly — `~/.uip/case-resources/action-apps-index.json`, top-level `id`.
+
+**Give the task a title that names the gateway and the seat** — *"Eligibility review for Jane"*. Action Center is
+one queue for the whole tenant.
+
+## Answering a stop from the command line
+
+There is no screen yet, so you complete the task yourself:
+
+```bash
+uip tasks list --folder-id <folder-id> --output json      # numeric id, not a GUID
+uip tasks get <task-id> --output json                     # what the case actually handed it
+uip tasks complete <task-id> --type AppTask --folder-id <folder-id> \
+  --action "<outcome>" --data '<json>' --output json
+```
+
+**`--data` replaces the whole payload.** Send only the outputs and you erase the `inOut` identifiers the platform
+would have kept, and the task can never be re-opened — which looks like an app bug in the next block and is not.
+Read the task first, merge your outputs into what is there, then complete.
+
+`tasks get` also **PascalCases every key** in the free-form `Data` blob, recursively — `triggerStage` reads back
+as `TriggerStage`. The values and their types are honest; only the key casing is not.
 
 ## `caseplan.json` is not what runs — and how to make it run
 

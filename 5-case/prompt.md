@@ -5,8 +5,9 @@ thing that runs a claim from the moment it arrives to the moment it closes.
 
 **Read.** `2-design/` (your own design — the journey you mapped out) · `5-case/spec.md` (the design decisions
 this has to honour) · `contracts/provided-processes.md` (the automations already running that you connect to) ·
-`contracts/claim-entity.md` (what gets recorded, and when) · `5-case/cookbook.md` (how to build it here — read
-the first two sections before you edit anything)
+`contracts/claim-entity.md` (what gets recorded, and when) · `contracts/review-task.md` (what a claim hands a
+person at the two stops, and what they hand back) · `5-case/cookbook.md` (how to build it here — read the first
+two sections before you edit anything)
 
 ## What the business is asking for
 
@@ -27,17 +28,22 @@ Three things about how the business works, which the shape has to reflect:
 - **Independent work happens at the same time.** Coverage, payout and credibility are three people's jobs done
   in parallel in a real claims team, and a claim that queues them takes four times as long for no reason.
 
-## The two people are not in place yet
+## The two people are part of the journey, even though their screen is not built
 
-The eligibility reviewer and the claims adjuster each need a screen, and that is the next block. So the two
-stages where they belong get built **now, in their right places, shaped and waiting** — with no task in them yet.
+The eligibility reviewer and the claims adjuster each need a screen and that is the next block. **What belongs
+here is the stop itself** — where the claim waits, what the person is asked, and what their answer does to the
+rest of the journey.
 
-That is deliberate and it is the cheaper order. A stage merged away or made to complete instantly has to be
-rebuilt rather than extended, and the wiring around it is the expensive part. `5-case/spec.md` says exactly what
-"shaped and waiting" has to mean, because the difference between *correctly waiting* and *broken* is invisible
-from the outside.
+So you build both stops now, working, with a **stand-in** where the screen will go: something a person can
+actually open and complete, with nothing on it. A door frame before the door. The frame's dimensions are what
+everything else gets built around, and `contracts/review-task.md` fixes them — what the claim hands the reviewer
+and what they hand back. That shape is settled and is not yours to design.
 
-## Do it in three passes
+**This is the cheaper order and it is not close.** Those dimensions are what the journey binds to, so changing
+them later means unpicking the wiring at both stops. Build the frame now and the journey is done when this block
+is; leave it and the next block spends most of itself back in here.
+
+## Do it in four passes
 
 This is the longest block. Finish each pass before starting the next, so a pass that goes wrong costs a pass
 rather than the block — and **write down where you are between them**, in the notes this block ends with. You
@@ -46,36 +52,40 @@ will lose your working context partway through, and that note is what makes the 
 1. **The journey.** Every stage, how a claim enters it, what ends it. No work in them yet.
 2. **The work, and the wiring.** What happens in each stage, connected to the components you have built and the
    automations already running, with the record written as the claim moves.
-3. **Run a claim through it.**
+3. **The two stops.** The stand-in at each, and what each answer does — including the endings they lead to.
+4. **Run claims through it** — the straightforward one, and one into each stop.
 
 ## Done when
 
-**A straightforward claim goes in one end and comes out settled, with nobody touching it.**
+**Every route through the journey has carried a real claim.** Three things, and the first is the one people stop
+at:
 
-Nothing wrong with the claim, nothing for a reviewer to query: it should be read, screened, inspected, analysed,
-approved, the claimant told, and the file closed — and its record should show each stage's work as that stage
-did it.
+- **A straightforward claim goes in one end and comes out settled, with nobody touching it.** Nothing wrong with
+  it, nothing to query: read, screened, inspected, analysed, approved, the claimant told, the file closed — and
+  its record showing each stage's work as that stage did it.
+- **A claim stops at each of the two stops**, waits, and moves on when a person answers.
+- **Both answers work, at both stops.** Agree and it carries on; disagree and it ends the other way, with the
+  claimant told the right thing. Four runs, and they are the ones that find the bugs — every route a claim can
+  take now exists, so every one of them can be wrong.
 
-**Do not run the problem claims yet** — every one of those is supposed to stop and wait for a person, and there
-is nobody there until block 6.
+You answer the stops by hand, on a blank stand-in — **you are proving the journey, not the screen.** Get all four
+routes right now and the next block cannot break them; it only changes what the person is looking at.
 
-**And the journey is written down**, in `5-case/notes.md`: the stages and how a claim moves between them, the two
-places a person will go, what you had to work out that the instructions did not tell you, and anything you left
-deliberately unfinished. Not a diary — the briefing you would give someone taking over.
-
-That second clause is a gate rather than good practice because **block 6 is the person taking over**, often in a
-fresh session with none of this in mind, and its first job is to replace the interim exits on the two stages you
-shaped and left waiting. Working that out from the plan file costs an hour. Reading it costs five minutes.
+**And the journey is written down**, in `5-case/notes.md`: the stages and how a claim moves between them, what
+happens at each stop, what you had to work out that the instructions did not tell you, and anything left
+deliberately unfinished. Not a diary — the briefing you would give someone taking over, because **block 6 is the
+person taking over**, usually with none of this in mind. Reading it costs five minutes; reconstructing it from
+the plan file costs an hour.
 
 ## How to test it
 
-Ask for a claim with nothing wrong with it and follow it through — `5-case/cookbook.md` has the exact call.
-Deploying and running are **pre-authorised** (`AGENTS.md`): your seat, synthetic claimants, no letter ever sent.
-Do not stop to ask, and do not end this block before the run — a plan that has not carried a claim proves nothing.
+`5-case/cookbook.md` has the exact calls, including how to answer a stop without a screen. Deploying and running
+are **pre-authorised** (`AGENTS.md`): your seat, synthetic claimants, no letter ever sent. Do not stop to ask, and
+do not end this block before the runs — a plan that has not carried a claim proves nothing.
 
-Then read the claim's record rather than the journey's status. A claim can reach an ending with a stage that
-never ran, and the record is the only place that shows it: a stage that went green and left its columns empty did
-not do its job, whatever the status says.
+**Read the claim's record, not the journey's status.** A claim can reach an ending with a stage that never ran,
+and the record is the only place that shows it: a stage that went green and left its columns empty did not do its
+job, whatever the status says.
 
 **If the clean claim gets stopped for review, the journey is not what is wrong.** It parked exactly where it was
 told to, because one of your analyses found fault with a claim that has none. That is a block 4 fix.

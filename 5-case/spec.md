@@ -27,41 +27,45 @@ binds agents by name **inside its own solution**, so an agent published separate
 case that needs it. If block 4 left your agents in a solution of their own, move them before you start here —
 that is cheaper than discovering it at deploy time.
 
-## Two passes, and why
+## The stand-in app, and why the gateways are built here
 
-**You cannot deploy a case that binds an app you have not built.** Deploy validation derives the app package from
-the case binding and refuses with `One or more properties are missing: [package]`. The review app is block 6.
+**You cannot deploy a case that binds an app that does not exist.** Deploy validation derives the app package
+from the case binding and refuses with `One or more properties are missing: [package]`. That fact used to push
+both human gateways into block 6 — build the spine now, add the people later.
 
-So block 5 builds the plan **without the two human gateway tasks** — every stage, every agent, every process, both
-endings — and proves it end to end on a claim that runs unattended. Block 6 adds the app, inserts the two action
-tasks, and rewires the two stage exits that then finish on a different task.
+**It no longer does, because what the case binds is the app's contract, not its screen.** An app registered with
+the shape in `contracts/review-task.md` and an empty page satisfies the binding completely. Registering it is
+minutes and involves no design: a name, the input and output declarations, publish, deploy. `cookbook.md` has the
+commands.
 
-**The two human-decision stages still exist, and keep their shape.** Do not collapse a stage because its gateway
-task is not there yet: the eligibility screening stage and the claim review stage are where a human will stand,
-and block 6 drops a task into each. A stage that has been merged away or made to complete instantly has to be
-rebuilt rather than extended, and the entry and exit rules around it are the expensive part.
+So block 5 builds **the whole journey, including both stops**, and block 6 replaces an empty page with a real
+one. Three reasons this is the right boundary, in the order they cost money:
 
-**What "shaped" has to mean, concretely.** In pass 1 a flagged claim reaches the review stage and stops there,
-because the only thing that could move it on is a human who has not been asked. **That is the correct
-behaviour, not a defect** — the stage is waiting for a task block 6 will add. What is a defect is not knowing
-which of the two you are looking at, so decide it before you run anything:
+1. **Changing the contract after the case binds it is expensive.** It is a schema change; the app must be
+   re-registered to refresh its registered contract; and re-registering **clears the task's bindings at both
+   gateways**. Settling the shape from the design — which is what `contracts/review-task.md` is — costs nothing
+   now and cannot be done cheaply later.
+2. **The human routes are the ones that carry bugs, and they were going untested.** When block 5 ended at the
+   clean path, every gateway exit, every decision-to-ending rule and every write behind them was unproven until
+   somebody built a screen. The first build to reach them found three real defects in one afternoon — a stage
+   entry with no guard on the eligibility decision, an ending that fabricated a settlement for a denied claim,
+   and a notification reading a variable nothing wrote.
+3. **It keeps the case-plan edit loop in one block.** That loop — recompile, repack, uninstall, deploy — is the
+   most trap-laden tooling in the exercise. Meeting it twice, in two blocks, the second of which is supposed to
+   be about a screen, is the worst available arrangement.
 
-- the clean exit is present and conditional — `reviewRequired === false` and nothing else;
-- the flagged path has **no** exit yet, and no invented substitute — an auto-approve "for now", a timer that
-  gives up, a second exit that fires on the same completion, are each a thing block 6 has to find and remove;
-- **the acceptance run is a claim that takes the clean path.** A flagged claim parking forever proves nothing
-  either way, which is why a claim with nothing wrong with it is what closes this block.
+**What the stand-in must be, and must not be.** It is a registered app whose contract is final and whose page is
+empty. It must **not** be a substitute for the decision: no auto-approve "for now", no timer that gives up, no
+second exit firing on the same completion. Each of those is a thing the next block has to find and remove, and
+each hides whether the routing works.
 
-**Gateway 1 gets the same treatment**, and this has caught a build out. The section above reads as though it is
-only about the final review, but the acceptance run requires *no human asked at either gateway* — so eligibility
-screening also needs a clean, conditional exit in pass 1 and no invented substitute, and block 6 replaces both.
+A person answers it by hand for now — from the command line if that is all there is (`cookbook.md`). That is
+enough to prove every route, and proving the routes is what this block is for.
 
-That is not a workaround. Proving the spine before inserting the humans is the cheaper order: a stuck claim in
-pass 1 has one possible cause, and you will have learned the edit loop before you need it under pressure.
-
-**Both endings still work in pass 1.** Nothing sets `adjusterDecision` when no human is asked, so every downstream
-read is `(adjusterDecision || recommendedDecision)` — the human's word when there was one, the agent's when there
-was not. Write that expression once and reuse it; two routes that drift apart is the failure this prevents.
+**Both endings must work whether or not a human was asked.** A clean claim reaches the ending with nobody
+touching it; a flagged one reaches an ending because somebody answered. So every downstream read is
+`(adjusterDecision || recommendedDecision)` — the human's word when there was one, the agent's when there was
+not. Write that expression once and reuse it; two routes that drift apart is the failure this prevents.
 
 ## Stage exits and entries must match — the rule that costs deploy cycles
 

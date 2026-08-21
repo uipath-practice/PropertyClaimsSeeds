@@ -67,5 +67,4 @@ taxonomy it sees a subset — but you label and train on all of them.
 ## One thing the CLI cannot do
 
 Publishing a model does not make it available to an automation. **Binding a published model to an Orchestrator
-folder is done in the product**, and there is no CLI equivalent — so the last step of this block happens in the
-IXP interface, whichever route you took.
+folder is done in the product**, and there is no CLI equivalent for now — so the last step of this block happens in the IXP interface, whichever route you took.

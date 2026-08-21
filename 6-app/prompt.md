@@ -4,13 +4,13 @@
 they use.
 
 **Read.** `pdd.md` §2 and §6 (who these two people are, and what their approval binds) · `2-design/` (your own
-tables — what each analysis produces and which column it lands in) · `5-case/` (your own notes — the two stages
-you shaped and left waiting, and what you wrote down for this block) · `6-app/spec.md` (the design decisions
+tables — what each analysis produces and which column it lands in) · `5-case/notes.md` (your own hand-off — how
+the journey works and what happens at the two stops) · `contracts/review-task.md` (what the claim hands the
+reviewer and what they hand back — already fixed, and already bound) · `6-app/spec.md` (the design decisions
 already taken) · `6-app/cookbook.md` (how to build it here, and what has cost other people time)
 
-You may be starting this block in a fresh session, with none of block 5 in your head. That is normal and it is
-why those notes exist — read them before anything else, because the two stages waiting for this screen were
-built with an interim exit that you are about to replace.
+You may be starting this block in a fresh session with none of block 5 in your head. That is normal and it is why
+those notes exist — read them first.
 
 ## What the business is asking for
 
@@ -29,6 +29,11 @@ Both of them are doing the same job — reading what the machine found and decid
 **build one screen and use it at both points**. At the first gateway most of the analysis has not happened yet;
 say so on the screen. A section that is empty because the work has not been done reads as a broken page unless
 it tells the reviewer why it is empty.
+
+**Both stops already work.** Block 5 built them, wired them and proved all four routes, with a blank page where
+the screen goes. You are replacing the blank page — the claim already stops, a person can already answer, and
+their answer already routes the claim correctly. **So if the journey misbehaves, that is a block 5 fix, and going
+back into the case plan is almost never the right move here.**
 
 ## What a reviewer has to be able to do
 

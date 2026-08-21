@@ -49,45 +49,23 @@ screen's correctness independent of the case plan's binding table.
 hold rather than merely request. `cookbook.md` has the failure mode, which is worth reading before you build
 rather than after.
 
-## What the reviewer sends back
+## What the reviewer sends back — already fixed
 
-The decision is a **task outcome**; the reason and the timestamp are **task outputs**.
+The task's shape is `contracts/review-task.md`, and block 5 bound it. **Do not change it.** Re-registering the
+app to refresh its contract clears the task's bindings at both gateways, so a schema edit here is a rewire of the
+previous block's work.
 
-That split is not cosmetic. Outcomes are what the case plan branches on, so the outcome is what routes the claim
-to approved or denied. Outputs are data the process carries onward — and, unlike inputs, **outputs survive task
-completion**, which is what lets a decided task still show what was decided.
+What the contract settles, and what still matters to the screen:
 
-- The decision is **fully two-way at both gateways**. A reviewer who can only agree is not a reviewer, and the
+- **The decision is an outcome; the reason and the timestamp are outputs.** Outcomes are what the journey
+  branches on.
+- **The decision is fully two-way at both gateways.** A reviewer who can only agree is not a reviewer, and the
   recommendation being usually right is not an argument.
-- The written reason is **required**. `pdd.md` §6 makes every downstream analysis read it and be bound by it; an
+- **The written reason is required.** `pdd.md` §6 makes every downstream analysis read it and be bound by it; an
   empty reason is a gateway that told the rest of the process nothing.
-- Both must reach the claim record. A screen that completes the task and writes nothing to the record looks
-  identical to one that works, right up until someone asks what was decided last week.
-
-### A decided task must still open, and three separate things conspire against it
-
-**This is the most-failed requirement in this block.** Every build so far produced a screen that worked while a
-task was waiting and showed an error, or nothing at all, once it had been decided. Three causes, and you have to
-handle all three:
-
-1. **Completion drops the task's `inputs`.** Only `inOuts` and `outputs` survive. So whatever identifies the
-   claim — the record id, the claim number, which gateway this was — has to be declared **`inOut`**, or a decided
-   task arrives with no idea which claim it belonged to.
-2. **Anything that writes task data *replaces* the payload rather than merging into it.** The in-app save, the
-   draft save and `uip tasks complete --data` all do this, so an `inOut` the platform would have preserved is
-   erased by your own write. Read the current payload, spread it, then write — at **every** call site. A build
-   that got rule 1 right and this one wrong looks exactly like a build that got rule 1 wrong.
-3. **A task decided before you fixed either of those stays broken for ever.** Its payload was written at
-   completion and nothing rewrites it. So do not judge a fix against an old task — decide a fresh one.
-
-Because of 3, the screen also needs a floor: **if a decided task arrives with nothing to identify it, say so in
-the reviewer's language and show the decision that did survive** — never a stack trace, never a blank page. That
-is not defensive parsing; it is a real state the platform can hand you.
-
-Getting the schema right early matters more here than elsewhere, because changing `inputs` to `inOuts` is a
-**schema change**: the app has to be re-registered to refresh its contract, which clears the task's bindings and
-forces a rewire at both gateways. Size is not the constraint — the full second-gateway payload measures 37.7 KB
-and moves fine. Decide it before the first deploy, not after.
+- **The three identifiers are `inOut`, and a decided task must still open.** The contract explains the three
+  separate reasons it might not — one of which is your own save replacing the payload rather than merging into
+  it. Read that section before you write the completion handler, not after.
 
 ## Reading it, in the reviewer's language
 

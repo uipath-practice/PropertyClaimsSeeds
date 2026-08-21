@@ -32,6 +32,11 @@ The two that reliably cost an afternoon are 2 and 5, and both are invisible from
 | Deploy into | **`ClaimCase-<seat>`, your seat folder** — never `ClaimCase-<seat>-Deploy` |
 | Deployment | its own; a coded app is **not** part of the `.uipx` solution and deploys separately |
 
+**You registered this app in block 5** as an empty page with its final contract, and you are replacing the page,
+not the app. Same name, same `action-schema.json`, new version. Do not register a second one, and do not change
+the schema — the case is bound to it, and re-registering clears the task's bindings at both gateways
+(`contracts/review-task.md`).
+
 **The folder is the one that bites.** Publishing the same app name while two folders could plausibly hold it —
 your seat folder and the solution folder your case deployed into — got one seat **two app identities under one
 name**. Tasks already raised stayed pinned to the first; every later deploy upgraded the second; the app being
@@ -45,9 +50,9 @@ cat .uipath/app.config.json               # systemName — these two must agree
 
 If they have diverged, deploying again will not converge them. Stop and check before you publish a second time.
 
-The app is registered against the case's two gateway tasks, so the case plan gains a task at each gateway that
-binds to it. That is a case-plan edit — expect to go back to block 5's edit loop once, and read
-`5-case/cookbook.md`'s recompile step before you do, because the compiled plan is what runs.
+**If your gateways are not already wired** — a case plan built before this block existed in its current
+shape — do that first: `5-case/cookbook.md`, *Registering the stand-in app* and *Wiring an action task*. Then come
+back. Everything below assumes a claim can already reach a task and be answered.
 
 ## The OAuth client already exists — do not create one, and do not edit it
 
@@ -139,30 +144,6 @@ uip or bucket-files list <bucket-key> --folder-key <folder>      # the paths act
 
 The second answers "is the app wrong, or is the file simply not there" — worth settling before reading any app
 code. Paths resolve with or without a leading slash.
-
-## Wiring the app into the case plan
-
-Two mechanical traps, each of which faulted a live run on a plan that packed and validated cleanly.
-
-**The task's app reference is a binding, not a literal.** `uip maestro case tasks add --type action` writes
-`data.name` and `data.folderPath` as plain strings, and that is wrong — like every other non-connector task, an
-action task resolves them through `=bindings.<id>` into the plan's root `bindings[]`:
-
-```json
-{ "id": "bClmRvName", "resource": "app", "resourceKey": "<folderPath>.<appName>" }
-```
-
-Literals pack, validate and deploy, then fault at run time with `[170015] No app:  found in folder: ` — both
-values empty, because nothing resolved them.
-
-**Recompile before you pack.** The compiled `caseplan.json.bpmn` is what runs, and `uip solution pack` only
-copies it. A stale one deploys happily with your new gateway tasks simply absent. `uip maestro case pack` first,
-then `uip solution pack` — `5-case/cookbook.md` has the full loop.
-
-**Finding the app's id, when the registry will not tell you.** `uip maestro case tasks describe --type action`
-wants the *action-app* id, which is not the `systemName` in `.uipath/app.config.json`. `registry pull --force`
-reports the node cached and `registry search`/`list` then return nothing for it, at any filter. Read the cache
-file directly — `~/.uip/case-resources/action-apps-index.json`, top-level `id`.
 
 ## How to test it
 
