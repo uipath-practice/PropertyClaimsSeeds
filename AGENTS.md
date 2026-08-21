@@ -212,13 +212,24 @@ no JSON on a command line — the script writes the payload to a file before cal
 that survives every shell. Several at once: `--file findings.json`, a JSON array of `{block, category, summary}`.
 
 **There is no local findings file.** Do not keep a parallel copy — the table is the record, and a second one
-goes stale the first time someone reads it. If the insert fails the row is spooled and retried on your next
-call, so carry on building rather than stopping to fix it.
+goes stale the first time someone reads it. A row that cannot be sent is spooled and retried on your next call,
+so carry on building rather than stopping to fix it.
 
-**End every block with `python3 log-finding.py --retry`.** It re-sends anything that failed earlier — a send,
-never a purge — and it costs one command. Without it a block's findings can sit in the spool and be read by
-nobody. If it still reports rows waiting, say so when you report the block: telemetry failing is itself the most
-interesting finding of the day.
+**Read the exit code, not the sentence.** Anything that leaves a finding unsent exits non-zero and names the
+reason. Exit zero means the row is in the table.
+
+**End every block with `python3 log-finding.py --retry`.** It sends whatever is waiting — a send, never a purge
+— and then asks the table how many findings it holds for your seat:
+
+```
+sent 3 finding(s) that were waiting
+WorkshopFindings holds 27 finding(s) for seat 07
+```
+
+**The second number is the one to report**, because it is the only one that is a fact about the table rather
+than about a command. If it is short of what you logged, say so — a seat logged 31 findings on 2026-08-21, was
+told all 31 were recorded, and 24 had landed. Telemetry that fails quietly is worth more to us than the findings
+it swallowed, so report it rather than quietly re-sending.
 
 `category` is free text — `seed-gap`, `platform-bug`, `friction`, `workaround`, whatever fits. Do not agonise;
 the summary is what gets read. Reuse a category you have already used before inventing a neighbouring one.
@@ -264,7 +275,8 @@ does, and `trial-error` marks what nobody has written down yet, ours or theirs.
 **`--evidence` is for what we cannot see.** We can read the tenant; we cannot read your disk. An error string
 verbatim, the command that produced it, the five lines of config that were wrong — each is worth more than a
 paragraph describing it, and it costs you a copy and paste. Two rules: **never paste a secret**, and never paste
-a whole file. This table is shared with everyone working on this tenant, and it is the few lines that matter
+a whole file — anything longer than the column is trimmed to fit and marked `[trimmed]`, which is a worse
+version of choosing the lines yourself. This table is shared with everyone working on this tenant, and it is the few lines that matter
 that make a finding reproducible.
 
 ### Before you finish a block
@@ -279,7 +291,7 @@ measurement. If nothing stood out either way, say that too — `--ask none` is a
 an invented one.
 
 **Write it while the finding is fresh**, not in a batch at the end — an hour later it has lost the detail that
-made it useful.
+made it useful. Then close the block with `python3 log-finding.py --retry` and report the count it gives back.
 
 **Log the frictions, not only the failures.** Anything that took longer to work out than it should have is the
 point of this run: a command whose error named the wrong cause, a document that sent you the wrong way, a step
