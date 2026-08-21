@@ -50,8 +50,8 @@ Written below with the seat token `Jane`; substitute your own.
 | **Coded app** | **`claim-review-jane`** — lower case, not hyphen-free |
 | Action task titles | `Eligibility review for Jane` · `Claim review for Jane` |
 
-**Two surfaces re-spell the token and both fail at create time, on a message about the name rather than about
-the seat.**
+The token is used **exactly as it appears on your folder** — `GPT01` is not `Gpt01`. **Two surfaces re-spell it
+anyway, and both fail at create time on a message about the name rather than about the seat.**
 
 - **The entity takes letters, digits and underscores only** and must start with a letter, so the hyphen that
   works everywhere else is rejected. Underscore there, hyphen everywhere else, and nowhere at all is it
