@@ -95,7 +95,9 @@ registration.
   use it. Initialising your own is how an app works in a browser tab and fails in the place it is meant to run.
 - **Await the task fetch.** No timeout race, no fallback. One prototype raced a 2-second timer against the fetch
   and could show sample data *inside Action Center* — which is the failure the no-mock rule in `spec.md` exists
-  to prevent, arriving by a side door.
+  to prevent, arriving by a side door. The rule is that nothing which fails, times out or arrives malformed may
+  fall through to invented data; a dev-only branch taken *before* the fetch is not that, and
+  *Running it locally* below depends on it.
 - **Every list call returns one page.** Loop the cursor to completion; a single call is never "all rows".
 - **A completed task is a distinct state and the platform tells you which.** Read `task.isReadOnly` and render a
   read-only summary. Branching on a platform-supplied mode is not defensive parsing.
@@ -157,13 +159,76 @@ So before you write any UI, send in **three claims to each gateway** and leave t
 is a browser reload. Spend a task only when you are deliberately testing the decision itself, and you still have
 two left at that gateway.
 
-Two more that cut the loop further:
+**Working on the record read?** Query the entity from a script. The screen is not involved and neither is the
+case.
 
-- **Working on layout only?** Do it against a fabricated payload behind an explicit flag — `?preview` or
-  similar — dynamically imported so it is not in the bundle a real task loads. `spec.md` explains why the flag
-  has to be unreachable in the deployed app; within that rule it is the fastest surface there is.
-- **Working on the record read?** Query the entity from a script. The screen is not involved and neither is the
-  case.
+### Match the loop to what you actually changed
+
+A full run is the only one of these that re-proves the journey, and it is the only one that costs minutes. Most
+of block 6 does not touch the journey, so most of block 6 should not be paying for one.
+
+| What you changed | Cheapest thing that shows it | Cost |
+|---|---|---|
+| Layout, wording, an empty state | `npm run dev` against a captured payload | a reload |
+| How the app reads one value | edit the row, reopen the parked task | seconds |
+| App code, running where it really runs | redeploy, reopen the parked task | about a minute |
+| The task payload, a gateway, the routing | an aimed run | 2–3 minutes |
+
+**The two middle rows are the ones builds skip**, and between them they cover most of the work.
+
+**Change what the claim says instead of waiting for a claim that says it.** A parked task points at a row; edit
+the row and reload the task. `update` is a partial write — name the `Id`, then only the columns you want moved:
+
+```bash
+uip df records update <entity-id> --folder-key <seat-folder-key> \
+  --body '{"Id":"<record-id>","<column>":"","<another>":0}'
+```
+
+That is how you see a missing surveyor report, a zero settlement, or a reviewer's reason long enough to break
+the layout — in seconds, instead of running claims until one turns up. `insert` builds a whole row from nothing
+the same way, when you want a claim no run has produced.
+
+### Running it locally, and the three seconds that look like a hang
+
+`npm run dev` serves the app on `localhost:5173` and is by far the fastest surface for layout work. But an action
+app is an iframe with a conversation partner: `getTask()` asks Action Center for the task over `postMessage`, and
+outside Action Center **nobody answers, so it rejects after three seconds** — `Timeout: Task data not received
+from Action Center`. The scaffolded `useEffect` has no `.catch()`, so what you get is a blank shell and an
+unhandled rejection in the console, which is indistinguishable from the app being broken.
+
+So local dev needs one deliberate branch, and where you put it is the whole of the safety:
+
+```ts
+if (import.meta.env.DEV && new URLSearchParams(location.search).has('preview')) {
+  const { previewTask } = await import('./dev/preview-task');  // dev-only, never bundled
+  applyTask(previewTask);
+  return;
+}
+applyTask(await codedActionAppService.getTask());              // the only path that ships
+```
+
+- **`import.meta.env.DEV` is what makes this safe.** `npm run build` substitutes `false`, so the branch and its
+  dynamic import are eliminated — the fixture is not just unreachable in the deployed app, it is not in it. A
+  query flag on its own does not achieve that; `spec.md` says why it has to.
+- **Keep the `?preview` half as well.** Without it `npm run dev` never exercises the real path, and you stop
+  noticing the day the real path breaks.
+- **Before `getTask()`, never after it.** A fallback reached by something *failing* is the defect `spec.md` opens
+  with. A branch taken before you ask is a different thing, and is fine.
+
+**Capture the payload, do not invent one.** An invented fixture is a second contract that nothing else honours,
+and an app tuned against it is tuned to a shape the platform never sends. Take the claim from the record and keep
+it as it came:
+
+```bash
+uip df records get <entity-id> <record-id> --folder-key <seat-folder-key> --output json
+```
+
+For the task half you need only the identifiers in `contracts/review-task.md`. One trap: **do not capture from
+`uip tasks get`** — it PascalCases every key in `Data` (*Find the waiting task*, below), so a fixture from it carries
+`TriggerStage` where your app will be handed `triggerStage`.
+
+Re-capture whenever the entity changes. A stale fixture is worse than no fixture: it is a green light for a shape
+that nothing produces any more.
 
 ### Make a claim stop at the eligibility gateway
 

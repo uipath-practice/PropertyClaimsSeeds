@@ -173,8 +173,22 @@ The claim form, the policy and the surveyor's report are reachable two different
 **A failed call renders an error state.** Never sample data, never a placeholder claim, never a silent fallback.
 
 This is the most important rule here and it is here because of what it cost: a prototype with a fallback looked
-finished for months while its live path did not work. If you want sample data for local development, put it
-behind an explicit flag that cannot be reached in a deployed app.
+finished for months while its live path did not work.
+
+**Sample data for local development is a different thing, and you should want it** — it turns a three-minute
+edit-and-look loop into a reload, and `cookbook.md` sets out the loop it buys. Two conditions make it safe:
+
+- **Chosen, never fallen into.** The branch is taken *before* the task is fetched, on an explicit flag. Nothing
+  that fails, times out or arrives malformed may end up on it.
+- **Compiled out, not merely hidden.** Gate it on `import.meta.env.DEV`, which the production build substitutes
+  with `false`, so the branch and its dynamically-imported fixture leave the bundle entirely. *Cannot be reached
+  in a deployed app* has to mean **is not in it** — a query parameter alone still ships the fixture, and a
+  fixture that ships is a fallback waiting for someone to find it.
+
+**And capture the fixture from a real claim rather than writing one.** An invented payload is a second, private
+contract that nothing upstream honours; the app that satisfies it has been tuned to a shape the platform never
+sends. Capture it, and re-capture it when the entity changes — a stale fixture is a green light for a shape
+nothing produces any more.
 
 The same instinct one level down: **never defensively re-parse or unwrap a payload that arrived in the wrong
 shape.** If it is wrong, the contract upstream is wrong — fix it there and say so. Defensive parsing in the UI

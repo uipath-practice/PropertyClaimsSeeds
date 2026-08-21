@@ -72,8 +72,9 @@ You answer the stops by hand, on a blank stand-in — **you are proving the jour
 routes right now and the next block cannot break them; it only changes what the person is looking at.
 
 **And the journey is written down**, in `5-case/notes.md`: the stages and how a claim moves between them, what
-happens at each stop, what you had to work out that the instructions did not tell you, and anything left
-deliberately unfinished. Not a diary — the briefing you would give someone taking over, because **block 6 is the
+happens at each stop, the identifiers the next block will reach for constantly (your seat's folder key, the claim
+entity's id, the aimed run that stops a claim at each gateway), what you had to work out that the instructions
+did not tell you, and anything left deliberately unfinished. Not a diary — the briefing you would give someone taking over, because **block 6 is the
 person taking over**, usually with none of this in mind. Reading it costs five minutes; reconstructing it from
 the plan file costs an hour.
 
