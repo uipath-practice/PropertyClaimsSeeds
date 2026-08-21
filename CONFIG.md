@@ -116,20 +116,28 @@ make another.**
 | Name | `Claim Case External App` |
 | **Client id** | **`24daf1c0-48be-4710-8d81-5467adfe7f15`** |
 | Kind | Non-confidential — a public client, no secret, and none to put in your code |
-| Scopes | `DataService.Schema.Read` `DataService.Data.Read` `OR.Folders.Read` `OR.Buckets.Read` `OR.Jobs.Read` |
+| Scopes | `DataFabric.Schema.Read` `DataFabric.Data.Read` `OR.Folders.Read` `OR.Buckets.Read` `OR.Jobs.Read` |
 
 Put the client id and the scopes in your app's `uipath.json`, and pass the id again when you deploy:
 
 ```json
 {
   "clientId": "24daf1c0-48be-4710-8d81-5467adfe7f15",
-  "scope": "DataService.Schema.Read DataService.Data.Read OR.Folders.Read OR.Buckets.Read OR.Jobs.Read"
+  "scope": "DataFabric.Schema.Read DataFabric.Data.Read OR.Folders.Read OR.Buckets.Read OR.Jobs.Read"
 }
 ```
 
 ```bash
 uip codedapp deploy -n claim-review-<seat> --client-id 24daf1c0-48be-4710-8d81-5467adfe7f15   --folder-key <your-seat-folder-key>
 ```
+
+**Two Data Fabric resources exist on this tenant and only one of them works.** `DataFabricOpenApi` carries
+`DataFabric.*`; `DataServiceOpenApi` carries `DataService.*` and is the older one. The TypeScript SDK calls
+`/datafabric_/` and nothing else, so `DataService.*` buys you a token that authenticates perfectly and can read
+no records at all. It fails as `Missing permissions: EntityRecords.View` — a *folder permission* message for what
+is really a wrong-resource scope, which is why it sends people to check their folder roles for an afternoon
+([findings 93](../../TestKitchen/findings.md)). Both pairs are registered on the shared client; request the
+`DataFabric.*` pair.
 
 Three things about it are worth knowing before you meet them as errors:
 

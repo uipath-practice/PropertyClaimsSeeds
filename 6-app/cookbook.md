@@ -70,9 +70,14 @@ What you will otherwise walk into:
   encourage you to fix the registration yourself, which you cannot and must not.
 - **`uip admin external-apps list` may also `403`.** So you cannot confirm the grant by reading it. `CONFIG.md`
   is the source of truth; treat it as read.
-- **The scope names in the skill's docs are wrong for this tenant.** `oauth-scopes.md` says
-  `DataFabric.Schema.Read` / `DataFabric.Data.Read`; there is no `DataFabric.*` scope here at all. The resource is
-  `DataServiceOpenApi` and the scopes are `DataService.*`. `uip admin scopes list` settles it.
+- **Two Data Fabric resources exist and picking the wrong one costs you a day.** `uip admin scopes list` shows
+  both: `DataFabricOpenApi` with `DataFabric.*`, and the older `DataServiceOpenApi` with `DataService.*`. The
+  TypeScript SDK calls `/datafabric_/` exclusively, so **`DataFabric.*` is the pair you need** — `CONFIG.md` has
+  the exact string. Get it wrong and the token authenticates cleanly and reads nothing, reporting
+  `Missing permissions: EntityRecords.View` in your seat folder. That is a *folder permission* message for a
+  *scope* fault, so it sends you to check folder roles, effective permissions and the entity's folder, all of
+  which will look correct. Grep the SDK if you are ever unsure which API a call lands on:
+  `grep -roh "datafabric_\|dataservice_" node_modules/@uipath/uipath-typescript/dist/`.
 - **`deploy` registers your redirect URL on the shared client for you.** Never run
   `uip admin external-apps update` — it **replaces** the redirect list rather than appending, so on a shared
   client it breaks everybody else's app in one command.
