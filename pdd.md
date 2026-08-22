@@ -37,13 +37,12 @@ detail — it is what these documents *are*:
 | Insurance policy | **free prose** — coverage sections, exclusions, special conditions, endorsements, written differently by every insurer | an analysis, reading the document itself |
 | Assessor report | **free prose** — written by an external contractor who may put anything in it, in any order | an analysis, reading the document itself |
 
-Extraction suits the form and only the form. A policy's meaning lives in the wording of its exclusion and
-coverage clauses, and an analysis has to be able to quote the exact sentence it relied on (§5.2) — flattening
-that into fields loses precisely what the decision rests on, and no fixed field set survives contact with the
-next insurer's wording. The same holds for the assessor's report, with less structure still.
+Extraction suits the form and only the form. A policy's meaning lives in the wording of its clauses and an
+analysis has to quote the exact sentence it relied on (§5.2) — flattening that into fields loses what the
+decision rests on, and no fixed field set survives the next insurer's wording. The assessor's report, less
+structured still, is the same.
 
-**So the policy and the assessor's report reach the analyses as files**, and the analysis reads them. Only the
-claim form is extracted.
+**So the policy and the assessor's report reach the analyses as files.** Only the claim form is extracted.
 
 ## 2. Roles
 
@@ -51,7 +50,7 @@ claim form is extracted.
 |---|---|
 | **Claimant** | Files the claim; is informed twice and receives a written decision |
 | **Independent assessor** | Inspects the property and issues the assessor report |
-| **Eligibility reviewer** | A human. Sees the eligibility findings *before* an inspector is dispatched, and decides whether the claim proceeds — with a written reason |
+| **Eligibility reviewer** | A human. Called in *before* an inspector is dispatched, and only when screening flagged something, to decide whether the claim proceeds — with a written reason |
 | **Claims adjuster** | A human. Sees every analysis and makes the final call — with a written reason |
 | **Analysis specialists** | Each examines exactly one aspect of the claim and reports what it found. None decides the claim |
 
@@ -71,23 +70,25 @@ Applied here that gives **primary**: intake, eligibility screening, analysis, cl
 stage a claim can return to), missing details (an exception), denied (the unhappy ending).
 
 Making the *approved* ending secondary is the tempting mistake, because the two endings look symmetric. They are
-not: approval is what a healthy claim does, and a portfolio view that shows every settled claim as an exception
-is a portfolio view nobody can read.
+not: approval is what a healthy claim does, and a portfolio view showing every settled claim as an exception is
+one nobody can read.
 
-**Intake.** Register the claim. Then **in parallel**: open the claim record and retrieve the documents. Then **in
-parallel** again: retrieve the policy, look up prior claims against it, and tell the claimant the claim was received.
+**Intake.** Register the claim. Then **in parallel**: open the claim record and retrieve the documents. Then in
+parallel again: retrieve the policy, look up prior claims against it, and tell the claimant the claim was received.
 
-**Eligibility screening.** Run the five checks (§5.1), record the result, then **stop for the eligibility
-reviewer**. If they continue the claim, request an assessor inspection.
+**Eligibility screening.** Run the five checks (§5.1) and record the result. **If any of the five failed, stop
+for the eligibility reviewer**; if all five passed, the claim carries on with nobody looking at it. On both of
+those routes the stage ends by requesting an assessor inspection — only a reviewer's refusal sends the claim
+straight to the unhappy ending.
 
-**Requesting the inspection is the eligibility reviewer's act, and the process has nothing to send.** As with
-the settlement, the outbound system is out of scope here: the assessor is instructed outside this workflow, and
+**Requesting the inspection is not a call the process makes.** The assessor is instructed outside this workflow;
 what the process owns is the *waiting*. `Retrieve Inspection Report` returning not-ready is what "requested and
-outstanding" looks like from inside the case; there is no dispatch process to call and you should not build one.
+outstanding" looks like from inside the case — there is no dispatch process, and you should not build one.
 
 **Awaiting inspection.** The claim waits until the assessor's report is ready, then moves to analysis. Give this
-stage — and every stage — **exactly one way in**. Two entry conditions that can both become true is a double
-execution waiting to happen.
+stage — and every stage — **no two ways in that can both be true at once**. Two entry conditions that can both
+become true is a double execution waiting to happen. Mutually exclusive ones are fine, and one stage needs them:
+*denied* is reached from the eligibility gateway and from claim review, and a claim takes exactly one of the two.
 
 **Analysis.** Validate the assessor report first and turn it into structured data. Then, **in parallel**, three
 independent analyses — coverage, payout, credibility — each reading the *structured* assessment rather than the
@@ -110,17 +111,13 @@ written afterwards is one nobody can see (§8).
 They have the same shape on purpose: *write the letter → send it → record the outcome*. Approval carries the extra
 money step. A claim denied at the eligibility gateway goes straight here, having had no analysis at all.
 
-**Authorising the settlement means writing the approved amount to the claim record, and nothing else.** There is
-no payment system in this exercise and no process that pays one — an insurer's disbursement runs through a
-finance system that is out of scope here, exactly as the claimant's letter is written and logged rather than
-emailed. The approved figure and who approved it are what the process owes the next system; making the payment
-is that system's job.
+**Authorising the settlement means writing the approved amount to the claim record, and nothing else.** As with
+the inspection, the outbound system is out of scope: the approved figure and who approved it are what this
+process owes the next one, and paying it is that system's job.
 
 **Missing details** — *a stage that waits, not a stage that works.* A real claim sometimes lacks a required
-document: the claimant is asked for it and the claim waits. Build this stage as a placeholder — it must exist in the
-lifecycle and must not do anything yet.
-
-Two structural facts worth stating because they are easy to get wrong: **parallelism is expressed by grouping
+document: the claimant is asked for it and the claim waits. Build it as a placeholder — it must exist in the
+lifecycle and must not do anything yet. Two structural facts, both easy to get wrong: **parallelism is expressed by grouping
 work, not by ordering it** — sequencing three tasks does not make them concurrent. And **the two endings branch on
 the *same* event** — claim review completing — with mutually exclusive tests, rather than one of them diverting the
 claim out early. One event, two tests, nothing to race.
@@ -130,31 +127,42 @@ claim out early. One event, two tests, nothing to race.
 | | Eligibility gateway | Final review |
 |---|---|---|
 | Placed | after eligibility screening, before an inspector is sent | after all four analyses |
+| Opens when | one of the five screening checks failed | the analyses raise something worth a human |
 | Answers | is this claim worth investigating? | is this claim payable, and for how much? |
 | Sees | the five eligibility checks, the claim, the policy | every analysis, and the recommended outcome |
 | Yields | continue or deny, plus the reviewer's reason | the final outcome, plus the adjuster's reason |
 
-Both must show the reviewer everything the analyses found, not a summary. The first gateway exists to avoid paying
-for an inspection on a claim that was never eligible — which means the downstream analyses have not run when it
-opens. Those sections must read as **not yet available**, never as empty or broken ones. A claim denied at this
-gateway is different again: those analyses will never run, so promising a screen that is coming is worse than saying
-plainly that there is none.
+Both must show the reviewer everything the analyses found, not a summary. The first exists to avoid paying for
+an inspection on a claim that was never eligible, so the later analyses have not run when it opens — and on a
+claim it denies they never will. What that means for the screen is `6-app/spec.md`'s to say.
 
-**No claim is ever refused without a human.** An analysis that finds a fatal problem recommends denial and raises it;
-the reviewer decides, and may override on compelling circumstances they can see and the documents cannot. This is
-the whole reason the eligibility gateway is never skipped.
+**No claim is ever refused without a human.** An analysis that finds a fatal problem recommends denial and raises
+it; the reviewer decides, and may override on compelling circumstances they can see and the documents cannot. So
+**a failed screening check always opens the eligibility gateway** — that is the half of it that is never skipped.
 
-**Approval is the direction that may run unattended.** When the recommendation carries no flags and the payout is
-within the §5.3 tolerance, the final review is skipped and the claim settles without a human seeing the amounts —
-deliberate for small clean claims, and the reason the tolerance is not optional. Two rules make it safe:
+**Approval is the direction that may run unattended, and it runs unattended at *both* gateways.** The point of
+automating this at all is to clear the clean claims and spend human attention on the ones that need it, so:
 
-- **Fail towards the human.** Skip only on an explicit "no review needed". A missing or unreadable value means a
-  reviewer looks at it.
-- **Whatever runs after the gateway needs its own way to start**, or a skipped gateway leaves the claim waiting
-  forever for a step that will never run.
+- all five screening checks pass ⇒ **no eligibility reviewer**. The claim goes on to the inspection by itself.
+- the analyses then raise nothing, and the payout is inside the §5.3 tolerance ⇒ **no adjuster**. The claim
+  settles without a human seeing the amounts.
 
-Everything downstream then reads *the reviewer's decision if there was one, otherwise the recommendation*. Write
-that rule once and reuse it, or the two routes drift apart.
+A spotless claim is therefore decided end to end by the process, with **no task raised at all**. That is the
+intended outcome, not a hole in the controls: concerns still reach a human, they just reach the *right* one —
+what screening can see stops the claim before an inspector is paid for, and what only the analyses can see stops
+it at the final review with every finding on the screen.
+
+Two rules make skipping safe, and they apply to both gateways equally:
+
+- **Fail towards the human.** Skip only on an explicit "nothing to review". A missing or unreadable value means a
+  reviewer looks at it. The test is `!== false`, never `=== true`.
+- **Whatever runs after a gateway needs its own way to start**, or a skipped gateway leaves the claim waiting
+  forever. This now applies to the step after screening too.
+
+Everything downstream reads *the reviewer's decision if there was one, otherwise the recommendation* — write
+that rule once and reuse it, or the two routes drift apart. And **write the automatic decision down as a
+decision**: a claim that skipped a gateway still records what was decided and that no human decided it, or the
+record shows a blank where the reviewer's answer would be, and nobody can tell a clean claim from a lost one.
 
 ## 5. What each analysis decides
 
@@ -242,32 +250,34 @@ lower figure makes "pay less than was asked" the default outcome and leaves no t
 **Never convert a currency.** Report in the currency of the claim.
 
 **The aggregate is the one cap a claimant cannot check for themselves.** Every other reduction is printed on a
-document they hold — the section limit, the sublimit, the deductible. This one rests on a claim history only the
-insurer has, so it always goes to a human before the money is set, and the reason names the earlier claim and what
-it consumed. A correct settlement the claimant cannot verify becomes a complaint.
+document they hold. This one rests on a claim history only the insurer has, so it always goes to a human before
+the money is set, and the reason names the earlier claim and what it consumed — a correct settlement the
+claimant cannot verify becomes a complaint.
 
 ### 5.4 Credibility — four behavioural reads, each low, medium or high risk
 
 - **Narrative consistency** — does the claimant's account match the assessor's findings? Material contradictions
   only; differences in wording are expected.
-- **Estimate reasonableness** — as a **ratio** of claimed to assessed, never an amount: at or below **1.20** this
-  is normal and is not a finding; 1.21–1.50 medium to high and flagged; above 1.50 high and flagged. A claim 3%
-  above the estimate is two professionals agreeing.
+- **Estimate behaviour** — the claimed-to-assessed **ratio**, never an amount, and read as behaviour: at or below
+  **1.20** two professionals are agreeing; above it, the pattern is worth noting alongside the other three reads.
+  **Credibility never flags the gap itself.** That is the same test §5.3.7 gives to payout, at the same threshold,
+  and §5 forbids one fact reaching a reviewer as two problems — so payout owns the finding and credibility may
+  only cite it.
 - **Documentation completeness** — the assessor's licence number, itemised descriptions rather than bare
   amounts. Missing paperwork is not fraud; it may mean the claim is not ready to adjudicate. **A field that is
   legitimately empty is not missing** — not every country has a state or province.
 - **Timing and pattern** — a submission gap beyond 30 days is notable and beyond 45 a flag; an assessment on the day
   of the incident, or more than 60 days after it, is notable; prior claims are read for frequency and similarity.
 
-Credibility reads timing as **behaviour**. The contractual deadline test belongs to eligibility, and only there.
+Credibility reads timing as **behaviour**. The contractual deadline test belongs to eligibility, and only there —
+and by the same rule the amount comparison belongs to payout, and only there.
 
 ### 5.5 Assessor report validation — the gate before the parallel analyses
 
 Confirm the document is the assessor report for *this* claim; that it carries assessor name, licence, assessment
-date, property, incident date, cause determination, damage observations, estimate and the assessor's authorisation;
-that its details match the claim and the policy; and that it does not contradict itself. Produce the structured
-assessment the three parallel analyses read. Conclude with one of: proceed, escalate for human attention, or the
-report is unusable.
+date, property, incident date, cause determination, damage observations, estimate and authorisation; that its
+details match the claim and the policy; and that it does not contradict itself. Produce the structured assessment
+the three parallel analyses read, and conclude with one of: proceed, escalate, or unusable.
 
 ### 5.6 The decision rules — applied in this order
 
@@ -301,15 +311,19 @@ not one: the findings, **the decision**, and **the reviewer's written reason** �
 Get this wrong and the reviewer is asked the same question twice, the audit trail says the claim failed after it was
 approved, and a human's *yes* becomes a machine's *no*.
 
+**A skipped gateway binds nothing, and that is not the same as a reviewer who said nothing.** Nothing was
+accepted because nothing was raised. Hand the later stages an explicit "no human has spoken" rather than a blank
+reason, or they will read the blank as approval of everything.
+
 ## 7. Keeping the claimant informed
 
 **Twice.** Claim received, at intake — and the outcome, from whichever ending the claim reaches. The mid-process
 "still working on it" notices were removed: they told the claimant nothing they could act on.
 
-The outcome message carries the **decision letter** itself, so the letter has to be written *before* the message is
-sent, inside the same ending. That ordering is also why each ending drafts its own letter rather than one being
-drafted centrally before the branch: a claim denied at the eligibility gateway never passes through review, and
-would otherwise be notified with nothing to send.
+The outcome message carries the **decision letter** itself, so the letter is written *before* the message is sent,
+inside the same ending — which is also why each ending drafts its own rather than one being drafted before the
+branch: a claim denied at the eligibility gateway never passes through review, and would be notified with
+nothing to send.
 
 The letter explains; it never analyses. Two letters exist and there is no third — **never write to a claimant that
 their claim is still under review.** By the time a letter is drafted the claim has an ending, and the analyses that
@@ -336,10 +350,9 @@ shape the whole build, and each of them cost us a working day to learn:
 
 Claims arrive with problems deliberately planted in them, at most one screening-level and one review-level per
 claim. **Catching these is how you will know the solution works** — so each row below names what to look for, which
-analysis owns it, and what it must produce. An analysis that misses its row is not a style difference.
-
-Note what the right-hand column does *not* say. None of these closes a claim: the analysis fails its check and says
-why, and a human decides what that is worth (§4).
+analysis owns it, and what it must produce. An analysis that misses its row is not a style difference. Note what
+the right-hand column does *not* say: none of these closes a claim. The analysis fails its check and says why,
+and a human decides what that is worth (§4).
 
 ### Screening — from the claim form and the policy alone
 
@@ -354,10 +367,10 @@ no assessor report to compare against and its absence is not a finding.
 | The policy term ended days before the loss and was never renewed — payment status stays truthful | eligibility, coverage period | **Coverage period fails**, giving the loss date and the policy period. |
 | The loss happened more than **60 days** before the claim was filed | eligibility, filing deadline | **Filing deadline fails** with no explanation on the form; a caveat rather than a failure where the form explains the delay. |
 
-**Two of these are designed to slip past a careless reading.** The identity check is told that nicknames, middle
-names and minor spellings are *acceptable* — so an analysis matching on how similar two strings look will wave a
-spouse's policy through. The address check is told to normalise `St.`/`Street` and `Apt`/`#` — which will not close
-a one-digit gap, because everything except the number still matches.
+**Two of these are designed to slip past a careless reading.** The identity check is told that nicknames and minor
+spellings are *acceptable*, so an analysis matching on how similar two strings look waves a spouse's policy
+through. The address check is told to normalise `St.`/`Street` and `Apt`/`#` — which will not close a one-digit
+gap, because everything except the number still matches.
 
 ### Review — needs the assessor's report, or the claim history
 
@@ -368,16 +381,18 @@ a one-digit gap, because everything except the number still matches.
 | The claimant's own account asserts something that rules out the cause they are claiming | credibility, narrative consistency | **Flagged.** Quote the two statements side by side. |
 | An earlier settled claim in the same policy period has consumed most of the annual aggregate | payout, aggregate limit | **Reduce and flag.** Cap the settlement at what remains and name the earlier claim. |
 
-The last two are the hard ones, for opposite reasons. The narrative contradiction has **nothing missing and nothing
-malformed** — no field disagrees with another field, and each document is internally fine. It is visible only to
-something that reads both accounts and understands them. The aggregate erosion is not in the documents **at all**:
-the claim is clean, the peril is covered, the assessor agrees with the estimate, and the settlement still comes out
-below the amount asked for.
+The last two are the hard ones, for opposite reasons. The narrative contradiction has **nothing missing and
+nothing malformed** — every document is internally fine, and it is visible only to something that reads both
+accounts and understands them. The aggregate erosion is not in the documents **at all**: the claim is clean, the
+peril is covered, the assessor agrees, and the settlement still comes out below the amount asked for.
 
 ### And sometimes nothing is wrong
 
-Roughly a third of claims carry no planted problem at all. Those must pass every screening check, reach the
-eligibility reviewer with nothing to answer, and then **settle in full without the second review** — the one
-gateway a clean claim is allowed to skip. A solution that finds something to flag on every claim has not passed; it
-has just learned to always say yes to the question *"is anything wrong here?"*, and it can never auto-settle
-anything.
+Roughly a third of claims carry no planted problem at all. Those must pass every screening check and then
+**settle in full with no human touching them at any point** — both gateways skipped, no task ever raised. A
+solution that finds something to flag on every claim has not passed; it has just learned to always say yes to the
+question *"is anything wrong here?"*, and it can never auto-settle anything. **A clean claim raising no task is
+the pass, not a silence** — the first time you run one it looks as though the case did nothing, because the
+screen you were waiting to answer never appears. Read the record and the timeline instead: the checks, the
+analyses and the letter are all on it, and the ending is *approved*. The corollary matters when you demo: **to
+see the reviewer's screen at all you have to aim the run at it.**

@@ -32,9 +32,12 @@ The claim moves through five stages, and every stage writes what it learned to a
 Everything in this seed follows from these. If a design choice seems arbitrary, it is probably one of these
 four showing through.
 
-**1. Analyses report; humans decide.** No agent may refuse a claim. They produce *findings* and a
-*recommendation*; the two human gateways turn that into an outcome. Approval is the one direction allowed to run
-unattended — a claim with nothing wrong settles without an adjuster, but it still passes the screening gateway.
+**1. Analyses report; humans decide — when there is something to decide.** No agent may refuse a claim. They
+produce *findings* and a *recommendation*; the two human gateways turn that into an outcome. Approval is the one
+direction allowed to run unattended, and it runs unattended at **both** gateways: a claim that passes all five
+screening checks is never shown to the eligibility reviewer, and if the analyses then raise nothing it settles
+without an adjuster either. **A gateway opens because something needs a human, never as a formality** — a
+spotless claim is closed end to end with no task raised at all, and that is the pass.
 
 **2. One analysis per agent, and no agent reports another's concern.** A reviewer sees the findings side by
 side, so the same problem raised by three analyses reads as three problems. An agent may *cite* another's finding
@@ -104,10 +107,40 @@ another package to version, deploy and uninstall in step, and a name nobody chos
 other file in a block folder is yours.** Put your notes where the prompt that prompted them lives — that is
 where the next person will look for them.
 
+**A file that configures the platform rather than shipping inside the solution belongs in its block folder too**,
+not in `Build/`. An entity schema, an input fixture, a test matrix: each is generated and machine-readable, and
+none of it is part of the `.uipx`. `Build/ClaimCase-<seat>/` becomes a solution root, where a stray folder is
+noise at best and packed at worst — and `ls Build/` is meant to show your solution and nothing else.
+
 Do not scatter working folders across the seed, and do not build outside `Build/`. A reviewer should be able to
 run `ls Build/` and see your entire solution, once.
 
 ## Rules that hold everywhere
+
+**Fix what the earlier blocks got wrong. They are your inheritance, not your foundation.**
+
+Each block builds on the ones before it, and each of those was written by somebody — possibly you, possibly a
+different agent on a different day, possibly a less capable one — working with less information than you have
+now. **Their output is a draft you have the standing right to correct**, and correcting it is part of your
+block, not a detour from it.
+
+Concretely, when you open a block:
+
+- **Read the upstream artifacts against what you now know**, not as settled fact. The design (`2-design/sdd.md`),
+  the entity, the agent prompts, the case plan and the block notes are all in scope.
+- **When you find something wrong, fix it at the source** and say so in your block's notes — what was wrong,
+  what you changed, and how you know. A workaround in your own block leaves the defect in place for the next
+  one, and hides it.
+- **When you cannot fix it here** — because the fix costs a redeploy you should not spend, or belongs to a
+  component you are not touching — **write it down in your notes anyway, with the specific change required.**
+  An unfixed defect that is named is a task; an unfixed defect that is silent is a landmine.
+- **Log it as a finding** with `--artifact` naming the file, because a defect one block leaves for another is
+  usually a gap in what the seed told that block, not a lapse by whoever built it.
+
+The one thing to be careful about: **do not redesign upstream work because you would have done it differently.**
+The bar is *wrong*, not *not how I would have written it* — a contract it violates, a value that will not bind,
+a fact that has since been measured otherwise, a shape the platform rejects. Where it is merely a different
+choice that works, leave it and get on with your block.
 
 **You have standing approval to build, deploy and run. Do not stop to ask for it.**
 
@@ -273,15 +306,21 @@ neither of us. Over many runs it is how we watch the platform's own guidance imp
 does, and `trial-error` marks what nobody has written down yet, ours or theirs.
 
 **`--evidence` is for what we cannot see.** We can read the tenant; we cannot read your disk. An error string
-verbatim, the command that produced it, the five lines of config that were wrong — each is worth more than a
-paragraph describing it, and it costs you a copy and paste. Two rules: **never paste a secret**, and never paste
-a whole file — anything longer than the column is trimmed to fit and marked `[trimmed]`, which is a worse
-version of choosing the lines yourself. This table is shared with everyone working on this tenant, and it is the few lines that matter
-that make a finding reproducible.
+verbatim, or the command that produced it, is worth more than a paragraph describing it and costs you a copy and
+paste.
+
+**The column holds 200 characters.** That is one error string — not a command *and* its output, and not five
+lines of config. Anything longer is trimmed to fit and marked `[trimmed]`, and the script prints both numbers
+when it happens. Knowing the size up front turns a retry into a choice: pick the few words someone would grep
+for. `--summary` is the roomy one — ~1,500 characters is normal and goes untrimmed — so put the explanation
+there and keep `--evidence` literal.
+
+**Never paste a secret**, and never paste a whole file. This table is shared with everyone on this tenant.
 
 ### Before you finish a block
 
-Re-read the `cookbook.md` you were handed and log the two-sided answer:
+Re-read the three files you were handed — `prompt.md`, `spec.md`, `cookbook.md` — and log the two-sided answer,
+one finding per file:
 
 > **Up to three sections you never needed, and up to three you would have failed without.** One line each,
 > naming the section.
@@ -289,6 +328,16 @@ Re-read the `cookbook.md` you were handed and log the two-sided answer:
 Both halves, or neither. A list of what to cut with nothing to keep is an opinion; the two together are a
 measurement. If nothing stood out either way, say that too — `--ask none` is a real answer and more useful than
 an invented one.
+
+**A warning that worked leaves no trace, so say so explicitly.** If a section told you about a trap and you
+therefore never met it, that is evidence the section earns its place — and it is invisible in every other
+signal we have. Log it with `--category saved-me` and name what you would have done unaided. *"I would have used
+the nested folder layout, which only `agent debug` rejects"* is worth more than a passing build.
+
+**Suggest a rewording only when you can say what it cost you.** *"This sentence would read better as X"* is an
+opinion and we cannot act on it. *"I read this sentence, did X for forty minutes, and the right answer was Y"*
+is a defect with a fix attached. The consequence is the part that makes it actionable — so if a rewrite occurs
+to you and no consequence does, it is probably fine as it is.
 
 **Write it while the finding is fresh**, not in a batch at the end — an hour later it has lost the detail that
 made it useful. Then close the block with `python3 log-finding.py --retry` and report the count it gives back.
@@ -300,3 +349,20 @@ in the tooling itself.
 
 It is not homework. It is the deliverable that improves this for the next person, and the most useful thing you
 will have when someone asks what the build actually cost.
+
+### Before you finish the exercise
+
+Once — at the end of block 7, when you have seen the whole set and know how each block's decisions played out.
+Four questions, one finding each, `--block 7-testing --category seed-review`:
+
+1. **Which single change to this seed would have saved you the most time?** Name the file and the section. One
+   answer, not a list — forcing the ranking is the point.
+2. **What did you have to work out that no document told you?** The thing you learned from an error message, a
+   third try, or someone else's answer. This is the gap between what we wrote and what building it needs.
+3. **Where did two documents disagree, and which did you follow?** Every one of these is a defect we cannot see
+   from the outside, because your build resolved it silently.
+4. **What did you build that you now know is wrong**, and did you go back and fix it? An unfixed defect that is
+   named is worth more to us than a clean report.
+
+Answer them from what happened, not from what would sound useful. A blank answer to any of the four is a real
+answer and we would rather have it than an invented one.

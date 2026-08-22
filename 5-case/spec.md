@@ -76,9 +76,27 @@ A stage can leave in two ways and they are **different events**:
 | an exit rule with `marksStageComplete: true` | `selected-stage-completed` |
 | exiting without marking complete | `selected-stage-exited` |
 
-Both forms are legitimate — a poll loop the claim returns to should never mark itself complete, so what follows it
-keys on its *exit*. **Only the mismatch is fatal**, and it fails in the worst possible way: every task green, no
-error, no incident, no cursor, and the downstream stage simply never starts.
+Both forms are legitimate. **Only the mismatch is fatal**, and it fails in the worst possible way: every task
+green, no error, no incident, no cursor, and the downstream stage simply never starts.
+
+### A waiting stage loops *inside itself* — `return-to-origin` does not do what it sounds like
+
+**Corrected 2026-08-22, measured.** `return-to-origin` does **not** re-enter the stage that carries it. It sends
+the claim back to the stage it came *from*. An earlier version of this document built the whole `Awaiting
+inspection` stage on the opposite reading — *"a poll loop the claim returns to"*, with a `not ready` exit of
+`return-to-origin, itself`. What that actually does: the timer, the poll and the write run exactly once, the
+not-ready exit fires, and the case then sits `Running` with **no cursor in the stage, no incident and every task
+green**, forever.
+
+Put the loop inside the stage instead:
+
+- give the timer a **second entry rule** — `selected-tasks-completed(<the write task>)` `IF reportReady !== true`
+- give the stage a **single exit**, gated on `reportReady === true`
+- set the timer to **10 seconds**, not minutes. The stand-in models no assessor delay — it answers ready about
+  four times in five on every call, so the interval *is* the wait (`5-case/cookbook.md`).
+
+That also keeps the status column honestly reading *Awaiting inspection* for as long as the claim is really
+waiting, which the diverting-exit shape does not.
 
 Three related mechanisms, each silent:
 
@@ -88,9 +106,20 @@ Three related mechanisms, each silent:
   finishing. If the diverting exit wins, the stage exits without ever completing.
 - **A stage that marks itself complete does not satisfy a `selected-stage-exited` rule.**
 
-**So: name the finishing task.** Every stage exit should be `selected-tasks-completed` naming the task — or the
-parallel group — that ends the stage, with `marksStageComplete: true`. It survives a task being deleted, and it
-reads as what it is.
+**So: name the finishing task, and let the tool decide the rule.** Every stage exit names the task — or the
+parallel group — that ends the stage, and marks the stage complete.
+
+**Three authorities disagree on the exact pairing, so know which one wins.** This document used to mandate
+`selected-tasks-completed` **with** `marksStageComplete: true`; the case skill's own rules call that pairing a
+schema error and require `required-tasks-completed` there; and `5-case/check_caseplan.py` rejects the skill's
+alternative diverting-exit shape as unreachable. Exactly one shape satisfies all three, and it is the one to
+build:
+
+> `required-tasks-completed` + `marksStageComplete: true` on every exit · **no routing exits anywhere** ·
+> branching expressed in the *downstream* stage's entry condition.
+
+When the seed and the tool disagree, the tool wins and the disagreement is a finding (`AGENTS.md`). This row is
+here because two builds have now spent a cycle rediscovering it.
 
 The fix for a branch is never to key the diverting exit on an earlier task; that only moves the race. **Delete the
 diverting exit** and let both destinations key on the *same* completion with mutually exclusive conditions — one
@@ -130,6 +159,11 @@ Task groups are a nested array and **the inner grouping is what expresses concur
 sequence run in sequence, however independent they look. `pdd.md` §3 says which work is parallel; expressing it is
 your job.
 
+**Do not reach for `runs-sequentially` to say it.** That rule must be a task's *only* entry condition, which
+means a stage where four tasks form a chain and a fifth runs alongside them cannot be expressed with it at all —
+and two of this process's stages are exactly that shape. Name the predecessor with `selected-tasks-completed`
+instead: it is unambiguous, it survives a task being deleted, and it is what the rest of your plan already uses.
+
 ## Three shapes the schema insists on
 
 These are not style. Each one was found by a live run failing in a way that named nothing useful.
@@ -166,18 +200,37 @@ consumer then has two sources of truth for the same thing.
    **two** entry rules — after the gateway completes, *or* after the upstream task completes with the skip
    condition true. With only the first, the skipped path stops dead.
 
-4. **The generator is not in your folder.** Every agent, process and app you build resolves inside the case's own
-   folder, so an empty folder path is correct for them — which is exactly why the one task that needs an explicit
-   folder is easy to miss. `CONFIG.md` names the folder the generator lives in. Get this wrong and the case faults
-   in about five seconds with `170007 The job's associated process could not be found`, having executed nothing.
+4. **The six provided processes are not in your folder — all six.** Every agent, process and app *you* build
+   resolves inside the case's own folder, so an empty folder path is correct for them. That is exactly what makes
+   the exception easy to under-apply: it is not one task, it is **every binding to a provided process**
+   (`contracts/provided-processes.md`). Name the folder explicitly on each. Miss one and the case faults in about
+   five seconds with `170007 The job's associated process could not be found`, having executed nothing — and a
+   build that named the folder on the generator alone takes that fault on its second process task, not its
+   first.
 
-## Auto-settlement: fail towards the human
+## Two skippable gateways: fail towards the human
 
-A claim with nothing flagged skips the *final* review and settles unattended. It never skips the eligibility
-gateway (`pdd.md` §4).
+**Both** gateways are skippable and a clean claim skips both, so it closes with no task raised (`pdd.md` §4, §9).
+Screening opens the eligibility gateway only when one of the five checks failed; claim review opens the
+adjuster's only when the analyses raise something.
 
-The gate is **`reviewRequired !== false`, never `=== true`.** A missing or malformed value must route to a
-reviewer; only an explicit `false` may skip. This is a one-character difference with a one-way consequence.
+Each gate is a **`!== false`** test, never `=== true`. A missing or malformed value must route to a reviewer;
+only an explicit `false` may skip. This is a one-character difference with a one-way consequence.
+
+**Gate on the case variable, not on the column you just wrote.** The screening verdict and `reviewRequired` are
+both produced by an agent task *and* written to the record, and this document's own warning about reading back a
+value written in the same batch applies to both. Bind each gate to the case variable the agent task produced.
+
+Three consequences, and the first two are where builds break:
+
+- **Every task after a skippable gateway needs two entry rules** — after the gateway completes, *or* after the
+  upstream task completes with the skip condition true. This now applies to the step after screening as well as
+  the step after review. With only the first rule, the skipped path stops dead — item 3 above, twice over.
+- **The skip route still has to write the decision down.** `eligibilityDecision` and `reviewDecision` are what
+  block 6 renders and what the letters read; a claim that skipped a gateway must record an explicit
+  *decided automatically* rather than leaving the column empty. An empty column is indistinguishable from a
+  claim that got lost.
+- **Your acceptance run needs an aimed claim.** A clean one proves the automation and shows you no screen.
 
 ## The claim record is written through a shared connection
 
@@ -199,10 +252,15 @@ Two consequences for the plan's shape:
   been written down; a value written afterwards is one nobody can see.
 - **A single write at the end cannot work.** The gateways fire before the case ends.
 
-## The case header
+## The case header — authored in the designer, after your last pack
 
 The case app renders a configured header above the stage timeline, and it reads **case variables only** — no
 entity access, no metadata traversal. Whatever it shows, some task must already have emitted.
+
+**There is no header field in the case schema.** Nothing on the root or on `metadata` holds it, so a locally
+authored plan cannot carry one and a local `case pack` would drop it if it could. Treat this section as
+something you do in Studio Web *after* the last time you pack — or skip it and say you skipped it. Do not invent
+a field for it.
 
 **Scalars only.** Binding an object renders as a literal class name, which is the most common way to make the
 header look broken. Two sections of about seven rows is the practical maximum. Keep every expression null-safe or

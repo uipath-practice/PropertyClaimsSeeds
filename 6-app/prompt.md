@@ -37,6 +37,10 @@ back into the case plan is almost never the right move here.**
 
 ## What a reviewer has to be able to do
 
+- **Change an amount, with a reason.** At the second gateway the adjuster may disagree with the machine's
+  settlement, and the case has already reserved somewhere to put the number they land on. What they may change
+  and within what bounds is in `contracts/settlement-table.md`; a screen with no way to disagree leaves those
+  fields empty forever.
 - **See what the decision turns on the moment the screen opens.** Who claimed, for what, how much, against which
   policy, what the machine recommends and what it thinks is wrong — all of it before they scroll anywhere. Detail
   below and behind things is fine and expected; a claim carries a lot. Arriving at a screen that says nothing

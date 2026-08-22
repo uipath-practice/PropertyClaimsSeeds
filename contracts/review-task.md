@@ -31,6 +31,13 @@ can silently arrive empty, to carry data the record already holds.
 A design may add outputs — a settlement the adjuster edited, say. Add them as **outputs**; never move something
 out of the three inOuts.
 
+**There is no `json` type, so a document travels as a string.** A coded action app's schema supports
+string / number / integer / boolean / array / object / file, and `object` is rejected outright unless you spell
+out every nested property — which for the settlement document is about forty lines the screen then binds field
+by field, against this contract's own rule about not threading data through the payload. Declare it as a
+**string carrying JSON text**. That is also the shape the `MULTILINE_TEXT` column wants, so the case writes it
+with no conversion.
+
 ### Two outcomes, and not three
 
 **Exactly two at each gateway.** Carry on, or stop. Two gateways × two answers is **four routes**, and four is
@@ -78,11 +85,22 @@ The title is set where the task is raised, in the case plan.
 
 ## The casing depends on who completed the task
 
-The names in the table above are what the **app** sends. A task completed from the command line hands the same
-fields back to the case **PascalCased** — `reviewerNotes` arrives as `ReviewerNotes`. The outcome is unaffected,
-so routing is identical either way; only the data mapping differs.
+The names in the table above are what the **app** sends. A task completed from the command line comes back
+**PascalCased** — you send `reviewerNotes`, and `uip tasks get` echoes `ReviewerNotes`. The outcome is unaffected
+either way, so routing is identical.
 
-This matters at the block 5 / block 6 seam. Block 5 answers its tasks from the CLI to prove the four routes, and
-an output mapping written against the CLI's casing will fail the moment block 6's real screen submits. **Map the
-names in this contract**, and treat a `null` reviewer note during block 5 as expected rather than as a mapping
-bug. Observed on two independent seats, 2026-08-21.
+**Re-measured 2026-08-22 on `uip` 1.199.0-preview.119, and the news is better than it was:** the case's output
+mapping, written against this contract's camelCase, **did** populate the columns from a CLI-completed task. The
+mapping appears to be case-insensitive on this version. An earlier version of this section told you to expect a
+`null` reviewer note through block 5; that is no longer what happens, and believing it would make you ignore a
+real gap or hunt a bug that is not there.
+
+**What has not changed is the rule.** Map **the names in this contract** and never re-point a mapping at what
+the CLI printed. Two seats did exactly that on 2026-08-21 — one on a confident answer from the platform's own
+documentation tool — and produced a case that passes its own CLI tests and breaks the first time a human uses
+the screen. If your notes arrive empty, the fix is upstream of the mapping, not in it.
+
+The same caution applies to the app: **do not capture a fixture from `uip tasks get`**, which PascalCases the
+whole payload for display. Read the three inOut identifiers through one case-tolerant lookup at the edge and
+write back the camelCase in the table — then a task answered from the CLI still opens, and one raised by the
+case still works.

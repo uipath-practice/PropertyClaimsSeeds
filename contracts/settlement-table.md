@@ -76,14 +76,11 @@ without hiding a D payment when one ever exists.
 
 ## Where it lives
 
-**`settlementJson`, a new `MULTILINE_MAX` column. Nothing had to be dropped for it.**
-
-> **Corrected 2026-08-10, before anything was deleted.** I had counted the entity as **10 of 10** `MULTILINE_MAX`
-> columns and concluded that the orphaned `assessmentReportValidationJson` had to go to make room. The real count
-> was **9** — `claimResponseJson` is `MULTILINE_TEXT`, not `MULTILINE_MAX`, and I had miscounted it into the cap.
-> One slot was free, so `settlementJson` took it and the assessment-validation envelope stays. The change also
-> became purely **additive**, which is why it was safe to apply immediately instead of waiting for the deploy
-> window. The entity is now genuinely at **10 of 10** — the next payload really does need a slot freed.
+`settlementJson` is one of the eleven `MULTILINE_TEXT` columns at 10,000 characters — see
+[`claim-entity.md`](claim-entity.md), which owns the column list. **There is no `MULTILINE_MAX` budget to
+manage.** An earlier version of this section reasoned at length about a 10-of-10 `MULTILINE_MAX` cap; that type
+is a private preview not enabled on this tenant, and the entity design it described has been replaced. It read
+as authoritative because it carried a date and a correction, which is exactly what made it expensive.
 
 ```jsonc
 settlementJson = {
@@ -101,8 +98,15 @@ settlementJson = {
 ```
 
 **`recommended` is never mutated.** The assessor's edits produce `final` plus one `overrides` entry each, which is
-the whole audit story: what the agent proposed, what the human set, and why. `approvedPayout` — an existing decimal
-column, **never populated on any claim so far** — carries `final.net` so a dashboard can sort on it without parsing.
+the whole audit story: what the agent proposed, what the human set, and why.
+
+**`approvedPayout` carries `final.net`**, so a dashboard can sort on it without parsing. It has **one** writer,
+and picking the wrong one is why it stayed empty on every claim for two weeks: the obvious candidate is the task
+that records the adjuster's decision, and *that task does not run on a clean claim* — which is a third of them,
+and now every claim that skips both gateways. Give the column to the task that **authorises the settlement in
+the approved ending**, reading the human's override if there was one and the agent's figure otherwise. Both
+routes then populate it, and `pdd.md` §3 says the same thing from the process side: authorising the settlement
+*is* writing the approved amount.
 
 ## Who may write what
 
@@ -126,8 +130,25 @@ column, **never populated on any claim so far** — carries `final.net` so a das
 The app's wording must follow: at gateway 2 the action is *"Approve and send for settlement"*, not "continue". A
 reviewer approving a payment should be told that is what they are doing.
 
-**When no gateway is raised** (a clean claim, straight to payment) `final` is a copy of `recommended` with
-`source: "agent"`. The letter must not distinguish the two cases; the audit trail must.
+**When no gateway is raised** — a clean claim, which now skips *both* (`pdd.md` §4) — `final` is a copy of
+`recommended` with `source: "agent"`. The letter must not distinguish the two cases; the audit trail must.
+
+### The aggregate reduction has to be legible, not merely correct
+
+The annual aggregate is the one cap a claimant cannot check for themselves (`pdd.md` §5.3), so a settlement cut
+by it is the row most likely to be authorised blind. Measured: a claim correctly reduced from SGD 16,600 to
+9,807 where the only evidence offered was *"One settled claim in this policy period"* — no claim number, no
+amount, no date, and not one of the three numbers a reviewer needs anywhere on the record.
+
+So the settlement document carries them beside `net`:
+
+```jsonc
+"aggregateLimit": 125000, "aggregateConsumed": 112693, "aggregateRemaining": 12307
+```
+
+and the `aggregate_limit` check's details name **the earlier claim's identifier and what it consumed**. A capped
+row also has to say so in words — *"Annual aggregate exhausted"*, *"Reduced by the remaining aggregate"* —
+because `"Not covered"` and `"limit exhausted"` are different facts and must not both render as `0.00`.
 
 ## Override bounds — enforced in the app
 

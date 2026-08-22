@@ -50,6 +50,14 @@ cat .uipath/app.config.json               # systemName — these two must agree
 
 If they have diverged, deploying again will not converge them. Stop and check before you publish a second time.
 
+**And if you already have two, there is a way out.** `uip codedapp publish` resolves the app **by name alone** —
+it does not read `app.config.json`'s `systemName`, and restoring that file by hand does not help. With two
+records sharing a name, five consecutive publishes alternated between them **deterministically**: 1.1.0 → A,
+1.1.1 → B, 1.1.2 → A, 1.1.3 → B, 1.1.4 → A. So: after every publish read the **System Name** the command prints
+back, compare it to the `AppId` on an existing task, and if it is the wrong one **bump the version and publish
+again** until it is the right one. Deploy the version that landed on the bound identity. It costs a version
+number per attempt and nothing else.
+
 **If your gateways are not already wired** — a case plan built before this block existed in its current
 shape — do that first: `5-case/cookbook.md`, *Registering the stand-in app* and *Wiring an action task*. Then come
 back. Everything below assumes a claim can already reach a task and be answered.
@@ -149,6 +157,10 @@ uip or buckets list --folder-key <folder> --output json          # names, keys, 
 uip or bucket-files list <bucket-key> --folder-key <folder>      # the paths actually present
 ```
 
+**The CLI takes the `Key`; the SDK takes the numeric `Id`.** Both come back from `buckets list`, and passing the
+number to the CLI fails with `Invalid bucket key: '24070'. Expected a UUID` — which reads like a broken value
+rather than the wrong one of two.
+
 The second answers "is the app wrong, or is the file simply not there" — worth settling before reading any app
 code. Paths resolve with or without a leading slash.
 
@@ -212,6 +224,13 @@ if (import.meta.env.DEV && new URLSearchParams(location.search).has('preview')) 
 applyTask(await codedActionAppService.getTask());              // the only path that ships
 ```
 
+**One thing has to be fixed before any of this runs.** The scaffold puts
+`export const entities = new Entities(sdk)` at **module scope** in `src/uipath.ts`. Outside Action Center the SDK
+has no meta tags to read, so that constructor throws *at import time* — before your component mounts, and before
+the `import.meta.env.DEV` branch can be taken. You get a blank shell and one `pageerror` reading *"Invalid SDK
+instance"*, which looks exactly like the timeout above and is not. Guarding `getTask()` is not enough:
+**build the services lazily**, a getter per service, or this whole loop is unreachable.
+
 - **`import.meta.env.DEV` is what makes this safe.** `npm run build` substitutes `false`, so the branch and its
   dynamic import are eliminated — the fixture is not just unreachable in the deployed app, it is not in it. A
   query flag on its own does not achieve that; `spec.md` says why it has to.
@@ -237,8 +256,10 @@ that nothing produces any more.
 
 ### Make a claim stop at the eligibility gateway
 
-Aim the run. `Retrieve Property Claim` takes `in_Scenario`, and `eligibility-fail` produces a claim the screening
-analysis will flag:
+**You have to aim the run: a clean claim stops nowhere.** Both gateways are skipped when nothing is flagged
+(`pdd.md` §4), so a randomly generated claim has a fair chance of closing itself before you can open anything.
+`Retrieve Property Claim` takes `in_Scenario`, and `eligibility-fail` produces a claim the screening analysis
+will flag:
 
 ```bash
 uip or jobs start <process-key> --folder-key <your-seat-folder-key> \
@@ -247,6 +268,12 @@ uip or jobs start <process-key> --folder-key <your-seat-folder-key> \
 
 For the second gateway use `review-fail`, which passes screening and is flagged by the analysis instead. The full
 matrix is block 7's; two aimed runs are all this block needs.
+
+**Start both of them at the top of the block, before you write any code.** A claim still has to walk the whole
+case — extraction, screening, inspection, four analyses — before it reaches a gateway, so one aimed now is
+waiting by the time you have a screen to point at it. Park several, aimed at different scenarios; it is cheaper
+than editing rows to manufacture a state. (If your inspection wait is set to minutes rather than seconds, fix
+that first — `5-case/cookbook.md` explains why it is free.)
 
 ### Find the waiting task
 
@@ -294,9 +321,32 @@ to a working app from `uip tasks get`. So the last step is to look at it:
 1. **A waiting task** — the app loads, the claim is on screen, both decisions are available.
 2. **A completed task** — the app loads, shows what was decided, and offers nothing to press.
 
-Neither may show an error screen, an empty page, or anything in the browser console. If you cannot drive a
-browser yourself, `uipath-coded-apps`'s `debug.md` carries a Playwright reproduction script that opens the app,
-captures console output and screenshots the result; run it against both states and read what it captured.
+Neither may show an error screen, an empty page, or **anything in the console from *your app***. That
+qualification matters: every Action Center task page emits console errors of its own — `orgId is invalid`, twice,
+and a 404 on `tasksTenantMigration` — and they appear on the sign-in page too, before any app has loaded. Taken
+literally the bar is unachievable, and an honest agent either reports failure on a working screen or learns to
+ignore the console entirely.
+
+**Open more than one claim, and open every tab.** The defect this step exists to catch is claim-dependent: the
+screen opens, and the tab that dies is one click further in (`contracts/record-payloads.md`).
+
+### Driving the browser when you have no browser
+
+An action app has **no standalone surface**. It renders only at
+`https://cloud.uipath.com/<org>/<tenant>/actions_/current-task/tasks/<taskId>`, which needs a real interactive
+session — `uip login` does not help, and the coded-apps skill's Playwright script targets a *web* app on
+localhost with its own sign-in button. A fresh Playwright profile lands on `account.uipath.com` and stops.
+
+What works, in four points:
+
+- `chromium.launchPersistentContext` with a **fixed `userDataDir`** and `headless: false`, the first time only.
+- Navigate to the task URL and **have a human sign in once**. The profile persists, so every later capture is
+  headless and unattended.
+- **Poll until your app's own text appears in one of the frames** — not until the hostname is
+  `cloud.uipath.com`. The hostname flickers back mid-redirect, and a naive check screenshots the login page.
+- **Completing a task raises a confirmation dialog in the *parent* page** — *"Do you wish to mark this task as
+  complete?"*, Complete / Cancel. `completeTask()` resolving is not the end of the flow, and a check that stops
+  there records a decision that never happened.
 
 A completed task decided *before* you fixed the payload rules can never render — its data was written at
 completion and nothing rewrites it. Decide a fresh one and test against that.

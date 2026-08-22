@@ -42,9 +42,10 @@ and a claims adjuster — and what they can see determines whether they can deci
 - **Stay in your lane.** Where two analyses touch the same fact, the one that does not own it says so and names
   the owner, rather than raising it as its own finding. Three of these run at the same time and none of them can
   see what the others found.
-- **Respect what a human already settled.** Every analysis after the eligibility gateway is told what the
-  reviewer decided and why. A finding they saw and accepted is closed — `pdd.md` §6 is the rule, and getting it
-  wrong asks a person the same question twice.
+- **Respect what a human already settled — and notice when nobody was asked.** Every analysis after screening is
+  told what the reviewer decided and why. A finding they saw and accepted is closed (`pdd.md` §6). But most
+  claims never reach that reviewer, so the same inputs also have to carry *"screening passed, nobody was asked"*
+  — and an empty decision must not be read as approval of anything.
 
 **Two of the seven read a document rather than extracted fields** — the policy and the surveyor's report. Those
 documents are prose whose meaning lives in specific sentences, and an analysis has to be able to quote the one it

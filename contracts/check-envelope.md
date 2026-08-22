@@ -1,9 +1,14 @@
 # The check envelope — one shape for every analysis payload
 
-**Scope: all seven analyses, not only the four whose column ends in `ChecksJson`.** The envelope is what makes
-one prompt shape generate seven agents and one screen render any of them. Where an analysis also produces a
-structured *record* — the claim, the policy, the assessment — that record is a separate output with its own
-shape and is not an envelope; see `4-agents/spec.md`.
+**Scope: six of the seven analyses.** The envelope is what makes one prompt shape generate the agents and one
+screen render any of them. Two things it does not cover:
+
+- **A structured *record* an analysis also produces** — the claim, the policy, the assessment, the history — has
+  its own shape and is not an envelope. Those shapes are pinned in [`record-payloads.md`](record-payloads.md).
+- **The response analysis is exempt.** Its output is a letter a customer reads; `pdd.md` §7 says the letter
+  explains and never analyses, and its column feeds the notification's subject and body. Wrapping it in
+  verdict/headline/summary would either bury the letter inside a summary field or force a second output with no
+  column. `claimResponseJson` is a record, in the same class as `claimDataJson`.
 
 **Decided 2026-08-07.** Every `*ChecksJson` blob an agent produces uses this one shape, and the Action App renders it
 with a single component. Written once here; the seven agent prompts reference it and never restate it.
@@ -87,6 +92,13 @@ declares as a string packs, deploys, and faults on a live claim.
    sees all the evidence. **Aim for at most 2–3 failing checks per claim**; a wall of failures is noise, not signal.
 4. **`pass` must be honest.** A check with no data available is not `pass`. Omit it, or mark it `warn` with a detail
    saying what was missing.
+5. **One check covers one rule.** A check has exactly one `status`, and `details[]` rows carry no status of their
+   own, so a check that bundles six independent rules can only report the worst of them. Measured: a decision
+   agent's `escalation_rules` check bundled late filing, coverage ambiguity, claimed-vs-assessed, credibility,
+   the dwelling threshold and the annual aggregate. One fired; the app rendered the whole card red above five
+   rows each saying nothing was wrong, and the reviewer's reaction was *"everything seems passed but the block is
+   red"*. The payout prompt already gets this right with seven single-purpose ids — the discipline exists, it was
+   just never stated. Split aggregate checks.
 
 ## The seven typed claim facts — separate outputs, not a sub-object
 
@@ -120,9 +132,10 @@ They are declared but **not `required`**: a missing key resolves to `undefined` 
 > scalar variables demonstrably bind, so that is what we use, and `header` is gone from the blob — one producer, one
 > place, no drift.
 
-## Rollout
+## The casing you get back depends on where you read it
 
-Task 18 pins the envelope, builds the renderer, and converts **Eligibility only** — proving whether declaring
-`outputSchema` properties actually constrains the model or is merely advisory. If advisory, every prompt needs a
-harder format contract and the renderer must tolerate violations. Task 19 rolls it to the remaining six, one
-`uip agent debug` run each.
+`uip agent debug` returns the whole payload PascalCased — `out_CoverageChecksJSON` as `OutCoverageChecksJSON`,
+and the envelope's own keys as `Verdict`, `Headline`, `Checks[].Id`. The keys above are the contract and the
+screen is written against them; the CLI's normalisation is a display artefact of that one surface. Do not
+re-point anything at what `agent debug` printed — see the same trap, in the other direction, in
+[`review-task.md`](review-task.md).

@@ -16,9 +16,24 @@ nothing anywhere says so.
 Pass the GUID. `--folder-path` is the flag that takes a name:
 
 ```bash
-FK=$(uip or folders list --all --name ClaimCase-<seat> --output json --output-filter "[0].Key")
+uip or folders list --all --name ClaimCase-<seat> --output json --output-filter "[0].Key"
+```
+
+**`--output-filter` selects, but the envelope stays** — that command returns
+`{"Result":"Success", "Code":"FolderList", "Pagination":{…}, "Data":{"Value":"<the guid>"}}`, not the guid. So
+`FK=$(…)` captures a multi-line JSON blob, and the next `--folder-key "$FK"` is exactly the garbage this section
+warns about. Read the value out of `Data.Value` with a JSON reader:
+
+```bash
+FK=$(uip or folders list --all --name ClaimCase-<seat> --output json \
+     | python3 -c "import json,sys; print(next(f['Key'] for f in json.load(sys.stdin)['Data'] \
+                                               if f['Name']=='ClaimCase-<seat>'))")
 uip or processes list --folder-key "$FK" --output json
 ```
+
+**`--name` is a prefix match, so `[0]` is not safe either.** `--name ClaimCase-07` returns `ClaimCase-07` *and*
+`ClaimCase-07-Deploy`, in no guaranteed order — and those two folders are exactly the pair you must not confuse
+(`CONFIG.md`). Match the name exactly, as above.
 
 The general form is worth carrying: **any list that comes back bigger than you expected is scoped wrongly**, and
 a list that comes back with `HasMore: true` has not answered your question at all.

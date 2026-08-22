@@ -7,7 +7,7 @@ other is the trap that costs a day if you meet it cold.
 ## Skills, and the four passes in commands
 
 **Skills.** `uipath-maestro-case`, plus `uipath-solution` to pack and deploy, and `uipath-coded-apps` for the
-one small thing in pass 3. **Not `uipath-maestro-bpmn`** — different product; the only thing drawing you there is
+one small thing in pass 2. **Not `uipath-maestro-bpmn`** — different product; the only thing drawing you there is
 that your compiled plan is named `.bpmn`. **Not `uipath-human-in-the-loop`** either — that authors approval nodes
 in Flow projects, and your stops are case stages.
 
@@ -24,7 +24,11 @@ in Flow projects, and your stops are case stages.
 uip maestro case validate <caseplan.json> --skeleton --output json     # Valid
 ```
 
-**Pass 2 — the work and the wiring.**
+**Pass 2 — the stand-in app.** Publish the blank screen and register it *before* anything binds to it: an
+action task is described in terms of the app's identity and its two outcomes, so pass 3 cannot be authored until
+this exists. Fifteen minutes, no design in it — *Registering the stand-in app*, below.
+
+**Pass 3 — the work, the wiring and the two stops.**
 
 - Read the deployed automations' exact arguments from the platform, not from memory:
   `uip or packages entry-points "<PackageId>:<Version>"`.
@@ -40,30 +44,20 @@ python3 5-case/check_caseplan.py <caseplan.json>       # 0 problems
 uip maestro case validate <caseplan.json> --output json
 ```
 
-**Pass 3 — the two stops.** Register the stand-in app, then wire a task into each gateway. Both halves are
-below: *Registering the stand-in app* and *Wiring an action task*. The app is fifteen minutes and has no design
-in it; the wiring is where the traps are.
+- **Wire a task into each gateway.** *Wiring an action task*, below — this is where the traps are.
+- **Both gateways are skippable**, so every task after one needs a second entry rule for the skipped route
+  (`5-case/spec.md`).
 
-```bash
-python3 5-case/check_caseplan.py <caseplan.json>       # still 0 problems
-uip maestro case validate <caseplan.json> --output json
-```
-
-**Pass 4 — deploy and run every route.**
-
-```bash
-uip maestro case pack <case-project-dir> <throwaway-dir>       # recompiles caseplan.json.bpmn
-grep -c "<a-token-your-edit-introduced>" caseplan.json.bpmn    # not 0 — the runtime has your change
-```
-
-Then deploy (*Redeploy under the same name*) and run four claims:
+**Pass 4 — deploy and run every route.** Build loop and recompile proof: *Build locally*, below. Then deploy
+(*Redeploy under the same name*) and run **five** claims:
 
 | Aim | `in_Scenario` | Should |
 |---|---|---|
-| the clean one | `auto-settle` | settle with nobody asked |
+| the clean one | `auto-settle` | settle with **no task raised at all** |
 | stop 1, agree | `eligibility-fail` | carry on into the inspection |
 | stop 1, disagree | `eligibility-fail` | end denied |
-| stop 2, either way | `review-fail` | end approved, and end denied |
+| stop 2, agree | `review-fail` | end approved |
+| stop 2, disagree | `review-fail` | end denied |
 
 `CONFIG.md` has the shell-quoting trick if you are on Windows. *Answering a stop from the command line*, below,
 is how you complete a task with no screen.
@@ -71,11 +65,21 @@ is how you complete a task with no screen.
 A claim sitting in `Running (With Faults)`, or a stage whose tasks are all green while the next stage never
 started, is a failure however the status reads.
 
-**Then make it reviewable.** `uip solution upload Build/ClaimCase-<seat>` puts the plan on the Studio Web canvas,
-which is far easier to read; deploying alone does not. Read *Build locally; open Studio Web to review* first —
-the sync runs one way only.
+**Then make it reviewable** — *Build locally; open Studio Web to review*, below. Read it before you open the
+designer: the sync runs one way only.
 
 ## Where the time actually goes — read this first
+
+**Poll the inspection every 10 seconds, and half of it disappears.** One build waited 25 minutes for an
+assessor's report and concluded the wait was real. It is not: `Retrieve Inspection Report` **models no timer at
+all**. Every call is an independent draw and it answers ready roughly **four times in five**, so the expected
+wait is about one and a quarter calls and the wall clock is entirely your poll interval multiplied by that. A
+two-minute timer turns a twelve-second wait into a several-minute one, and an unlucky run of three misses into
+half an hour.
+
+So set the wait step to **10 seconds**. There is nothing being waited *for* — the PDF is in the bucket within a
+second of the claim being generated. This matters most in block 7, where the interval is paid once per test run
+rather than once per build.
 
 Three builds finished this block. One took **13 solution versions and five authoring bugs**; the other two were
 not far off. Every bug had the same shape: **the plan packs, deploys, passes every gate, and then something
@@ -123,10 +127,12 @@ nothing*.
 
 Binding a required agent input to `""` does not send an empty string — **the runtime drops the key from
 `InputArguments` altogether**, and the agent faults at startup on `pydantic: Field required`, naming an input you
-did bind. It bites the four analyses downstream of the eligibility gateway, because in pass 1 no human has spoken
-yet and `in_EligibilityNotes` has nothing to carry.
+did bind. It bites the four analyses downstream of screening, and it bites them on **every clean claim** — the
+gateway never opens, so nobody has spoken and `in_EligibilityNotes` has nothing to carry (`pdd.md` §4).
 
-Bind a short non-empty literal instead — `"none recorded"` says the true thing and survives the trip. Prove which
+Bind a short non-empty literal instead. Make it say what actually happened rather than nothing:
+`"screening passed - no reviewer was asked"` on the skip route, and the reviewer's words on the other. An empty
+reason reads to a model as a reviewer who approved everything. Prove which
 keys arrived rather than guessing:
 
 ```bash
@@ -266,19 +272,19 @@ at the action task with `170001 Failure mapping the data from the task result`.
 ### What CLI completion proves, and what it cannot
 
 `tasks get` **PascalCases every key** in the free-form `Data` blob, recursively — `triggerStage` reads back as
-`TriggerStage`. That much is only a display artefact. **But a task completed from the command line hands those
-PascalCase keys back to the case as well**, so an output mapping sourcing `reviewerNotes` resolves to nothing:
-the decision routes correctly because it comes from the *outcome*, while the reviewer's notes arrive `null` and
-the next analysis faults on a required input it was promised. Both clean seats hit this independently on
-2026-08-21.
+`TriggerStage`. That is a display artefact of that one command.
 
-So be precise about what this step is for:
+**Re-measured 2026-08-22 on `1.199.0-preview.119`, and it is better news than this section used to carry:** a
+task completed from the CLI *did* deliver the reviewer's text to the case. camelCase went in, `tasks get` echoed
+PascalCase, and the output mapping written against the contract's camelCase populated every mapped column on
+every route — the case-side mapping appears case-insensitive on this version. The earlier text told you to
+expect a `null` note through block 5, which would have you ignore a real gap or hunt one that is not there.
 
 | | proven by answering from the CLI |
 |---|---|
 | all four routes reach the right ending | **yes** — the outcome carries it |
 | the identifiers survive a completed task | yes |
-| the reviewer's text reaches the record | **no** — block 6 proves that, through the app |
+| the reviewer's text reaches the record | **yes on this CLI version** — verify on yours, and log the version |
 
 **DocsAI will tell you to make the mapping match the returned field names, and it is right — about the CLI.**
 What it cannot know is that the returned casing depends on *who completed the task*, and that the screen arriving
@@ -338,8 +344,19 @@ it refuses on the version, do not downgrade your plan to satisfy it; that is a s
 overwrite. Either way **log `uip --version`**, because this is the class of result that
 is undiagnosable afterwards.
 
+**The version refusal only bites a plan that has been through Studio Web.** A plan you authored locally has
+validated clean first time on every build so far — so while you are still local, read the rest of this section
+as insurance rather than as instruction.
+
 **The gate that always works is `check_caseplan.py`, shipped beside this file** — no tenant, about a second,
 and every class it catches is one that fails silently at run time. The two gates overlap barely; run both.
+
+**Your case skill may forbid the tool this gate is built from.** Its Rule 13 bars reading or writing skill
+artifacts with python, node, jq or sed, naming `caseplan.json` explicitly — and `check_caseplan.py` opens and
+parses exactly that file. Both rules are right inside their own scope, so hold both: **author** every artifact
+with your editor's read/write tools as the skill requires, and **check** with the script as this seed requires.
+It is the only structural gate that catches the binding-shape and orphan-stage classes, and it is what has kept
+a 190 KB hand-authored plan correct.
 
 ## Resolving the processes you bind
 
@@ -397,7 +414,20 @@ you want to look mid-build, upload first and expect the local loop to need the f
 per agent and process the deployment owns — *during* the pack, after any cleanup you ran. Measured both ways: 8
 duplicates with the deployment live, zero with it uninstalled, same folder, same files.
 
-The order that works is **uninstall → clean → pack → deploy**.
+The order that works is **uninstall → clean → pack → deploy**. Two more things `uninstall` does, neither
+obvious, and both of which read as something you broke:
+
+- **It reaps your coded app's package from the tenant feed**, so the very next `pack` dies with
+  `Failed to download claim-review-<seat>_1.0.0 … Reason: Unauthorized` — on a solution that packed cleanly ten
+  minutes earlier, for an app nobody touched. This is the cause behind the *pinned package not in the feed*
+  symptom further down; the fix is the same (remove and re-add the resource), but knowing the cause stops you
+  looking for your own mistake. One command confirms it: `uip or packages versions claim-review-<seat>` returns
+  an empty `Data`. The consequence is that **every redeploy cycle in this block needs the app repacked,
+  republished and its solution resource re-added first** — four commands, not zero.
+- **It deletes the solution folder, and the redeploy creates a new one with a new key.** Every folder key and
+  process GUID you noted for `ClaimCase-<seat>-Deploy` is dead after one cycle, and the first symptom is
+  `HTTP 400: Folder does not exist or the user does not have access` on a folder you can still see in the
+  portal. **Only the seat folder key is stable.** Re-read the deploy folder's key after every redeploy.
 
 Cleaning means deleting the numbered files, and the suffix **increments every cycle** (`_1`, then `_2`), so a
 `*_1` filter silently stops matching on the second pass:
@@ -532,6 +562,11 @@ Three details that each cost a deploy cycle if missed:
 - **The query keys are lower-case** — and `case spec` prints them PascalCased, like everything else
   this CLI displays. `EntityScope` / `FolderEntityName` return `404 Entity ... does not exist`, the
   same error a genuinely missing entity gives. Lower-case them on the way in.
+- **One of the three cannot be recovered by lower-casing at all.** `case spec --input-details` PascalCases
+  every key on the way out and **drops the underscore with it**: `folderEntityName_folderPath` comes back as
+  `FolderEntityNameFolderPath`, which lower-cases to `folderEntityNameFolderPath` — not a parameter name, so
+  the activity 404s with the same *entity does not exist*. Take the real spelling from
+  `is resources describe … --operation Replace`, never from what `spec` echoed.
 - **There is no `entityName` path parameter.** The entity is identified entirely by the query
   parameters; `pathParameters` stays empty. Confirm it for yourself in one command:
 

@@ -59,11 +59,18 @@ failing afterwards.
 | `REVIEW_AMOUNT_INFLATION` | payout | reasonableness |
 | `REVIEW_CAUSE_MISMATCH` | coverage | peril classification |
 | `REVIEW_NARRATIVE_CONTRADICTION` | credibility | narrative consistency |
-| `REVIEW_PRIOR_CLAIM_EROSION` | payout | aggregate limit |
+| `REVIEW_PRIOR_CLAIM_EROSION` | payout | aggregate limit — **and its evidence must name the earlier claim** |
 
 **Names are yours to choose.** If your eligibility analysis calls its filing check something else, that is fine —
 what must hold is that *one* check, owned by *that* analysis, is failing, and that its wording names the actual
 problem. A test that only passes when your labels match ours is testing the labels.
+
+**The aggregate row has a second half that a build will pass without.** `pdd.md` §9 says *cap the settlement at
+what remains **and name the earlier claim***. Measured on a real run: the arithmetic was right to the unit — a
+SGD 16,600 claim correctly cut to 9,807 — and the only evidence offered was *"One settled claim in this policy
+period"*. No number, no date, no identifier, and none of the three figures a reviewer needs anywhere on the
+record. That build passes the first three assertions and asks a human to authorise a 41% reduction blind. Assert
+the evidence, not only the reduction.
 
 ## The four assertions
 
@@ -78,10 +85,13 @@ the one that never announces itself at all.
 >
 > What *is* worth running at block 5 is the clean claim, alone, which is that block's own acceptance gate.
 
-**1. It stopped where it should.** Every claim reaches the **screening gateway** — that one is never skipped, not
-even for a clean claim. A claim carrying anything flagged must *also* reach the **adjuster gateway**. A clean
-claim must not: it settles unattended after screening is approved, and an adjuster task appearing for it is a
-failure even though nothing looks wrong on screen.
+**1. It stopped where it should.** A claim carrying a **screening-level** problem must reach the **screening
+gateway**. A claim carrying a **review-level** problem must reach the **adjuster gateway**. A claim carrying both
+reaches both, in that order. A **clean** claim must reach *neither* — it settles unattended and raises no task at
+all.
+
+That last one is the assertion builds get backwards, so state it as a count: **zero tasks on a clean claim is the
+pass.** A task appearing for it is a failure even though nothing looks wrong on the screen.
 
 **2. The right analysis is failing the right check.** Not "something was flagged" — the analysis that *owns* the
 concern must be the one reporting it. Three analyses all reporting the same late notice is not three findings; it
@@ -114,7 +124,9 @@ lands in whichever payload was richest, which is the claim with the most damage 
 Run the clean scenario deliberately, and more than once. It is the assertion most solutions fail:
 
 - every check passes, and the analyses say so rather than staying silent;
-- the adjuster gateway never appears;
+- **neither gateway appears — the claim raises no task at all** ([`pdd.md`](../pdd.md) §4);
+- the record still shows a screening decision and a review decision, each recorded as *decided automatically*
+  rather than left blank;
 - the claim settles at the full amount the policy allows;
 - the letter states the amount and how it was reached.
 
@@ -144,6 +156,17 @@ as a discrepancy, a silence read as a refusal.
 `auto-settle` again. Over-flagging is the most common defect in this whole build and the only thing that
 reliably exposes it is a claim with nothing wrong.
 
+**5. The screen survives the claim.** This block is the only time you will have thirty-one different claims in
+one place, and it is therefore the only chance to catch the defect that is invisible on one: **an agent payload
+whose shape varies per claim.** Measured across 15 claims on one build, the policy blob came back six different
+ways, two of which blank the reviewer's screen entirely — white page, minified stack, nothing else
+(`contracts/record-payloads.md`).
+
+So on **at least five** of your runs that raise a task, open the screen and click through **every** tab. Not the
+same claim five times — five different claims, with different scenarios and ideally different currencies. A
+screen that opens is not a screen that renders: the panel that dies is one click further in, and it dies on the
+claim you did not try.
+
 ## How many, and in what order
 
 1. **One per problem, pinned** — nine runs. This is the coverage test, and it is the one to keep green.
@@ -152,11 +175,14 @@ reliably exposes it is a claim with nothing wrong.
    surface: two problems in one claim, a currency you had not tried, a claim with four damage items instead of
    five.
 
-Run them concurrently. A claim spends most of its life waiting.
+Run them concurrently. A claim spends most of its life waiting — and **check your inspection poll interval
+before you start**, because it is paid once per run here rather than once per build. The stand-in models no
+assessor delay at all (`contracts/provided-processes.md`), so a two-minute timer costs you an hour across
+thirty-one claims for nothing. Ten seconds.
 
 ## Recording the result
 
-For each run keep the claim id, what was aimed at, the three assertions, and — when one fails — the actual text
+For each run keep the claim id, what was aimed at, all four assertions, and — when one fails — the actual text
 the analysis produced. **The text matters more than the pass/fail.** An analysis that fails the right check for
 the wrong reason will pass this test and mislead a reviewer on a real claim; the wording is the only place that
 shows.

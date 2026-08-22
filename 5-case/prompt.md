@@ -50,23 +50,27 @@ rather than the block — and **write down where you are between them**, in the 
 will lose your working context partway through, and that note is what makes the next hour cheap.
 
 1. **The journey.** Every stage, how a claim enters it, what ends it. No work in them yet.
-2. **The work, and the wiring.** What happens in each stage, connected to the components you have built and the
-   automations already running, with the record written as the claim moves.
-3. **The two stops.** The stand-in at each, and what each answer does — including the endings they lead to.
-4. **Run claims through it** — the straightforward one, and one into each stop.
+2. **The stand-in, first.** Publish the blank screen and register it, before anything binds to it. A task that
+   stops a claim for a person is described in terms of the app's identity and its two answers, so pass 3 cannot
+   be written until this exists. Doing it here also makes passes 2 and 3 one continuous edit.
+3. **The work, the wiring and the two stops.** What happens in each stage, connected to the components you have
+   built and the automations already running, with the record written as the claim moves — and what each answer
+   at each stop does, including the endings it leads to.
+4. **Run claims through it** — the clean one, and one into each answer at each stop.
 
 ## Done when
 
 **Every route through the journey has carried a real claim.** Three things, and the first is the one people stop
 at:
 
-- **A straightforward claim goes in one end and comes out settled, with nobody touching it.** Nothing wrong with
-  it, nothing to query: read, screened, inspected, analysed, approved, the claimant told, the file closed — and
-  its record showing each stage's work as that stage did it.
+- **A straightforward claim goes in one end and comes out settled, with nobody touching it — and it raises no
+  task at all.** Nothing wrong with it, nothing to query: read, screened, inspected, analysed, approved, the
+  claimant told, the file closed, with its record showing each stage's work as that stage did it. If a screen is
+  waiting for a person on a claim with nothing wrong, that is the failure, not the proof.
 - **A claim stops at each of the two stops**, waits, and moves on when a person answers.
 - **Both answers work, at both stops.** Agree and it carries on; disagree and it ends the other way, with the
-  claimant told the right thing. Four runs, and they are the ones that find the bugs — every route a claim can
-  take now exists, so every one of them can be wrong.
+  claimant told the right thing. That is **four aimed runs plus the clean one — five**, and the four are the ones
+  that find the bugs: every route a claim can take now exists, so every one of them can be wrong.
 
 You answer the stops by hand, on a blank stand-in — **you are proving the journey, not the screen.** Get all four
 routes right now and the next block cannot break them; it only changes what the person is looking at.

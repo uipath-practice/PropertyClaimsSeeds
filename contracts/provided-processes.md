@@ -23,9 +23,21 @@ the single most common way a claim faults at run time having packed and deployed
 read them before you bind anything:
 
 ```bash
-uip or processes list --folder-key <your seat folder> --output json     # what is deployed
+uip or processes list --folder-key <your seat folder> --output json     # what is deployed, and its version
 uip or packages entry-points "<PackageId>:<Version>" --output json      # its exact I/O schema
 ```
+
+**Read the version out of the process list first.** `entry-points` at a version that does not exist answers
+`Result: Success` with an empty `Data` array — which reads as *this process declares no arguments*, not as
+*no such version*. Not all six are on `1.0.0`, so guessing the version is how a build concludes the generator
+takes no inputs and writes a plan that faults.
+
+**And expect more than one entry point.** `Retrieve Property Claim` has two, with *different required arguments*:
+`GenerateClaim.cs` requires all three of `in_Scenario`, `in_Discrepancy`, `in_ClaimID` and returns nothing;
+`Main.xaml` requires none and returns `out_ClaimID`. Both are true, which is why an earlier version of this file
+said the process produces no outputs and this one says it produces one. **Always supply all three arguments**,
+empty strings where you are not aiming the run — that is valid against either entry point, where supplying only
+`in_ClaimID` faults against one of them with `170002`.
 
 `packages entry-points` returns real JSON Schema for inputs and outputs — names, types, which are required, and
 each argument's own description. That is the shape your case plan has to match, and it cannot go stale the way
@@ -93,15 +105,32 @@ not there yet** — it returns `out_ReportReady: false` and no file. That is wha
 call it, test the flag, and either move on or wait and call again. Treat any value other than an explicit `true`
 as not-ready.
 
+**How long "not yet" lasts is decided by your poll interval, not by the assessor.** The stand-in does not model
+a timer at all: **every call is an independent draw, ready about four times in five.** So the expected wait is
+roughly one and a quarter calls, and the wall clock is whatever you multiply that by. Poll every two minutes and
+a claim takes minutes; poll every ten seconds and it takes seconds. There is nothing to wait *for* — pick a
+short interval. Measured 2026-08-22 by reading the process.
+
 **`Client Notification`** takes a subject, a body and a recipient, and **writes them to the job log — it does not
 send email.** Its recipient argument is spelled **`in_Recepient`**, with the `i` and the `e` transposed. That is
 a typo in our process, not in this document; bind the spelling the platform reports, and read the arguments from
 `packages entry-points` rather than from any prose — including this paragraph.
 
-**Where the recipient comes from**, since no column holds it: the claimant's email address is in the raw
-extraction payload, as the `ClaimClaimant` group's email field. It is not promoted to a claim-record column
-because nothing downstream reads it twice — the notification tasks are its only consumer. Pull it from the
-extraction blob at the point of use. No email connection is provisioned, deliberately: what this exercise cares about is the *content*
+**Where the recipient comes from**, and it is not where you would expect. No column holds the claimant's email;
+it is in the raw extraction payload. But **`in_Recepient` is required, and the raw payload is four levels deep**:
+
+```
+ClaimClaimant[0].EmailAddress.Value          every group is an ARRAY
+                                             every field is { Value, Confidence, OcrConfidence }
+ClaimGeneral[0].TotalClaimed.Value.Value     money nests once more: .Value.Value and .Value.Currency
+```
+
+One level of property access is the only depth proven to resolve in a case expression
+([`check-envelope.md`](check-envelope.md)), so **a case cannot reach the address, and a notification bound to it
+fails on every claim** — loudly, on a required argument. Two ways out, and pick one deliberately: have the
+eligibility analysis emit the address as its own scalar output and notify from there, or promote it to a
+claim-record column. The first is cheaper and moves the claim-received notification out of intake by a few
+seconds of case time (`pdd.md` §3). No email connection is provisioned, deliberately: what this exercise cares about is the *content*
 of what the claimant is told, which an analysis produces and `pdd.md` §7 governs. Bind the letter you would have
 sent; it is then visible in the log and recorded on the claim.
 
@@ -111,15 +140,17 @@ Three buckets, in your folder. Knowing the naming lets you check by hand what a 
 
 | Bucket | Holds |
 |---|---|
-| `Claims` | `<claimId>-claim.pdf`, and the policy's history as `<policyId>-history.json` |
+| `Claims` | `<claimId>-claim.pdf`, the answer key as `<claimId>-claim.json`, and the policy's history as `<policyId>-history.json` |
 | `Insurance Policies Repository` | `<policyId>.pdf` |
 | `Assessor Reports` | `<claimId>-incident-report.pdf` |
 
 The claim history is keyed by **policy**, not by claim, and lives in the `Claims` bucket with the claim forms —
 worth knowing before you go looking for it somewhere else.
 
-**`Claims` also holds a `manifest.json` per claim. Nothing you build may read it.** It states which problems were
-planted and what the outcome should be; it is the test oracle and it is yours in block 7 only.
+**The answer key is `<claimId>-claim.json`, and nothing you build may read it.** It states which problems were
+planted and what the outcome should be — the test oracle, and yours in block 7 only. It is named after the claim
+PDF, not `manifest.json`: the generator writes it locally under that name and renames it on upload, so looking
+for `manifest.json` in the bucket finds nothing.
 
 ## The one thing that will bite you
 

@@ -28,8 +28,10 @@ ask a human.
 It is not "the claim stopped". Four things have to be true together, and the third is the one that separates a
 working solution from a lucky one:
 
-- **It stopped in the right place** — at the screening gateway or the adjuster's, whichever the problem calls
-  for. A claim caught too late has already had a surveyor sent out for nothing.
+- **It stopped in the right place, or did not stop at all** — at the screening gateway or the adjuster's,
+  whichever the problem calls for, and **nowhere** on a claim with nothing wrong. A claim caught too late has
+  already had a surveyor sent out for nothing; a clean claim that stopped anywhere has cost a person's attention
+  for no decision.
 - **The right check caught it.** If the coverage analysis flags something the credibility analysis owns, the
   outcome is right and the solution is wrong: on the next claim the same mistake produces the wrong answer, and
   nobody will know why.
@@ -37,6 +39,9 @@ working solution from a lucky one:
   eleven days before the incident"* — not the rule that fired.
 - **The claimant was told something true.** The letter has to match what was decided. A claim approved and a
   letter saying it remains under review is a complete failure that every other check passes.
+- **The reviewer could actually read it.** On the claims that do stop, open the screen — several different
+  claims, every tab. This is the only block with thirty-one claims in it, and a screen that renders one claim
+  perfectly and blanks on another is a defect only volume can find.
 
 And the one that catches most solutions:
 
@@ -55,6 +60,9 @@ and it is the failures that tell you what to fix.
 **And you have read the cookbook back** — the two-sided review in `AGENTS.md`, *Before you finish a
 block*. Two minutes, and it is what keeps this seed from only ever growing.
 
+**This is also the last block, so it is where the whole set gets its verdict.** `AGENTS.md`, *Before you finish
+the exercise*, asks four questions about the seed as a whole rather than about this block. Answer them here.
+
 ## How to test it
 
 Every run is **aimed** — you decide which problem the claim carries before you send it in, so you know what
@@ -66,6 +74,10 @@ down what it put in every claim and what should happen to it — **this is the o
 because here it is the answer key rather than a shortcut.
 
 Then, once the nine behave, send in twenty unaimed claims and see what a normal week looks like.
+
+**Before the first run, check what your inspection wait is set to.** Nothing is actually being waited for — the
+stand-in decides readiness by a coin flip on each call, not by a clock — so a two-minute timer costs about an
+hour across these runs and buys nothing. Ten seconds.
 
 **Where it goes.** The results table in this block's folder. Generated code, as ever, in `Build/ClaimCase-<seat>/`.
 

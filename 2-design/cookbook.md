@@ -8,8 +8,9 @@ time. It is also the block whose mistakes are cheapest to fix and most expensive
 
 ## Skill
 
-`uipath-planner`. It auto-triggers on `pdd.md`, so which agent loads it is not really a choice — read the next
-section for what to keep from what it produces.
+`uipath-planner`. Some harnesses load it the moment they see a `pdd.md` and some require you to invoke it by
+name — **load it explicitly if yours does not**, and read the next section for what to keep from what it
+produces.
 
 Everything you need is in this folder if it does not load; you are not at a disadvantage without it.
 
@@ -36,10 +37,14 @@ was not here. Nothing downstream parses it.
 
 **Use it.** It is the UiPath skill for exactly this step, it reads a PDD and writes an SDD, and it asks the
 questions a design should answer — exceptions, escalations, what happens when a document never arrives — that
-are easy to skip when you are writing to a template of your own. Most agents load it by themselves the moment
-they see a `pdd.md`; that is by design, not a misfire.
+are easy to skip when you are writing to a template of your own.
 
-Two things to know before it runs, because both change what you get:
+Two of its own opening steps are already answered by this seed, so a correct run should ask you nothing:
+its execution-mode question is answered by `AGENTS.md`'s standing approval (autonomous), and its delivery-model
+question by `CONFIG.md` (cloud). It also wants to create progress tasks through harness tools that may not exist
+where you are running; its own rules cover that gracefully, so a skipped step there is expected.
+
+Three things to know before it runs, because they change what you get:
 
 - **Its template is a hard superset contract.** It will produce every section the template names — RACI matrix,
   SLA rules, DEV/UAT/PROD environments, compliance constraints — whether or not this exercise has any. Let it.
@@ -72,6 +77,14 @@ Three of the four tables end up naming things that must match at run time. The a
 | entity columns and their types | `contracts/claim-entity.md` |
 | the check ids | `pdd.md` §9 — the check name in snake_case |
 | the analysis payload shape | `contracts/check-envelope.md` |
+| the shape of a structured record | `contracts/record-payloads.md` |
+| **which case-plan shapes fail at run time, and how** | **`5-case/check_caseplan.py` — read its comments now** |
+
+That last row is not filed under block 5 by accident, and it is worth the ten minutes here. The script's
+comments are the most concrete source in the seed about which plan shapes fail and what they look like when they
+do — each rule carries the error code and the build it was added for. Three of them have already changed a
+design *before* anything was built, which is what block 2 is for; meeting them in block 5 means meeting them
+after the plan is authored.
 
 A name recalled from a plausible convention is the single most common defect this block produces, and it does
 not fail here — it fails in block 5, where bindings resolve by name at run time and a wrong one packs, deploys

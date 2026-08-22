@@ -69,9 +69,19 @@ the model edits sensibly. Leave either out and it writes an essay.
 
 Two analyses read a source document rather than extracted fields: eligibility reads the **policy**, and report
 validation reads the **assessor's report**. Both arrive as **job attachments** — the file itself, passed by
-reference — and the agent reads the document. The two inputs are named `in_PolicyPDF` and
-`in_AssessorReportPDF`; they are bound by name in block 5 like everything else, so they are not yours to
-rephrase.
+reference. The two inputs are named `in_PolicyPDF` and `in_AssessorReportPDF`; they are bound by name in block 5
+like everything else, so they are not yours to rephrase.
+
+**An attachment input does not put the document in front of the model.** Interpolating `{{in_PolicyPDF}}` renders
+the attachment's *metadata* — file name, MIME type, storage key — and nothing else. An agent built with the
+attachment declared and interpolated therefore sees a filename, reports the policy unreadable, and fails most of
+its checks: the seed's own *tell it what does not exist* failure, arrived at by following the design.
+
+So each of these two agents needs **a built-in attachment-reading tool as a declared resource**, and its prompt
+must *call* the tool and say what to ask the document for. On the UiPath low-code agent that tool is
+`analyze-attachments`, and it is the only way to reach the contents at run time; `4-agents/cookbook.md` has the
+resource shape and the one trap in creating it. Ask for the exclusion and coverage clauses **verbatim**, because
+`pdd.md` §5.2 requires quoting the sentence relied on and a paraphrase cannot be quoted.
 
 This is deliberate, and it is the reason extraction does not cover these two. A policy is long unstructured prose
 whose meaning lives in the exclusion and coverage clauses; two insurers write them completely differently. Sending
@@ -79,7 +89,7 @@ it through extraction would flatten the wording an analysis has to quote, and `p
 exact sentence. Passing the file is both simpler and more faithful.
 
 **The cost is a testing limitation, and it is real: `uip agent debug` cannot supply an attachment.** There is no
-mechanism for it. So those two agents cannot be exercised from the CLI at all — they are validated and reviewed
+mechanism for it, and no grade or validation notices a document reader that cannot read. So those two agents cannot be exercised from the CLI at all — they are validated and reviewed
 here, and first *run* in block 5, on a real job. Their `Done when` differs from the other five for that reason,
 and nothing about it is your build being wrong.
 
@@ -107,18 +117,24 @@ nothing rather than erroring.
 
 ## What crosses a human gateway
 
-After the eligibility gateway, every downstream analysis receives **three** things, and they are three *declared
+After eligibility screening, every downstream analysis receives **three** things, and they are three *declared
 inputs*, not a paragraph in the prompt:
 
 | Input | Carries |
 |---|---|
 | `in_EligibilityChecksJSON` | what the eligibility analysis found |
-| `in_EligibilityDecision` | what the human decided |
+| `in_EligibilityDecision` | what the human decided, **or that no human was asked** |
 | `in_EligibilityNotes` | why, in the human's own words |
 
 All three, on all four downstream analyses. `pdd.md` §6 has the reading rule, and it belongs in each of those
 prompts. An agent that re-raises a finding the reviewer already accepted asks a human to decide the same thing
 twice; an agent that never sees the decision cannot avoid doing so.
+
+**On a clean claim the gateway never opens, so two of the three arrive empty** (`pdd.md` §4). Do not leave them
+blank and hope: give `in_EligibilityDecision` an explicit value meaning *screening passed, nobody was asked*, and
+tell the prompt what it means. A blank decision reads to a model as a reviewer who accepted everything, which is
+the opposite of the truth — nothing was accepted, because nothing was raised. Both inputs stay **required**;
+what changes is the value, never its presence.
 
 **This is the rule a passing grade will not catch.** Agent review scores structure and prompt quality — schema
 shape, whether inputs are interpolated, whether the wording is clear. It does not know what this pipeline is, so

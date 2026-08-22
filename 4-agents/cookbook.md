@@ -59,6 +59,36 @@ retries. Budgets belong in the prompt, where the model can aim for them, and in 
 By contrast an `enum` on a required field is worth adding wherever a wrong value would produce plausible-looking
 output — it turns a silent wrong answer into a loud startup failure that names the field and the permitted values.
 
+**Do not share a shape between two output properties with `$ref`.** The convention the reference prescribes for
+*input* schemas — a `definitions` block, referenced twice — is not what an **output** schema resolves against. It
+resolves `$ref` against **`$defs` at the schema root**, and nothing else: not `definitions`, and not a `$defs`
+nested inside the property. Every gate says it is fine — `agent validate` returns Valid, `agent review` returns
+A/99, zero errors — and the agent then faults the first time it starts:
+
+```
+Invalid schema. Type Settlement_document could not be resolved.
+Check that all $ref targets have matching entries in $defs.
+```
+
+The runtime also mangles the type name on the way, so the name in the error is not the name you wrote —
+`settlement-document` becomes `Settlement_document`, `settlementDocument` becomes `Settlementdocument`. Cheapest
+answer: **inline the shape twice**, generated from one source so it cannot drift. This is the clearest example in
+the block of a tooling grade being a floor rather than a pass.
+
+## A resource folder must be named after the resource, spaces and all
+
+The two document readers each need a built-in attachment-reading tool (`4-agents/spec.md`), and the reference
+describing it gives a path the CLI rejects. **The folder has to carry the resource's *display name*, including
+its space** — `resources/Analyze Files/resource.json`, never `resources/AnalyzeFiles/`:
+
+```
+resources/AnalyzeFiles/resource.json: folder must be named after the resource name
+"Analyze Files" (found "AnalyzeFiles")
+```
+
+The error is a good one — it names both strings and the rule — so it costs a retry rather than a detour. Assume
+the rule applies to every resource kind, not only this one.
+
 ## Tool parameter descriptions are read as literally as the parameter name
 
 If a tool's parameter is described with something that looks like a key, the model will use it as one. A
@@ -100,6 +130,12 @@ This is the whole serialized input of the debug job, not one field, so it bites 
 five payloads at once — the decision analysis first. It is rejected before the model is invoked, so it costs
 nothing but tells you nothing either. Trim the *fixture's* prose to get under it; do not change the agent's own
 per-payload budget to suit a test harness, and do not conclude the agent is too big.
+
+**Aim for 7,000, not 10,000, and know the other face of this error.** The effective ceiling is lower than the
+number — 9,922 characters of JSON was refused — and at some sizes the message above is replaced by
+`Result: Failure`, `Message: "Failed to debug agent"` and an **empty** `Data` object, presumably because the
+CLI's own escaping counts toward the limit. A contentless *Failed to debug agent* is this problem, not a
+different one; the same call trimmed to 5,005 characters ran fine.
 
 There is also no `--inputs-file`: the JSON goes on the command line, and on Windows that runs into the command
 length limit and into PowerShell rewriting the quoting. Pass it from a small script (`subprocess` with an argv

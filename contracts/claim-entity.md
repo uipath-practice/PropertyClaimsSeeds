@@ -52,16 +52,23 @@ accepted by the server and unusable in the UI — `3-claim-record/cookbook.md` n
 one defaults to **200 characters** and truncates past it silently, exactly as `MULTILINE_TEXT` does. That is
 harmless for a policy number and destructive for a human's reasoning:
 
-These are **minimums, not exact values** — larger is fine anywhere, and only the first row is load-bearing:
-
-| Column | At least | Why |
+| Column | Set it to | Why |
 |---|---|---|
 | `eligibilityNotes`, `reviewerNotes` | **4000** | a reviewer's own words, and the only place their reasoning survives. 200 cuts a paragraph mid-sentence and tells nobody. |
 | `claimFormPdfName`, `policyPdfName`, `assessmentReportPdfName` | 500 | bucket filenames, comfortably |
 
+**4000 is the `STRING` ceiling, not a suggestion.** The valid range is 1-4000 and 4001 is rejected at create, so
+on those two columns "larger is fine" is false - and reaching for `MULTILINE_TEXT` to get more room silently
+changes the type block 6 renders. The filename rows are the ones where a bigger number costs nothing.
+
 The rest are yours, as long as you choose them rather than inherit them. **Tighter than the default is often
 right** — a currency code needs 20, not 200 — and a limit you picked is one you will recognise when a value hits
 it.
+
+**`DECIMAL` needs `decimalPrecision: 2`, for exactly the same reason.** `totalClaimAmount` and `approvedPayout`
+are money. The platform's `DECIMAL` takes a precision of 0-10 and the default is unstated; created without one,
+every settlement on the record may be rounded to whole units - a silent, plausible-looking corruption of the one
+number this whole exercise is about. Set it, then round-trip a value with cents and read it back.
 
 Three parallel builds produced three different answers here before this paragraph existed, and two of them
 capped a reviewer's notes at 200 characters without noticing.
@@ -104,13 +111,19 @@ never that an agent produces it.
 | `claimFormPdfId` · `claimFormPdfName` | `STRING` | the claim form attachment |
 | `policyPdfId` · `policyPdfName` | `STRING` | the policy attachment |
 
-### Written when the eligibility gateway closes
+### Written when screening resolves — by a reviewer, or automatically
 
 | Column | Type |
 |---|---|
 | `eligibilityDecision` | `STRING` |
 | `eligibilityNotes` | `STRING` |
 | `eligibilityReviewedAt` | `DATETIME_WITH_TZ` |
+
+**All three are written on both routes**, because most claims never reach the reviewer (`pdd.md` §4): when all
+five checks pass, the gateway does not open and the case fills these in itself. Give the automatic route a
+decision value that says so in as many words rather than leaving the columns empty — block 6 renders them, the
+letters read them, and an empty `eligibilityDecision` is indistinguishable from a claim that got stuck. The same
+applies to `reviewDecision` at the second gateway.
 
 ### Written after the analyses
 
@@ -174,15 +187,19 @@ not.** Measured behaviour, per column:
 
 | The request body | Result |
 |---|---|
-| omits the column | preserved |
-| sends `null` | preserved — the null is ignored |
+| omits the column | **preserved** — measured on the connector *and* on the CLI |
+| sends `null` | **content destroyed** on the CLI/REST path; unmeasured on the connector |
 | sends `""` | **content destroyed, silently, with `Result: Success`** |
 | sends a value | replaced |
 
-So it is a **merge**, which is what makes per-stage partial writes possible at all. The empty-string row is a
-live trap, because **an unset case variable resolves to `""`, not `null`.** Mapping a column whose variable has
-not been produced yet erases whatever an earlier stage wrote there — no warning, and for a max-length column the
-loss is invisible in any list view.
+So it is a **merge**, which is what makes per-stage partial writes possible at all — confirmed on the connector's
+own `UpdateEntityRecord_V3` on 2026-08-22, where a body naming five columns left a sixth untouched.
+
+**There is no safe sentinel: omitting the key is the only form measured safe.** The empty-string row is the live
+trap, because **an unset case variable resolves to `""`, not `null`** — mapping a column whose variable has not
+been produced yet erases whatever an earlier stage wrote, with no warning, and on a max-length column the loss is
+invisible in any list view. Do not reach for `null` as the escape either: it destroyed the column too, on the one
+path where anyone has measured it.
 
 Two rules follow, and neither is optional:
 
@@ -195,7 +212,10 @@ Two rules follow, and neither is optional:
 
 **Casing differs by access path, in the same solution.** Business fields are camelCase through the connector
 (`claimId`) but PascalCase through `uip df records get` (`ClaimId`). Entity *system* fields are PascalCase
-everywhere, so the record id reads as `Id`. And a job **attachment** object spells its key `ID`, all caps.
+everywhere, so the record id reads as `Id` — including in the connector's own response, which therefore mixes the
+two in one object: `CreateEntityRecord_V3` returns `{"Id": …, "CreateTime": …, "claimId": …, "status": …}`, so
+`=response.Id` is the right extraction for `recordId` and a renderer keyed on a single casing misses half the
+fields. And a job **attachment** object spells its key `ID`, all caps.
 Getting any of the three wrong yields `undefined` — which per the table above writes nothing, so it is safe;
 but never coalesce a missing value to `""`, which erases.
 
@@ -205,3 +225,10 @@ the eligibility agent emits `claimantName`, `incidentType`, `incidentDate`, `dat
 `totalClaimAmount`, `currency` and `propertyCountry` as **seven separate scalar outputs**, bound one-to-one.
 Plain scalars are the only form proven to bind. The agent also does the typing — a number, not `HK$1,234.00`,
 and ISO dates — because it knows the locale and a case expression should not have to parse.
+
+**Seven is the example. The rule is: every value the case has to read out of a payload is *also* emitted as its
+own top-level scalar output.** Otherwise a contract is asking for a copy by the one mechanism it forbids
+elsewhere in this file. Worked through, that means the decision agent emits its recommendation and its reason as
+scalars as well as inside `decisionJson`; the payout agent emits the net figure; the response agent emits the
+letter's subject and body. Each of those is read by a case expression, a binding or a gate. Miss the rule and you
+rediscover it once per payload, in block 5, after the plan is written.

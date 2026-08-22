@@ -7,7 +7,7 @@ Nothing here is generated for you. `pdd.md` describes the process in business la
 into stages, task groups and a data map *is* the design, and it is the part a coding agent is genuinely good at
 if you make it write the result down rather than hold it in its head.
 
-**The tables are yours to re-read, not a hand-off to a tool.** No skill parses them. Block 5 still points the
+**The tables are yours to re-read; no skill parses them.** The *SDD* is a different matter — see below. Block 5 points the
 case tooling at `pdd.md` directly; what the tables change is how much you have to reconstruct each time you come
 back to the work.
 
@@ -81,7 +81,22 @@ A document a person reads to understand what you built: the architecture, the co
 the lifecycle, where the humans stand, and how the pieces are wired. The four tables belong in it.
 
 It is a real deliverable — the documentation outcome of this exercise — and it is graded by whether someone who
-was not here could pick up your solution from it. It is **not** input to any tool.
+was not here could pick up your solution from it.
+
+**But it is not *only* a document any more, and this is the one thing to get right in block 2.** The case skill
+you will use in block 5 names `sdd.md` as its sole input after its own interview phase, and **writes its own
+design when it cannot find one**. Two different documents share that name: the planning skill writes a long
+architecture SDD, and the case skill reads a short one in its own vocabulary — stages, tasks, personas,
+integrations — and its template *forbids* the markers the planning skill's template *mandates*.
+
+So a build that writes one SDD and points block 5 at it gets, silently, a case plan that is not the one it
+designed. Decide now which of the two you are producing, and plan the hand-off:
+
+1. Write the architecture SDD. It is the graded deliverable and the design record.
+2. Write **sections 4 and 5 in the case schema's own vocabulary** rather than prose — stage names, task types,
+   entry and exit conditions, binding expressions. They are the same facts either way, and this is what makes
+   block 5 mechanical instead of interpretive.
+3. Record, in your notes, that block 5 re-renders or re-points. Do not leave block 5 to discover it.
 
 ## Done when
 

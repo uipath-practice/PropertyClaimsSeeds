@@ -95,12 +95,21 @@ That is not a plea for brevity — a claim carries a lot of data and a reviewer 
 scrolling for detail is entirely fine. What is not fine is a screen where the reviewer has to scroll before they
 learn anything: who claimed, for how much, what the machine recommends, and what it thinks is wrong.
 
+**Label the outcomes for the gateway you are at.** At the eligibility gateway the question is whether to pursue
+the claim at all — nothing about money has been decided, so *Approve* is the wrong word. At the adjuster's it is
+*Approve and send for settlement* (`contracts/settlement-table.md`). The sketch below uses the first pair.
+
+**"Always reachable" means reachable by keyboard and by assistive technology, not merely painted.** A button
+left clickable with `aria-disabled` so it can explain what is missing looks right to a sighted mouse user and
+tells everyone else the outcome is unavailable — and an automated check refuses to click it. Either disable it
+genuinely, or leave it genuinely enabled and describe the requirement with `aria-describedby`. Never both.
+
 ```
 ┌─ header ─────────────────────────────────────────────────────────────────────┐
 │ CLM-4675074 · J. Okafor · water damage · £48,200 · policy PL-99213            │
 │ Eligibility review for Jane          recommends: review required   [Documents]│
 ├─ decision ───────────────────────────────────────────────────────────────────┤
-│ [ Approve ]  [ Deny ]      why: ▏                                            │
+│ [ Pursue this claim ] [ Refuse ]     why: ▏                                  │
 ├─ at a glance ────────────────────────────────────────────────────────────────┤
 │ ┌ Claim ───────┐ ┌ Policy ──────┐ ┌ Assessment ──┐ ┌ Settlement ──┐          │
 │ │ 3 to look at │ │ in force     │ │ not yet      │ │ £41,880 net  │          │
@@ -193,6 +202,23 @@ nothing produces any more.
 The same instinct one level down: **never defensively re-parse or unwrap a payload that arrived in the wrong
 shape.** If it is wrong, the contract upstream is wrong — fix it there and say so. Defensive parsing in the UI
 converts a loud, findable bug into a quiet, permanent one.
+
+**That rule assumes there is a shape to be wrong against.** Where a payload is genuinely unpinned and the
+producer varies it per claim — `contracts/record-payloads.md` measures six such variations on the policy blob —
+the honest reading is not "guess in every component". It is **one declared shape, produced once, at the edge
+where you fetch**, with every variant it handles named in that one file so it is one function to delete when the
+producer is fixed. Log it as a finding at the same time; the permanent fix is upstream.
+
+## An error boundary per panel, and why this one is not optional
+
+**A malformed field in one panel must not take the claim down.** Without a boundary, one unexpected object in the
+policy blob renders a white page and a minified stack — the outcome `6-app/prompt.md` rules out — and the
+reviewer loses the claim, the analyses and both buttons along with it. With one, the failing panel says which
+panel it is, the console still gets the trace, and the reviewer can still read everything else and decide.
+
+**This is the defect class that passes every test you run.** It is claim-dependent: fifteen claims render, the
+sixteenth blanks. And it survives *"the screen opens"*, because the screen does open — the tab that dies is one
+click further in. Open more than one claim, and open every tab.
 
 ## The task has to be findable in a shared queue
 

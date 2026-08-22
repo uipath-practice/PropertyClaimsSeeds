@@ -116,14 +116,14 @@ make another.**
 | Name | `Claim Case External App` |
 | **Client id** | **`24daf1c0-48be-4710-8d81-5467adfe7f15`** |
 | Kind | Non-confidential — a public client, no secret, and none to put in your code |
-| Scopes | `DataFabric.Schema.Read` `DataFabric.Data.Read` `OR.Folders.Read` `OR.Buckets.Read` `OR.Jobs.Read` |
+| Scopes | `DataFabric.Schema.Read` `DataFabric.Data.Read` `OR.Folders.Read` `OR.Buckets.Read` `OR.Jobs.Read` `OR.Users.Read` |
 
 Put the client id and the scopes in your app's `uipath.json`, and pass the id again when you deploy:
 
 ```json
 {
   "clientId": "24daf1c0-48be-4710-8d81-5467adfe7f15",
-  "scope": "DataFabric.Schema.Read DataFabric.Data.Read OR.Folders.Read OR.Buckets.Read OR.Jobs.Read"
+  "scope": "DataFabric.Schema.Read DataFabric.Data.Read OR.Folders.Read OR.Buckets.Read OR.Jobs.Read OR.Users.Read"
 }
 ```
 
@@ -131,13 +131,25 @@ Put the client id and the scopes in your app's `uipath.json`, and pass the id ag
 uip codedapp deploy -n claim-review-<seat> --client-id 24daf1c0-48be-4710-8d81-5467adfe7f15   --folder-key <your-seat-folder-key>
 ```
 
-**Two Data Fabric resources exist on this tenant and only one of them works.** `DataFabricOpenApi` carries
-`DataFabric.*`; `DataServiceOpenApi` carries `DataService.*` and is the older one. The TypeScript SDK calls
-`/datafabric_/` and nothing else, so `DataService.*` buys you a token that authenticates perfectly and can read
-no records at all. It fails as `Missing permissions: EntityRecords.View` — a *folder permission* message for what
-is really a wrong-resource scope, which is why it sends people to check their folder roles for an afternoon
-([findings 93](../../TestKitchen/findings.md)). Both pairs are registered on the shared client; request the
-`DataFabric.*` pair.
+### `Missing permissions: EntityRecords.View` has **two** causes, and the second one blocks every seat
+
+The message names a folder permission and is almost never about one. Check them in this order:
+
+**1. `OR.Users.Read` is missing.** Folder-scoped Data Fabric entities are not yet generally available, and until
+they are, a coded app reading one needs `OR.Users.Read` as well as the `DataFabric.*` pair — confirmed by the
+product team in `#help-coded-apps`, where it is described as a temporary workaround whose scope name will change,
+"and that's why it's not mentioned in the skills or docs". **This seed puts your entity in your seat folder
+deliberately, so every seat hits this.** It is in the scope list above; if you have copied an older one, that is
+the fix. It has cost at least four people a working session since June.
+
+**2. The wrong Data Fabric resource.** Two exist on this tenant and only one works: `DataFabricOpenApi` carries
+`DataFabric.*`, and `DataServiceOpenApi` carries the older `DataService.*`. The TypeScript SDK calls
+`/datafabric_/` and nothing else, so `DataService.*` buys a token that authenticates perfectly and can read no
+records at all — failing with the *same* message. Both pairs are registered on the
+shared client; request the `DataFabric.*` pair.
+
+Neither cause has anything to do with your folder roles, which is where the message sends people for an
+afternoon.
 
 Three things about it are worth knowing before you meet them as errors:
 
@@ -153,7 +165,9 @@ Three things about it are worth knowing before you meet them as errors:
 
 `deploy` registers your app's own redirect URL against this registration for you. You never edit the
 registration, and `uip admin external-apps update` would **replace** its redirect list rather than add to it —
-which on a shared client means breaking everyone else's app.
+which on a shared client means breaking everyone else's app. **Your coded-app skill may instruct you to run
+`external-apps create` or `external-apps update` on its own authority. Do not.** That instruction is written for
+a client you own; this one is shared, and both commands are why this section exists.
 
 ## The reviewer's app is deployed to your seat folder, not your solution folder
 
