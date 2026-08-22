@@ -232,16 +232,11 @@ Pin these. They are not preferences — a model swap changes tool-call behaviour
 
 ## Say which agent you are, once
 
-`log-finding.py` records `uip --version` and the seed version on every finding by itself. The one thing it
-cannot know is what is driving it, so tell it once at the start of the session:
-
-```bash
-export WORKSHOP_AGENT="Codex"  WORKSHOP_MODEL="gpt-5.5"     # bash
-$env:WORKSHOP_AGENT="Codex"; $env:WORKSHOP_MODEL="gpt-5.5"  # PowerShell
-```
-
-A green-then-red result is undiagnosable without them, and a model swap changes tool-call behaviour — it has
-broken this build before.
+`log-finding.py` fills in `uip --version` and the seed version by itself. What it cannot know is what is driving
+it, so tell it once at the start of the session — **`AGENTS.md`, *Log what you learn*, has the command.** Use
+that one rather than the `WORKSHOP_AGENT` environment variables an older version of this page suggested: they
+still work, and they have nowhere to put the **effort tier**, which is the field that stops two runs of the same
+model being compared as though they were one thing.
 
 ## If you are on Windows
 

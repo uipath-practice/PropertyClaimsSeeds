@@ -14,21 +14,12 @@ it you get a clean early error:
 Cannot create MULTILINE_MAX field 'claimDataJson': the Multi-line (Max) feature is not enabled for this tenant.
 ```
 
-**Use `MULTILINE_TEXT` with `lengthLimit: 10000` and move on.** That is the design as it stands
-(`contracts/claim-entity.md`), and 10,000 is the type's hard maximum — a `lengthLimit` of 50000 or 131072 is
-rejected outright, with the allowed range in the message.
+**Use `MULTILINE_TEXT` with `lengthLimit: 10000` and move on.** Two things the error above does not tell you:
+`50000` and `131072` are rejected outright too, so 10,000 really is the ceiling for this type — and a column
+created with *no* `lengthLimit` silently defaults to **200**, which is the same failure fifty times worse.
 
-What matters is what happens *past* the limit: the write succeeds and the content is cut, silently. So the
-budget belongs upstream, in the agent prompts you write in block 4 — aim each payload at **8,000 characters** —
-and the check belongs in block 7, where a column whose length is exactly 10,000 is a truncated column.
-
-**A `MULTILINE_TEXT` column with no `lengthLimit` defaults to 200 characters.** Same silent truncation, fifty
-times worse. Set it explicitly on every one.
-
-**`STRING` does the same thing, and it is easier to miss** because 200 characters looks generous until the value
-is a person's reasoning. `contracts/claim-entity.md` gives minimums for the five columns where it matters; the
-two reviewer-notes columns are the ones that hurt. Three builds guessed three different answers here, and two
-of them cut an adjuster's notes at 200 without reporting anything.
+**Every limit, and why each one is what it is, lives in `contracts/claim-entity.md`.** Read it before you write
+the schema rather than after: it is the file that decides whether this block ships broken, and it is short.
 
 ## Create the entity in your seat folder
 

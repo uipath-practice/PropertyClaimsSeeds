@@ -57,9 +57,6 @@ right, plus clean claims that went through unattended.
 **Keep the failures in it.** A results table with only successes cannot show anyone that the solution improved,
 and it is the failures that tell you what to fix.
 
-**And you have read the cookbook back** — the two-sided review in `AGENTS.md`, *Before you finish a
-block*. Two minutes, and it is what keeps this seed from only ever growing.
-
 **This is also the last block, so it is where the whole set gets its verdict.** `AGENTS.md`, *Before you finish
 the exercise*, asks four questions about the seed as a whole rather than about this block. Answer them here.
 
@@ -79,8 +76,8 @@ Then, once the nine behave, send in twenty unaimed claims and see what a normal 
 stand-in decides readiness by a coin flip on each call, not by a clock — so a two-minute timer costs about an
 hour across these runs and buys nothing. Ten seconds.
 
-**Where it goes.** The results table in this block's folder. Generated code, as ever, in `Build/ClaimCase-<seat>/`.
+**Where it goes.** The results table in this block's folder (`AGENTS.md` for everything else).
 
-**Log as you go.** `python3 log-finding.py --block 7-testing --category <kind> --summary "..."` — every retry,
-every surprise, everything these instructions failed to explain, and anything that took longer than it should
-have. Dead ends included; they are the point. `AGENTS.md` has the detail.
+**Log as you go.** Every retry, every surprise, everything these instructions failed to explain, and
+anything that took longer than it should have — dead ends included, they are the point. `AGENTS.md`
+says how, and closing the block includes the two-sided read-back of what you were handed.

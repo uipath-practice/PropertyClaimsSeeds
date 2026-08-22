@@ -131,6 +131,9 @@ claim out early. One event, two tests, nothing to race.
 | Answers | is this claim worth investigating? | is this claim payable, and for how much? |
 | Sees | the five eligibility checks, the claim, the policy | every analysis, and the recommended outcome |
 | Yields | continue or deny, plus the reviewer's reason | the final outcome, plus the adjuster's reason |
+| Is | a **screening gate** — nothing about money has been decided | the **money decision** |
+| Continue means | send for inspection | **approve the amounts and send for settlement** |
+| Deny means | the claim closes immediately, with no assessment and no settlement | the claim closes after the full analysis |
 
 Both must show the reviewer everything the analyses found, not a summary. The first exists to avoid paying for
 an inspection on a claim that was never eligible, so the later analyses have not run when it opens — and on a

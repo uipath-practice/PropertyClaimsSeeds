@@ -11,8 +11,7 @@ the fix, because the symptom is what you will actually meet.
 **Skill.** `uipath-platform` to start runs and read state; `uipath-troubleshoot` when one fails and you need to
 know why. **Not `uipath-test`** — that drives Test Manager, which this exercise does not use.
 
-**Running claims is pre-authorised** (`AGENTS.md`) — your seat, synthetic claimants, no letter ever sent. Do not
-stop to ask before a run.
+**Running claims is pre-authorised** (`AGENTS.md`) — do not stop to ask before a run.
 
 Thirty-one runs, in this order, and the order matters: **nine pinned, then two clean, then twenty unaimed.**
 Pinned first because a failure there names its own cause; unaimed last because a random claim that misbehaves is

@@ -25,13 +25,7 @@ is identical either way.
 You have run a real claim form through it and seen every field the later steps need come back correctly, with
 the right number of damage rows.
 
-**Where it goes.** Generated code into `Build/ClaimCase-<seat>/` — one solution for the whole build. Notes and
-documents you write for this block go in this block's folder.
-
-**Log as you go.** `python3 log-finding.py --block <this-block> --category <kind> --summary "..."` — every
-retry, every surprise, everything these instructions failed to explain, and anything that took longer than it
-should have. Dead ends included; they are the point. `AGENTS.md` has the detail.
-
-**And you have read the cookbook back** — the two-sided review in `AGENTS.md`, *Before you finish a
-block*. Two minutes, and it is what keeps this seed from only ever growing.
+**Log as you go.** Every retry, every surprise, everything these instructions failed to explain, and
+anything that took longer than it should have — dead ends included, they are the point. `AGENTS.md`
+says how, and closing the block includes the two-sided read-back of what you were handed.
 

@@ -116,19 +116,19 @@ routes then populate it, and `pdd.md` §3 says the same thing from the process s
 | Action App | `final` + `overrides`, as **task outputs** — outputs survive completion where inputs do not, so a completed task renders the table with no entity read |
 | `Record Adjuster Decision` | copies `final` into the entity, and `final.net` into `approvedPayout` |
 
-### The two gateways are not the same kind of decision
+### The two gateways write different columns
 
-**Decided 2026-08-10.** They were writing the same three columns, so gateway 2 destroyed gateway 1's record. Now:
+What the two decisions *are* is `pdd.md` §4's table. What they write is this one, and getting it wrong is not
+theoretical: they were writing the same three columns until 2026-08-10, so gateway 2 destroyed gateway 1's
+record.
 
 | | Gateway 1 — eligibility | Gateway 2 — final review |
 |---|---|---|
-| Is | a **screening gate**. Nothing about money. | the **money decision**. |
-| Deny means | the claim closes immediately — no assessment, no settlement | the claim closes after full analysis |
-| Continue means | send for inspection | **approve the amounts and send for settlement** |
 | Writes | `eligibilityDecision`, `eligibilityNotes`, `eligibilityReviewedAt` | `reviewDecision`, `reviewerNotes`, `reviewedAt`, `settlementJson.final`, `approvedPayout` |
 
-The app's wording must follow: at gateway 2 the action is *"Approve and send for settlement"*, not "continue". A
-reviewer approving a payment should be told that is what they are doing.
+The app's wording follows the *process* distinction: at gateway 2 the action is
+*"Approve and send for settlement"*, not "continue". A reviewer approving a payment should be told that is what
+they are doing.
 
 **When no gateway is raised** — a clean claim, which now skips *both* (`pdd.md` §4) — `final` is a copy of
 `recommended` with `source: "agent"`. The letter must not distinguish the two cases; the audit trail must.

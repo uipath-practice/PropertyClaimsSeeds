@@ -49,12 +49,10 @@ You can answer these three from your own document, without going back to the pro
 If any answer sends you back to `pdd.md`, the design is not finished — and the cost of that lands in block 5,
 not here.
 
-**Where it goes.** `2-design/`, as markdown. This block writes no code, so nothing goes in `Build/`.
+**This block writes no code**, so nothing goes in `Build/` — the four tables and the SDD are markdown in
+`2-design/`.
 
-**Log as you go.** `python3 log-finding.py --block 2-design --category <kind> --summary "..."` — every retry,
-every surprise, everything these instructions failed to explain, and anything that took longer than it should
-have. Dead ends included; they are the point. `AGENTS.md` has the detail.
-
-**And you have read the cookbook back** — the two-sided review in `AGENTS.md`, *Before you finish a
-block*. Two minutes, and it is what keeps this seed from only ever growing.
+**Log as you go.** Every retry, every surprise, everything these instructions failed to explain, and
+anything that took longer than it should have — dead ends included, they are the point. `AGENTS.md`
+says how, and closing the block includes the two-sided read-back of what you were handed.
 

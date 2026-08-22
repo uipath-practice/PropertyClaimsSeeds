@@ -35,9 +35,6 @@ steps away, silently.
 You can hand the system a claim form it has never seen and get back every field the claims team asked for, with
 the right number of damage rows — and you would be comfortable letting the next step act on the result.
 
-**And you have read the cookbook back** — the two-sided review in `AGENTS.md`, *Before you finish a
-block*. Two minutes, and it is what keeps this seed from only ever growing.
-
 ## How to test it
 
 Generate a few fresh claims and read the extracted fields **beside the document**, not as a score. A score tells
@@ -52,9 +49,6 @@ Use `1-extraction/prompt-shared.md` and move on. **A supported route, not a pena
 everything downstream, so a half-trained model is worse than a borrowed one, and every block after this one is
 identical either way. The interesting part of this exercise is not here.
 
-**Where it goes.** Generated code into `Build/ClaimCase-<seat>/` — one solution for the whole build. Notes and
-documents you write for this block go in this block's folder.
-
-**Log as you go.** `python3 log-finding.py --block <this-block> --category <kind> --summary "..."` — every
-retry, every surprise, everything these instructions failed to explain, and anything that took longer than it
-should have. Dead ends included; they are the point. `AGENTS.md` has the detail.
+**Log as you go.** Every retry, every surprise, everything these instructions failed to explain, and
+anything that took longer than it should have — dead ends included, they are the point. `AGENTS.md`
+says how, and closing the block includes the two-sided read-back of what you were handed.

@@ -177,9 +177,10 @@ the mapping three blocks later, at run time, silently.
 name — `CONFIG.md`, *One deployment, reused*. An uninstalled deployment stays in the tenant's Solutions view
 permanently and there is no CLI verb that removes it, so a name per attempt is not mess you can tidy later.
 
-**Do not read the answer key.** The generator drops a `manifest.json` beside the documents naming the problems
-it planted and the outcome it expects. Nothing you build may read it — an analysis that consults it is brilliant
-and worthless. It is the test oracle, and it is yours in block 7 only.
+**Do not read the answer key.** The generator drops one beside the documents in the `Claims` bucket, named
+`<claimId>-claim.json`, stating the problems it planted and the outcome it expects. Nothing you build may read
+it — an analysis that consults it is brilliant and worthless. It is the test oracle and it is yours in block 7
+only. Full shape: `contracts/provided-processes.md`.
 
 **Check the platform's own tooling before hand-rolling.** `uip --help` and the installed skills are ahead of any
 document, this one included. Where they disagree with a cookbook, the tool wins — and that disagreement is worth
@@ -233,6 +234,9 @@ plausible wrong answer — a guess cannot be told from a fact after the fact. Th
 python3 log-finding.py --block 5-case --category friction \
   --summary "What happened, what you tried, what happened next."
 ```
+
+**`--block` is this block's folder name**, exactly as it is spelled on disk — `2-design`, `5-case`, `7-testing`.
+That is why no prompt repeats this command: the only part that changes is a name you already have.
 
 **The table is append-only and this script is the only thing that writes to it.** It has no delete and no update
 path: other people's findings, and your own earlier ones, cannot be affected by anything you do here. If someone

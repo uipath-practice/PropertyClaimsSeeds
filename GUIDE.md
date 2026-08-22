@@ -56,9 +56,8 @@ read the seed  →  prompt your agent  →  it builds  →  run the gate command
 That is deliberate: this pipeline fails late and quietly, and a mistake three blocks back costs far more to find
 than the same mistake caught at its own gate.
 
-**Log findings as you go** with `log-finding.py`. Every retry, every surprise, everything the seed failed to explain. It is
-how the next cohort's seed gets better, and it is also the most useful thing you will have at the end when
-someone asks what actually happened.
+**Log findings as you go.** It is how the next cohort's seed gets better, and it is the most useful thing you
+will have at the end when someone asks what the build actually cost. `AGENTS.md` says what and how.
 
 ## The sequence
 
@@ -91,31 +90,20 @@ payloads you imagined.
 Block 2 creates nothing on the platform, which makes it the easy one to rush. It is also the one that decides
 what blocks 4 and 5 cost, because **it is where the build stops living in your agent's context and starts living
 on disk.** Blocks 4 and 5 are long enough that your agent will lose its working context partway through at least
-one of them; what it comes back to is either four tables it wrote, or a 340-line process description it has to
-read again.
+one of them; what it comes back to is either four tables it wrote, or the whole process description again.
 
-The last of the four is the honesty check:
+The last of the four tables is the honesty check: **every planted problem, and which of your components catches
+it.** If you cannot fill it in from your own design you do not yet understand the process well enough to build
+it, and every hour after this point gets more expensive to correct. If you can, the rest of the exercise is
+execution — and the same table becomes your test plan in block 7. `2-design/spec.md` has its columns.
 
-| Planted problem | Which component catches it | Which field carries the finding | Which screen shows it |
-|---|---|---|---|
+## Block 5 is passes, not one attempt
 
-`pdd.md` §9 lists nine of them. If you cannot fill the table, you do not yet understand the process well
-enough to build it — and every hour after this point gets more expensive to correct. If you can, the rest of the
-exercise is execution, and the same table becomes your test plan in block 7.
-
-## Block 5 is three passes, not one attempt
-
-The case plan is the biggest single piece of work here and the one that fails in the most ways. Its prompt
-splits it — skeleton, then wiring, then deploy and run — and each pass ends in a command that passes or does
-not. Take the passes seriously as stopping points: a pass that goes wrong costs a pass, where the same mistake
-found at the end costs the block.
-
-Its acceptance run is **a claim with nothing wrong with it**. That is the only claim that can run the whole
-lifecycle without a human, which is what makes it provable before the app exists in block 6.
-
-**You build it locally and review it in the browser.** Nothing in the loop needs the designer any more — but
-`uip solution upload` puts your solution into Studio Web, where a case plan is far easier to read, and that is
-worth doing at the end of the block. Deploying does not upload; they are separate steps on purpose.
+The case plan is the biggest single piece of work here and the one that fails in the most ways, so its prompt
+splits it into passes that each end in a command. **Take them seriously as stopping points**: a pass that goes
+wrong costs a pass, where the same mistake found at the end costs the block. The passes themselves, and what
+closes each, are `5-case/prompt.md`'s — they have changed once already and this page is not the place to learn
+them from.
 
 ## When a block goes wrong — checkpoints
 

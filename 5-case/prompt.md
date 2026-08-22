@@ -89,14 +89,11 @@ no placeholder. **An analysis that could not do its job must say so where the pr
 letter.** One build produced a fluent letter whose entire content was the agent explaining it lacked the inputs
 to write one; every structural gate passed.
 
-**And you have read the cookbook back** — the two-sided review in `AGENTS.md`, *Before you finish a
-block*. Two minutes, and it is what keeps this seed from only ever growing.
-
 ## How to test it
 
 `5-case/cookbook.md` has the exact calls, including how to answer a stop without a screen. Deploying and running
-are **pre-authorised** (`AGENTS.md`): your seat, synthetic claimants, no letter ever sent. Do not stop to ask, and
-do not end this block before the runs — a plan that has not carried a claim proves nothing.
+are **pre-authorised** (`AGENTS.md`) — do not stop to ask, and do not end this block before the runs. A plan
+that has not carried a claim proves nothing.
 
 **Read the claim's record, not the journey's status.** A claim can reach an ending with a stage that never ran,
 and the record is the only place that shows it: a stage that went green and left its columns empty did not do its
@@ -105,10 +102,9 @@ job, whatever the status says.
 **If the clean claim gets stopped for review, the journey is not what is wrong.** It parked exactly where it was
 told to, because one of your analyses found fault with a claim that has none. That is a block 4 fix.
 
-**Where it goes.** Generated code into `Build/ClaimCase-<seat>/` — one solution for the whole build, holding the
-journey and all seven analyses. Notes and documents you write for this block go in this block's folder, and
-`5-case/notes.md` is the one this block is not finished without.
+**`5-case/notes.md` is the file this block is not finished without** — block 6 is somebody picking up your work
+with none of it in mind. Where everything else goes: `AGENTS.md`.
 
-**Log as you go.** `python3 log-finding.py --block 5-case --category <kind> --summary "..."` — every retry,
-every surprise, everything these instructions failed to explain, and anything that took longer than it should
-have. Dead ends included; they are the point. `AGENTS.md` has the detail.
+**Log as you go.** Every retry, every surprise, everything these instructions failed to explain, and
+anything that took longer than it should have — dead ends included, they are the point. `AGENTS.md`
+says how, and closing the block includes the two-sided read-back of what you were handed.

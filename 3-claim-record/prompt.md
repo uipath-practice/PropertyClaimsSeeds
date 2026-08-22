@@ -38,18 +38,12 @@ The record exists, and everything your design says a claim accumulates has somew
 table from block 2 against it: a payload with no home is a gap you will otherwise discover at run time in block
 5, when a write fails against a column nobody created.
 
-**And you have read the cookbook back** — the two-sided review in `AGENTS.md`, *Before you finish a
-block*. Two minutes, and it is what keeps this seed from only ever growing.
-
 ## One thing you will need later, so find it now
 
 The record is written by the case, and the case reaches it through a connection that **already exists and is
 shared across the team**. Confirm you can see it and that it answers, and note what it is called — block 5 binds
 to it. Do not create your own: authorising a connection needs a human at a browser, and one each buys nothing.
 
-**Where it goes.** Generated code into `Build/ClaimCase-<seat>/` — one solution for the whole build. Notes and
-documents you write for this block go in this block's folder.
-
-**Log as you go.** `python3 log-finding.py --block <this-block> --category <kind> --summary "..."` — every
-retry, every surprise, everything these instructions failed to explain, and anything that took longer than it
-should have. Dead ends included; they are the point. `AGENTS.md` has the detail.
+**Log as you go.** Every retry, every surprise, everything these instructions failed to explain, and
+anything that took longer than it should have — dead ends included, they are the point. `AGENTS.md`
+says how, and closing the block includes the two-sided read-back of what you were handed.

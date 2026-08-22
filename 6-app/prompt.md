@@ -45,6 +45,11 @@ back into the case plan is almost never the right move here.**
   policy, what the machine recommends and what it thinks is wrong — all of it before they scroll anywhere. Detail
   below and behind things is fine and expected; a claim carries a lot. Arriving at a screen that says nothing
   until you scroll is not.
+- **Check the machine's conclusions, not just read them.** This is a validator's job, so a screen that only
+  tells them the policy is fine has given them nothing to validate. Alongside each conclusion, show the handful
+  of figures it rests on — dates, amounts, limits, the assessor's own estimate — close enough together to be
+  compared at a glance.
+- **Know where the claim is in its journey**, without asking anyone.
 - **Read it as a claims handler, not as a developer.** Sentences, not field names. If your screen shows a
   reviewer `recommend_review` or `is_eligible: false`, it is not finished.
 - **Read the three documents** — the claim form, the policy, and the surveyor's report where one exists.
@@ -73,9 +78,6 @@ claim on it. Twice over:
 A blank page, an error, or a screen that works but logs errors underneath is not done. This is the one thing that
 cannot be established from the command line, and it is the reason to look.
 
-**And you have read the cookbook back** — the two-sided review in `AGENTS.md`, *Before you finish a
-block*. Two minutes, and it is what keeps this seed from only ever growing.
-
 ## How to test it
 
 Deploying the app and running claims through it are **pre-authorised** (`AGENTS.md`) — do not stop to ask.
@@ -91,9 +93,6 @@ Two checks that are easy to miss, both of which have caught real builds:
 - **Look at the claim's record afterwards.** The decision, the reason and the time it was made all belong on it.
   A screen that submits successfully and stores nothing looks identical from the front.
 
-**Where it goes.** Generated code into `Build/ClaimCase-<seat>/` — one solution for the whole build. Notes and
-documents you write for this block go in this block's folder.
-
-**Log as you go.** `python3 log-finding.py --block <this-block> --category <kind> --summary "..."` — every
-retry, every surprise, everything these instructions failed to explain, and anything that took longer than it
-should have. Dead ends included; they are the point. `AGENTS.md` has the detail.
+**Log as you go.** Every retry, every surprise, everything these instructions failed to explain, and
+anything that took longer than it should have — dead ends included, they are the point. `AGENTS.md`
+says how, and closing the block includes the two-sided read-back of what you were handed.

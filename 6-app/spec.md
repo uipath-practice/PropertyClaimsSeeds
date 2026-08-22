@@ -105,20 +105,31 @@ tells everyone else the outcome is unavailable — and an automated check refuse
 genuinely, or leave it genuinely enabled and describe the requirement with `aria-describedby`. Never both.
 
 ```
-┌─ header ─────────────────────────────────────────────────────────────────────┐
-│ CLM-4675074 · J. Okafor · water damage · £48,200 · policy PL-99213            │
-│ Eligibility review for Jane          recommends: review required   [Documents]│
-├─ decision ───────────────────────────────────────────────────────────────────┤
-│ [ Pursue this claim ] [ Refuse ]     why: ▏                                  │
-├─ at a glance ────────────────────────────────────────────────────────────────┤
-│ ┌ Claim ───────┐ ┌ Policy ──────┐ ┌ Assessment ──┐ ┌ Settlement ──┐          │
-│ │ 3 to look at │ │ in force     │ │ not yet      │ │ £41,880 net  │          │
-│ └──────────────┘ └──────────────┘ └──────────────┘ └──────────────┘          │
-├─ the analyses ───────────────────────────────────────────────────────────────┤
-│  Eligibility │ Coverage │ Payout │ Credibility │ Decision                     │
-│  ▾ The policy lapsed 11 days before the incident date            not passed   │
-│  ▸ 12 other checks passed                                                     │
-└──────────────────────────────────────────────────────────────────────────────┘
+┌─ header ──────────────────────────────────────────────────────────────────────┐
+│ CLM-4675074 · J. Okafor · water damage · £48,200 · policy PL-99213             │
+│ Claim review for Jane        recommends: escalate — aggregate limit  [Docs 3]  │
+├─ where the claim is ──────────────────────────────────────────────────────────┤
+│ ✓ Intake ─ ✓ Screening ─ ✓ Inspection ─ ✓ Analysis ─ ▶ Claim review ─ ○ Settled│
+├─ decision ────────────────────────────────────────────────────────────────────┤
+│ [ Approve and send for settlement ]  [ Refuse ]        why: ▏                  │
+├─ at a glance ─────────────────────────────────────────────────────────────────┤
+│ ┌ THE CLAIM ───────────┐ ┌ THE POLICY ──────────┐ ┌ THE SURVEYOR ─┐ ┌ SETTLE… ┐│
+│ │ Nothing flagged      │ │ In force on the day  │ │ Usable — mould│ │ £9,807  ││
+│ │ at screening         │ │ of loss              │ │ work unpriced │ │ recomm. ││
+│ │                      │ │                      │ │               │ │         ││
+│ │ Claimant   J. Okafor │ │ Type      HO-3       │ │ Assessor  I.D.│ │ Covered ││
+│ │ Incident   03/07/26  │ │ Period    03/07/25 → │ │ Licence   RO-…│ │  £12,307││
+│ │ Filed      08/07/26  │ │ Premium   Paid full  │ │ Assessed  06/07│ │ Excess  ││
+│ │ Claimed    £48,200   │ │ Dwelling  £500,000   │ │ Estimate  £48k│ │  £2,500 ││
+│ │ Items      4         │ │ Excess    £2,500     │ │ Cause     pipe│ │ Left    ││
+│ │ [ claim form ]       │ │ [ policy ]           │ │ [ report ]    │ │  £12,307││
+│ └──────────────────────┘ └──────────────────────┘ └───────────────┘ └─────────┘│
+├─ the analyses ─────────────────────────┬─ the documents ───────────────────────┤
+│ Eligibility · Report(1) · Coverage ·   │ Settlement · Claim form · Policy ·    │
+│ Payout(2) · Credibility · Decision(3)  │ Surveyor                              │
+│  ▾ The policy lapsed 11 days before the incident date             not passed   │
+│  ▸ 12 other checks passed                                                      │
+└───────────────────────────────────────────────────────────────────────────────┘
                               ▲ fold — a 1440×900 window ends about here
 ```
 
@@ -127,10 +138,58 @@ The regions are the contract; the styling is yours. What each one has to hold:
 | Region | Must carry | Must not |
 |---|---|---|
 | **header** | the claim in one line, who is reviewing it and at which gateway, the recommendation | be a logo bar |
+| **where the claim is** | every stage of *your* lifecycle, in order, with the current one marked | invent stages, or show only the current one |
 | **decision** | both outcomes and the reason field, always reachable | sit at the bottom of the page |
-| **at a glance** | one card per area, each stating its conclusion in a phrase | be four empty boxes at gateway 1 — say *"after the inspection"* |
+| **at a glance** | one card per area: a **verdict headline** *and* the facts it rests on, as aligned label → value rows | be four empty boxes at gateway 1 — say *"after the inspection"* |
 | **the analyses** | every check, failures open, passes collapsed to a count that expands | be a JSON dump, or a wall of green ticks |
-| **documents** | a button per document, opening over the page | render a PDF inline in the flow |
+| **documents** | a button on the card the document belongs to, opening over the page | render a PDF inline in the flow |
+
+### Show where the claim is
+
+A reviewer's first question is not *"what did the machine find"* — it is *"where is this, and what happens
+next"*. One strip of your lifecycle stages, in order, with everything before this one ticked and everything
+after it greyed, answers it before they read a word. It costs one row of the page and it is the single cheapest
+thing on this screen.
+
+Take the stages from **your own design** (`2-design/` Table 1) and the current one from the record's status
+column — not from a list you type into the app, which will drift from the case plan the first time either
+changes.
+
+### A verdict is not a fact — carry both
+
+This is the difference between a screen that looks considered and one a claims validator can actually work
+from, and it is where builds land on the wrong side.
+
+A card that says **"Nothing flagged at screening"** is doing real work: it saves reading five rows to reach a
+conclusion. But it is the *conclusion*, and a validator does not accept conclusions — their job is to check
+them. If the card carries only prose, every check costs a click into a tab.
+
+So each card carries both:
+
+- **A headline that states the conclusion**, in the reviewer's language, coloured by whether it needs
+  attention. *"In force on the day of loss"* beats *"Premium current"*, because it answers the question that
+  was actually being asked.
+- **Then the facts it rests on, as aligned `label → value` rows.** Five to eight of them. Two columns, values
+  left-aligned with each other, amounts right-aligned. A reader scans that in about a second; the same content
+  as sentences takes ten.
+
+Which facts? The ones the decision turns on, not everything on the record: who claimed and for how much, when
+it happened and when it was reported, the policy period and its payment status, the section limit and the
+excess, the assessor's identity and licence and independent estimate, and the settlement arithmetic. If you
+cannot say which question a row answers, it is decoration.
+
+**Density is earned by relevance, not by volume.** Eight well-chosen rows in two aligned columns read as
+authoritative. Thirty rows of every field on the record read as a database dump, and that is the other failure
+— this should not look like a green-screen terminal with a stylesheet.
+
+**Group the tabs, and count what is in them.** Two kinds of thing end up in that strip and they are not peers:
+the six *analyses*, which carry findings, and the *documents and the settlement*, which carry evidence. Put a
+divider between the two groups, and put the number of concerns on the analysis tabs — `Payout (2)` tells a
+reviewer where to go before they click anything, which is the whole job of a tab strip.
+
+**When the decision is already made, say so at the top and name who made it.** A reopened task shows the
+outcome, the timestamp, **the person**, and their reason, with no controls. Without the name it is not an audit
+trail; it is a status.
 
 Two habits that wreck this, both seen on real builds:
 

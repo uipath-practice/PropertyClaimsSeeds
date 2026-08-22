@@ -242,15 +242,13 @@ the first one you test.
 
 ## Every stage writes what it learned
 
-The case instance holds lifecycle, not content — no API exposes task output payloads, so **anything a human or an
-app must see has to be written to the claim record as it is produced.** `contracts/claim-entity.md` says which
-columns each stage can write and why a stage may only write what it produces.
+`pdd.md` §8 says why the record is the only thing that outlives a step, and `contracts/claim-entity.md` says
+which columns each stage may write. The platform fact underneath both, which neither states: **the case instance
+holds lifecycle, not content — no API exposes a task's output payload.** There is no route to that data other
+than the record.
 
-Two consequences for the plan's shape:
-
-- **A recommendation must be recorded before the gateway that shows it opens.** A screen is built from what has
-  been written down; a value written afterwards is one nobody can see.
-- **A single write at the end cannot work.** The gateways fire before the case ends.
+One consequence for the plan's shape: **a single write at the end cannot work**, because the gateways fire
+before the case ends.
 
 ## The case header — authored in the designer, after your last pack
 

@@ -71,9 +71,6 @@ a case binds through the solution registry and can only see what the manifest li
 hours and needed the manifest rebuilt — the CLI refuses both `projects add` ("already exists") and
 `projects remove` ("not found") once the two disagree. One command here; a rebuild there.
 
-**And you have read the cookbook back** — the two-sided review in `AGENTS.md`, *Before you finish a
-block*. Two minutes, and it is what keeps this seed from only ever growing.
-
 ## How to test it
 
 Build and test **one** analysis end to end before generating the other six. They share a shape, so a mistake in
@@ -86,10 +83,9 @@ commands, including which of the seven can be exercised on their own and which c
 pipeline is — it cannot tell that an analysis is missing an input it needs, or that two components spell the same
 payload differently. Read what you built.
 
-**Where it goes.** Generated code into `Build/ClaimCase-<seat>/` — one solution for the whole build. Nothing is
-published in this block: these ship inside the solution the case deploys in block 5. Notes and documents you
-write for this block go in this block's folder.
+**Nothing is published in this block** — the seven analyses ship inside the solution the case deploys in block
+5. Where the code and the notes go: `AGENTS.md`.
 
-**Log as you go.** `python3 log-finding.py --block <this-block> --category <kind> --summary "..."` — every
-retry, every surprise, everything these instructions failed to explain, and anything that took longer than it
-should have. Dead ends included; they are the point. `AGENTS.md` has the detail.
+**Log as you go.** Every retry, every surprise, everything these instructions failed to explain, and
+anything that took longer than it should have — dead ends included, they are the point. `AGENTS.md`
+says how, and closing the block includes the two-sided read-back of what you were handed.
