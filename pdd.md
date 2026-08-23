@@ -339,6 +339,16 @@ impossible. Times that differ between a form and a narrative, who was present, w
 how people remember things. *Same-day assessment* means the assessor attended on **the day of the incident**;
 matching the *submission* date is unremarkable and usually just a prompt claimant.
 
+**Expect to be only partly successful at this, and know where the durable fix is.** Measured across fifteen
+clean claims: every one still came back carrying *some* caution, and deleting the offending check did not help —
+the caution reappeared on the neighbouring check in the same analysis. The behaviour is **one caution per
+analysis**, not a caution about a topic, so prompt wording alone will not get you to a silent clean claim.
+
+What actually settles clean claims is **the decision rules, not the analyses**: scope §5.6's escalation
+conditions so that a caution from one analysis is not read as another's concern — a payout warning is not
+"coverage ambiguous". With that scoping, twelve of those fifteen claims settled unattended while still carrying
+a warning somewhere. **Fix the routing, not the mood.**
+
 **And the error in the other direction — materiality is not leniency.** A conflict between the incident type the
 claimant reported and the cause the assessor determined is a **failing** check on peril classification, even
 when the assessor's peril is itself covered: the claim was made on one basis and would be paid on another, and

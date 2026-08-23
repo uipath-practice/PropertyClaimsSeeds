@@ -179,6 +179,21 @@ Two things make this safe rather than reckless, and both are worth knowing:
 Pausing for approval is the wrong instinct here and it is expensive: a block's whole value is in what a live run
 reveals, and a build that stops at the deploy gate has proven nothing. **Work to the goal, then report.**
 
+**This approval is ours to give and your harness may not honour it — settle that before block 5, not during
+it.** The three commands that recover a broken deployment are the ones an automatic safety classifier is most
+likely to refuse, because out of context they read as destructive:
+
+```
+uip solution deploy uninstall …
+uip or processes delete …
+uip maestro case instance cancel …
+```
+
+Refused mid-block, the build stops dead with the fix identified and unrunnable. **Ask your operator to allow
+these before you reach block 5**, which is where the first redeploy happens — a per-command permission rule is
+enough. Inside a disposable seat all three are routine, and withholding them turns a five-minute recovery into a
+blocked session.
+
 Three things are still worth a pause, and they are all outside your seat: touching another seat's folder or
 solution, changing anything at tenant level, and deleting a shared resource — the IXP project, the shared Data
 Fabric connection, the deployed automations. If something you are about to run names a resource without your

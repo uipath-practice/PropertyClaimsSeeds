@@ -7,9 +7,8 @@ before someone else does.
 traceability table — which of your checks you made responsible for each) · `7-testing/spec.md` (what counts as a
 pass, and why) · `7-testing/cookbook.md` (how to run it here)
 
-**Before you start:** the reviewer's screen from block 6 has to be built and working. Most of these claims are
-supposed to stop and wait for a person, and without somewhere for that person to decide, they will sail past and
-close — which looks like your analyses failing when it is only the screen missing.
+**Before you start:** block 6 has to be finished — `7-testing/spec.md` has the measured cost of running this
+before it, and it is eight of the nine rows.
 
 ## What the business is asking for
 
@@ -72,12 +71,12 @@ because here it is the answer key rather than a shortcut.
 
 Then, once the nine behave, send in twenty unaimed claims and see what a normal week looks like.
 
-**Before the first run, check what your inspection wait is set to.** Nothing is actually being waited for — the
-stand-in decides readiness by a coin flip on each call, not by a clock — so a two-minute timer costs about an
-hour across these runs and buys nothing. Ten seconds.
+**Before the first run, check your inspection poll is at ten seconds, not minutes.** It is paid once per claim
+here rather than once per build (`contracts/provided-processes.md`).
+
+**And budget honestly: this is a fix block.** The nine will not pass first time — that is what the block is for.
+`7-testing/spec.md` has the measured loop.
 
 **Where it goes.** The results table in this block's folder (`AGENTS.md` for everything else).
 
-**Log as you go.** Every retry, every surprise, everything these instructions failed to explain, and
-anything that took longer than it should have — dead ends included, they are the point. `AGENTS.md`
-says how, and closing the block includes the two-sided read-back of what you were handed.
+**Log as you go** — `AGENTS.md` says how, and closing the block includes the two-sided read-back.

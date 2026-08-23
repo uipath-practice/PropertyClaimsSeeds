@@ -352,6 +352,47 @@ for stage in stages:
               f'entry and the origin\'s completion fire from the same event — pair them, or the '
               f'two paths are not mutually exclusive (`5-case/spec.md`, Entering a secondary lane)')
 
+# ------------------------------------------- expressions must survive t=0, when nothing is set
+#
+# The engine evaluates EVERY entry/exit/completion condition once at case start, in an element
+# called CaseRulesEvaluatorNode that appears nowhere in the plan -- and at that moment every
+# variable an agent will later write is empty. An expression that throws there does not park a
+# stage, it faults the whole claim. Measured 2026-08-23: 11 of 11 claims Faulted 8s after start on
+# `Cannot read property 'verdict' of null`, from JSON.parse of the string "null".
+#
+# This is a lint, not an evaluator -- it flags the two shapes that throw on empty input. The
+# ten-minute belt-and-braces check is to eval every expression in node against undefined, null,
+# "" and an unparseable string before packing.
+
+UNGUARDED_PARSE = re.compile(r'JSON\.parse\(\s*(?!.{0,80}?\|\|)[^)]*\)\s*(?:\.|\[)')
+UNGUARDED_PROP  = re.compile(r'\bvars\.(\w+)\.(\w+)')
+
+def conditions(stage):
+    for scope in ('entryConditions', 'exitConditions'):
+        for cond in (stage['data'].get(scope) or []):
+            for group in cond['rules']:
+                for rule in group:
+                    expr = rule.get('conditionExpression')
+                    if expr:
+                        yield scope, cond, expr
+
+for stage in stages:
+    label = stage['data'].get('label', stage['id'])
+    for scope, cond, expr in conditions(stage):
+        why = None
+        if UNGUARDED_PARSE.search(expr):
+            why = 'JSON.parse(...) with no `|| \'{}\'` default, then a property read'
+        else:
+            m = UNGUARDED_PROP.search(expr)
+            # vars.x.y is fine when x is guarded by ?. or a default somewhere in the expression
+            if m and '?.' not in expr and '||' not in expr:
+                why = f'reads vars.{m.group(1)}.{m.group(2)} with no `?.` and no default'
+        if why:
+            print(f'T-ZERO      {label}/{scope}/{cond["id"]} {why} — at case start every agent '
+                  f'variable is empty and this throws, faulting the whole claim '
+                  f'(`5-case/spec.md`, Every condition is evaluated once at case start)')
+            problems.append(cond['id'])
+
 # ------------------------------------------------------------- legibility (warnings)
 # Entry conditions drive execution; edges draw the picture. A plan with none runs
 # correctly and renders as disconnected boxes, which is how a case becomes

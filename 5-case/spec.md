@@ -167,6 +167,37 @@ lifecycle and must not do anything yet"* — so build it with no tasks and no wi
 inventing an entry condition or by deleting the stage. Say in your design that it is deliberate; then a reviewer
 counting warnings knows which one is expected and which one is new.
 
+## Every condition is evaluated once at case start, before any stage runs
+
+**This is the one that faults every claim at once, eight seconds in, and names an element that is not in your
+plan.** Measured 2026-08-23: eleven claims out of eleven, `Faulted`, with
+`Cannot read property 'verdict' of null` against an element called `CaseRulesEvaluatorNode` — which appears
+nowhere in `caseplan.json`, so grepping for it finds nothing and reads like a corrupted deployment.
+
+The engine evaluates **every** entry, exit and completion expression once when the case starts, before stage
+one runs. At that moment **every variable an agent will later write is empty.** So an expression that is
+correct once the data exists, and throws when it does not, does not park a stage — it kills the claim.
+
+The specific trap, because it is a chain of three reasonable things:
+
+```
+JSON.stringify(null)   →  the STRING "null"
+JSON.parse("null")     →  null
+null.verdict           →  throws  →  the whole case faults
+```
+
+**So every condition must be null-safe against four shapes**, not merely correct against real data:
+`undefined`, `null`, the empty string, and a string that does not parse. Optional chaining and a default are
+usually all it takes:
+
+```
+=js:((JSON.parse(vars.eligibilityChecksJson || '{}') || {}).verdict === 'pass')
+```
+
+`check_caseplan.py` flags the unguarded shapes, and the ten-minute belt-and-braces version is to pull every
+`conditionExpression` out of the plan and evaluate each one in `node` against those four shapes before you pack.
+That is the difference between finding this on your laptop and finding it in a faulted deployment.
+
 ## Conditions are the only description of the flow
 
 **Edges are retired.** `edges` stays `[]`, no `Edge` or `TriggerEdge` object is ever authored, and a stage is

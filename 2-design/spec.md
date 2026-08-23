@@ -67,6 +67,24 @@ neither the binding nor the name.
   (`contracts/claim-entity.md`); this table is where you decide which ones those are, and block 4 is where the
   budget goes into a prompt.
 
+### Read the data table backwards from the letter, once
+
+The forward read — *this is produced here and consumed there* — will not catch the commonest binding gap,
+because it never asks whether the consumer that needs a fact was actually given it.
+
+So read it **backwards, from the claimant's letter**: for every sentence the process requires the letter to
+contain (`pdd.md` §7 and §9), name the input that carries that fact, and confirm that input is **on the task**
+that writes the letter.
+
+Measured 2026-08-23: a build had to name which cause of loss a settlement was assessed against, and its response
+agent had been given the settlement, the decision and the eligibility checks — but never the **coverage**
+checks, which is where the reclassification lives. It could not say what it was being asked to say. The first
+fix was a prompt telling it to, which asked for something it could not see.
+
+The same read applies to anything else a human eventually reads: the reviewer's screen, the record's summary
+columns. **A component cannot report a fact it was not handed**, and this table is the only place that is
+visible before something is built.
+
 ## Table 4 — traceability
 
 | Planted problem | Caught by | Field carrying the finding | Stage where it shows |

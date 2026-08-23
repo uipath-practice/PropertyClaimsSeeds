@@ -72,7 +72,7 @@ period"*. No number, no date, no identifier, and none of the three figures a rev
 record. That build passes the first three assertions and asks a human to authorise a 41% reduction blind. Assert
 the evidence, not only the reduction.
 
-## The four assertions
+## The assertions
 
 Per claim, in this order. The third is the one that catches the defects the first two miss; the fourth catches
 the one that never announces itself at all.
@@ -119,6 +119,25 @@ lands in whichever payload was richest, which is the claim with the most damage 
 > when it arrives, the cap and this check go together. Until then it is the only thing standing between a
 > silently halved policy document and a reviewer making a decision on it.
 
+**5. Every payload actually holds something.** The same command, one more test, and it catches the defect the
+other four are all blind to: **a column containing the four-character string `"null"`**.
+
+That is what a defensive `JSON.stringify` binding writes when an agent output did not arrive
+(`contracts/check-envelope.md`). It passes assertion 4 — it is not 10,000 characters. It passes assertions 1
+and 2 — the claim stopped in the right place and the other analyses reported. It is invisible in every signal
+until a human opens the tab it feeds. Measured on **6 claims in 49**, on `decisionJson`, which is the tab the
+adjuster's gateway opens on.
+
+So assert it mechanically: **every `*Json` column is either absent, or parses to something with content** —
+never the literal `"null"`, never `""`, never `{}`.
+
+```bash
+uip df records get <entity-id> <record-id> --output json    # then, per *Json field:
+#   absent            -> fine, if your design says nothing writes it on this route
+#   "null" / "" / {}  -> FAIL. the pipeline ran perfectly and delivered an empty panel
+#   length == 10000   -> FAIL, assertion 4
+```
+
 ## What a clean claim proves
 
 Run the clean scenario deliberately, and more than once. It is the assertion most solutions fail:
@@ -156,24 +175,73 @@ as a discrepancy, a silence read as a refusal.
 `auto-settle` again. Over-flagging is the most common defect in this whole build and the only thing that
 reliably exposes it is a claim with nothing wrong.
 
-**5. The screen survives the claim.** This block is the only time you will have thirty-one different claims in
+**6. The screen survives the claim.** This block is the only time you will have thirty-one different claims in
 one place, and it is therefore the only chance to catch the defect that is invisible on one: **an agent payload
 whose shape varies per claim.** Measured across 15 claims on one build, the policy blob came back six different
 ways, two of which blank the reviewer's screen entirely — white page, minified stack, nothing else
 (`contracts/record-payloads.md`).
 
-So on **at least five** of your runs that raise a task, open the screen and click through **every** tab. Not the
-same claim five times — five different claims, with different scenarios and ideally different currencies. A
-screen that opens is not a screen that renders: the panel that dies is one click further in, and it dies on the
-claim you did not try.
+**Do the shape audit first — it is the floor, and it does not need a browser.** Pull every claim's payloads off
+the record and **count the distinct shapes** of each nested structure. Measured across 48 claims on one build:
+the policy blob came back in 4 exclusion shapes, 4 `namedPerils`, 8 deductible, 8 endorsement and 11
+coverage-section — and **three of those shapes silently emptied a panel on exactly one claim each.** No
+five-claim sample finds a shape that occurs once in forty-eight. A variant that appears on one claim is not an
+edge case here; it is a reviewer with a blank tab.
+
+**Then open the screen, if you have a browser.** On at least five runs that raised a task — five *different*
+claims, different scenarios, ideally different currencies — click through **every** tab. A screen that opens is
+not a screen that renders: the panel that dies is one click further in, and it dies on the claim you did not
+try.
+
+A coding agent running headless, with no signed-in browser profile, **cannot do the second half** — and that is
+an acceptable outcome as long as it is recorded as *not run* and the shape audit was done. Do not skip both and
+call the assertion passed.
 
 ## How many, and in what order
 
-1. **One per problem, pinned** — nine runs. This is the coverage test, and it is the one to keep green.
-2. **At least two clean runs.** See above.
-3. **Then twenty on `random`**, unpinned. Assert each against its own manifest. This is where interactions
-   surface: two problems in one claim, a currency you had not tried, a claim with four damage items instead of
-   five.
+**Start with one clean claim, before anything else.** It is the cheapest run in the set — five and a half
+minutes measured — it is the only claim that exercises *both* automatic-decision paths end to end, and it is the
+criterion this document already says most builds fail. It proves the spine. Only then fan out.
+
+1. **One clean claim.** If it does not settle unattended, nothing below will tell you anything you can act on.
+2. **One per problem, pinned** — nine runs. The coverage test, and the one to keep green.
+3. **A second clean run**, once the nine are green — the fixes you made for them are exactly what re-breaks it.
+4. **Then twenty on `random`**, unpinned, asserted against their own manifests.
+
+The old order put the nine first, reasoning that a pinned failure names its own cause. True, and still expensive:
+**every pinned failure is an agent fix and a redeploy**, so you pay a full deploy cycle before knowing whether
+the spine works at all.
+
+### This is a fix block, not a measurement block — budget for it
+
+The nine **will not** pass first time. That is the point of the block: its whole purpose is finding checks that
+are wrong, and a build that scores 9/9 on the first pass has almost certainly tested nothing.
+
+Measured on the first build to finish this block: **first pass scored 5 of 9, and reaching 9 of 9 took eight
+deploy cycles.** Eight of the nine rows needed a change before they passed. Only one of those changes was to the
+case plan — the rest were **agent prompts and output schemas**.
+
+So set the loop up before the first run and plan around it:
+
+| | |
+|---|---|
+| pack + publish + deploy | ~4 minutes — in place, same deployment name, no uninstall (`CONFIG.md`) |
+| one claim, end to end | ~6 minutes at a ten-second inspection poll |
+| **one fix-and-verify round** | **~10 minutes — plan on eight of them** |
+
+**Verify a fix on one claim, not on the set.** Aim a single pinned run at the check you just changed; keep the
+full thirty-one for the end. And read the first red row as the block working, not as a disaster.
+
+### What the twenty unaimed runs are actually for
+
+They earn their place, but not for the reason you would guess. "Interactions surface" produced **one** genuinely
+useful claim. What the twenty actually buy is **volume**: the payload-shape variance assertion 6 depends on,
+several currencies, and claims carrying problems the answer key does not declare.
+
+**They also raise about twenty human tasks, and you have to decide who answers them.** Answering twenty by hand
+is not affordable and leaving them parked scores nothing, so **automate a stand-in reviewer** — follow the
+recommendation, deny on a fatal screening check, and quote the failing checks in the note so the letter still
+has a real reason. **Declare it in the results table**, so nobody later reads those rows as human judgement.
 
 Run them concurrently. A claim spends most of its life waiting — and **check your inspection poll interval
 before you start**, because it is paid once per run here rather than once per build. The stand-in models no
@@ -182,7 +250,7 @@ thirty-one claims for nothing. Ten seconds.
 
 ## Recording the result
 
-For each run keep the claim id, what was aimed at, all four assertions, and — when one fails — the actual text
+For each run keep the claim id, what was aimed at, every assertion, and — when one fails — the actual text
 the analysis produced. **The text matters more than the pass/fail.** An analysis that fails the right check for
 the wrong reason will pass this test and mislead a reviewer on a real claim; the wording is the only place that
 shows.

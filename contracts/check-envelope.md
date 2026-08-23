@@ -53,6 +53,25 @@ can only ever show internal names. The fix is not to relabel in the UI, it is to
 | `checks[].details` | 6 × 120 | Supplied for **every** check, passing ones included. A `pass` row renders collapsed and a `warn`/`fail` renders open, but a reviewer must still be able to expand a green check and see its evidence — the address-match example is a `pass` that carries three addresses. **Corrected 2026-08-09:** the prompts originally said not to bother with details on passing checks, which left green rows unexpandable. |
 | `checks` | 8 | — |
 
+### The envelope is `required`, and the binding needs a null guard
+
+**An envelope output that is not `required` in the schema can simply not arrive**, and the failure is silent in
+every signal except the reviewer's screen. Measured 2026-08-23: the decision analysis returned no envelope at
+all on **6 claims in 49** — 12% — while its scalar outputs were fine, so nothing faulted and every claim routed
+correctly.
+
+What lands in the column then is worse than nothing. A defensive `JSON.stringify(vars.x)` binding turns a
+missing payload into the **four-character string `"null"`**: a column that looks populated in a list view,
+passes every mechanical check, and renders an empty panel on the one tab the adjuster's gateway opens on.
+
+Two rules, and you need both:
+
+- **Mark every envelope output `required`** in the agent's output schema, and say in the prompt that the
+  envelope is the agent's primary output and is never empty.
+- **Guard the binding**, so a missing payload writes nothing rather than a lie. Omit the key rather than
+  writing `"null"` — an omitted key leaves the column alone, which is honest, and `claim-entity.md`'s
+  empty-string rule already says never to write a blank.
+
 ### The decision analysis carries two more keys, and only it
 
 `pdd.md` §5.6 requires the decision analysis to produce a **recommended outcome** and a **confidence**, and the

@@ -66,17 +66,35 @@ minutes for two people. The title is set in the case plan, where the task is rai
 
 ### One deployment, reused — never a name per attempt
 
-**You redeploy many times. The deployment name never changes.** Uninstall the one you have, then deploy again
-under the same name:
+**You redeploy many times. The deployment name never changes** — and **the normal loop is an in-place upgrade,
+not an uninstall.** Same name, higher package version:
 
 ```bash
-uip solution deploy uninstall ClaimCase-Jane --yes --output json   # --yes or it exits 1 asking to confirm
 uip solution deploy run --name ClaimCase-Jane --folder-name ClaimCase-Jane-Deploy \
   --parent-folder-path ClaimCase-Jane --package-name ClaimCase-Jane --package-version <v>
 ```
 
-The tempting alternative — `-v103`, `-v104`, `-Run`, `-CaseRun2`, `-Block5` — is how one tenant reached **33
-deployments for four seats**, each with its own folder and its own copy of every process. By the fifth attempt
+Measured 2026-08-23: **nine consecutive upgrades**, 1.0.4 → 1.1.5, all `DeploymentSucceeded`, still exactly one
+deployment in the list, and **running case instances carried on across the upgrade untouched**.
+
+**Uninstall is the recovery path, not the loop**, and it is expensive: it deletes the solution folder, so the
+folder key, the case process GUID and every running instance go with it, and everything downstream has to be
+re-resolved. Reach for it when a deploy has half-failed and left a draft that blocks the next attempt — that is
+the one thing it reliably clears.
+
+```bash
+uip solution deploy uninstall ClaimCase-Jane --yes --output json   # --yes or it exits 1 asking to confirm
+```
+
+> **One thing to watch, because two measurements disagree.** Packing against a *live* deployment was measured on
+> 2026-08-11 to produce eight `_1` duplicate resources, which is where the uninstall-first rule came from. The
+> 2026-08-23 run packed and deployed in place nine times and ended with **two** `_1` resources, both traceable to
+> a failed deploy rather than to the upgrades. So: use the in-place loop, and **check for `_1` resources before
+> you pack** — `ls resources/**/*_1*`. If they appear, delete them and re-pack; if they keep coming back, that is
+> the case for an uninstall.
+
+**Do not change the name.** The tempting alternative — `-v103`, `-v104`, `-Run`, `-CaseRun2`, `-Block5` — is how
+one tenant reached **33 deployments for four seats**, each with its own folder and its own copy of every process. By the fifth attempt
 nobody could say which one was running, and a `list` gives no clue: an uninstalled deployment stays in the
 tenant's Solutions view forever.
 

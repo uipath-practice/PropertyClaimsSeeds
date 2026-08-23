@@ -56,6 +56,35 @@ Four rules inside it that are easy to get wrong and expensive to discover late:
   cannot enforce a length without faulting the job, the prompt is the only place the limit can live — so give
   the model a number, tell it what to leave out, and check the result rather than trusting it.
 
+### A typed output field beats a paragraph of prompt
+
+The most transferable thing measured in this whole exercise, and it is not obvious.
+
+Two analyses were failing the same way: each **reasoned correctly**, wrote the discrepancy into its own prose,
+and then left the check on `pass`. Three rounds of increasingly emphatic prompt wording moved neither. What
+moved both, first try, was declaring the comparison as **data in the output schema**:
+
+```jsonc
+"peril":     { "claimedType": "…", "assessedType": "…", "sameEvent": true },
+"aggregate": { "priorClaims": [ … ], "annualAggregate": 0, "remaining": 0 }
+```
+
+A model fills a declared field reliably, and will then reason from what it has written. Prose asking it to be
+careful competes with everything else in the prompt; a field it must populate does not.
+
+**But the field alone is not enough, and the counter-example is the instructive half.** The same build declared
+a `causeStatement` field on the letter and got three empty strings, because the field's *description* gave a
+rationale — a reason the fact was worth including — and left the agent free to decide it did not apply. What
+made the two analysis fixes stick was the field **plus a mechanical rule tying an output to it**:
+
+> `sameEvent: false` **means** this check is not `pass`. If you wrote one and reported the other, you have
+> contradicted yourself.
+
+So the rule for the seed, and for you: **when a payload must contain a fact, declare the field *and* state an
+invariant over the agent's own output.** Not a reason to include it — a contradiction it can check itself
+against. "Include the prior claim's identifier because a reviewer needs it" is a rationale and will be skipped;
+"if `aggregate.priorClaims` is empty you may not report an aggregate reduction" is an invariant and will not.
+
 ### Tell it what is *not* a finding
 
 `pdd.md` §5.7 is a list of things that look like problems and are not: an assessor's incidental observation, a

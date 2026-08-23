@@ -68,9 +68,9 @@ will have at the end when someone asks what the build actually cost. `AGENTS.md`
 | 2 | **The design** — four tables (stages · work · data · traceability) and an SDD | you can answer block 2's three questions from the tables alone | ~45 min |
 | 3 | **The claim record** — a Data Fabric entity | every payload has a home, and the ones with no column say why | ~20 min |
 | 4 | **The analyses** — seven agents | one runs on a pinned input; review grade ≥ B | ~90 min |
-| 5 | **The case** — the lifecycle, the two gateways, the wiring. **Three passes**: skeleton, wiring, deploy | a clean claim settles end to end, unattended | ~90 min |
+| 5 | **The case** — the lifecycle, the two gateways, the wiring, and a stand-in screen | a clean claim settles end to end, unattended | ~90 min |
 | 6 | **The app** — what a reviewer sees at each gateway | both gateways render; a decision writes back | ~90 min |
-| 7 | **Test** — aim runs at known problems | nine pinned runs and two clean runs behave | ~45 min |
+| 7 | **Test** — aim runs at known problems, then fix what they find | nine pinned runs and two clean runs behave | **~3–4 h** |
 
 Timings are a sketch until a real cohort has run it.
 

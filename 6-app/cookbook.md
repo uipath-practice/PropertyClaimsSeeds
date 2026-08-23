@@ -312,6 +312,34 @@ task first, merge, then complete.
 
 The same is true of every in-app write. There is more than one call site.
 
+## Finish by putting the app back into the solution
+
+**`codedapp publish` and `codedapp deploy` never touch the solution.** They update the app identity in the
+tenant; the `.uipx` goes on pinning whatever version block 5 registered — the 4 KB blank stand-in. Measured
+2026-08-23: solution resource at `1.0.1`, tenant identity at `1.2.1`, and nothing anywhere says they differ.
+
+Two things follow, and the second is worse than the first.
+
+- The **next** solution deploy fails inside the apps service with
+  `Transaction with { txnNumber: N } has been aborted` — a message naming no version and no cause. The partial
+  deploy then leaves an orphan process behind, which blocks every later attempt, and the documented remedy for
+  *that* corrupts the draft deployment permanently. One build lost about **an hour and a half** downstream of
+  this single omission.
+- And if that deploy had **succeeded**, it would have silently reinstalled the empty stand-in over your working
+  screen — with the case's task bindings still resolving perfectly, because the contract did not change.
+
+So end the block by refreshing the resource and repacking:
+
+```bash
+uip solution resources remove <app-resource-key>
+uip solution resources add --source remote          # picks up the version now live in the tenant
+uip solution pack . -o .dist
+uip solution publish .dist/<solution>_<version>.zip
+```
+
+Then confirm the solution and the tenant agree on the version before you stop. If you choose not to do this,
+**say so in your notes** — "the solution lags the app at 1.0.1" is a fact the next block needs.
+
 ## Open it in a browser — in both states — before you call this done
 
 **Every build so far reported this block finished on the strength of a clean TypeScript compile and a completed
