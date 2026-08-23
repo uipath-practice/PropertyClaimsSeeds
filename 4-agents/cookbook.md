@@ -14,9 +14,9 @@ late, which is why they are here and not in the prompt:
   over-long string faults the whole job and discards every other output the agent produced. `enum` and `required`
   are safe and worth using.
 - **Budget each JSON payload at 8,000 characters, in the prompt text.** The column it lands in holds 10,000 and
-  truncates past that silently; through the connector it is louder and worse — the whole case faults with
-  `The provided value for field [<column>] is longer than length limit 10000`. Since the schema cannot enforce a
-  length without faulting the agent, the prompt is the only place the limit can live.
+  **going past it faults the whole case** — `The provided value for field [<column>] is longer than length limit
+  10000`. Measured on both write paths; nothing truncates quietly. Since the schema cannot enforce a length
+  without faulting the agent, the prompt is the only place the limit can live.
 - **Every declared input must appear in the prompt text.** An input the schema declares and the prompt never
   interpolates does not reach the model — see the next section, which is the most common silent failure here.
 - **All three gateway inputs on all four post-gateway analyses** — the findings, the decision, and the reviewer's

@@ -105,14 +105,16 @@ not the decision field.
 > asking the claimant to itemise their cash and documents — under the subject line *"Your claim has been
 > approved"*. Every field was right. Only the sentence the human reads was wrong.
 
-**4. Nothing was truncated.** Every JSON column on the claim record is capped at 10,000 characters and the
-write **succeeds** when the payload is longer — it simply arrives cut. So the only symptom is the length itself:
+**4. No payload was over the limit.** Every JSON column is capped at 10,000 characters, and going past it
+**faults the claim at the write task** — it does not quietly cut the value (`contracts/claim-entity.md`, and the
+silent-truncation claim that used to be there is retracted). So the primary symptom is a claim that died at its
+last stage, and the secondary one is a length:
 
 ```bash
 uip df records get <entity-id> <record-id> --output json    # then check the length of every *Json field
 ```
 
-Any field whose length is exactly 10,000 has been truncated. Treat it as a failed run, not a near miss: the loss
+Any field whose length is exactly 10,000 would have been cut. Treat it as a failed run, not a near miss: the loss
 lands in whichever payload was richest, which is the claim with the most damage rows — the interesting one.
 
 > This assertion is temporary. It exists because the field type that would hold 128 KB is in private preview;

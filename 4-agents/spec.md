@@ -52,7 +52,7 @@ Four rules inside it that are easy to get wrong and expensive to discover late:
   over-long string faults the whole job. Ask for a length in the prompt so the model aims for it, and clamp when
   rendering. `enum` and `required` are safe and worth using.
 - **Budget each JSON payload at 8,000 characters, and say so in the prompt.** The column it lands in holds
-  10,000 and **truncates past that silently, reporting success** (`contracts/claim-entity.md`). Since the schema
+  10,000, and **going past it faults the whole claim at the write** (`contracts/claim-entity.md`). Since the schema
   cannot enforce a length without faulting the job, the prompt is the only place the limit can live — so give
   the model a number, tell it what to leave out, and check the result rather than trusting it.
 

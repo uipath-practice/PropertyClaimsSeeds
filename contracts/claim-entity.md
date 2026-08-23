@@ -61,7 +61,9 @@ Types are Data Fabric's own. The suffix decides the two temporal ones: a column 
 accepted by the server and unusable in the UI — `3-claim-record/cookbook.md` names them.
 
 **Every `STRING` needs an explicit `lengthLimit`, and two of them need a large one.** A `STRING` created without
-one defaults to **200 characters** and truncates past it silently, exactly as `MULTILINE_TEXT` does. That is
+one defaults to **200 characters** — confirmed by test — and a longer value is then **rejected**, taking the
+whole write with it (measured 2026-08-23; the earlier claim that it truncated silently was inferred from
+`MULTILINE_TEXT` and is retracted with it). The default is the hazard, not the failure mode. That is
 harmless for a policy number and destructive for a human's reasoning:
 
 | Column | Set it to | Why |
@@ -170,10 +172,21 @@ without fetching every row, for the reason in the next section.
 
 ## Every JSON column is capped at 10,000 characters — design for 8,000
 
-The eleven `*Json` columns are `MULTILINE_TEXT` with an explicit `lengthLimit: 10000`. That is the platform's
-hard ceiling for the type, and **past it the write truncates silently, with `Result: Success`** — no error, no
-warning, and for a column you cannot read in a list view the loss is invisible until a screen renders half a
-document three blocks later.
+The eleven `*Json` columns are `MULTILINE_TEXT` with an explicit `lengthLimit: 10000`. **The ceiling is real and
+measured.** What happens when you exceed it is **path-dependent and not settled**, so plan for the worse case:
+
+**Going past it is loud on both paths that have been measured**, and the correction matters because this
+document said the opposite until 2026-08-23:
+
+| Write path | What happens past 10,000 |
+|---|---|
+| **The connector** your case writes through (`CreateEntityRecord_V3`) | **The whole case faults** — `The provided value for field [<column>] is longer than length limit 10000`. Not a lost payload: a dead claim. |
+| **REST** (`uip df records insert/update`) | **Rejected, atomically** — `Result: Failure`, and the previous value survives intact. Measured 2026-08-23. |
+
+There is **no silent truncation on either path.** That claim entered this document on 2026-08-18, was inferred
+rather than measured, and propagated into three other files; it is retracted here. The practical consequence is
+sharper, not softer — an over-long payload does not quietly cost you a panel, it **kills the claim at the write**,
+so the budget below is what stands between a build and a run that dies at its last stage.
 
 So the limit is not a formality, and it is not the agents' to discover at run time:
 
@@ -182,17 +195,18 @@ So the limit is not a formality, and it is not the agents' to discover at run ti
 - **Say the budget in the agent's prompt**, and never in its output schema. A `maxLength` in an output schema
   is hard validation rather than a clamp: one over-long string faults the whole job instead of being retried.
   `4-agents/spec.md` has the rule.
-- **Assert it in block 7.** A column whose length is *exactly* 10,000 has been truncated — that is the
-  signature, and it is the only way silent truncation ever announces itself.
+- **Assert it in block 7.** The symptom to look for is a **faulted claim at a write task**, and a column
+  sitting at exactly 10,000 if any path ever does cut rather than reject.
 
 Two payloads sit near the line and need real editorial discipline in their prompts: the structured policy
 (measured at 10.9 KB on a single claim — **over the ceiling as designed**) and the coverage findings (9.0 KB).
 Both carry material no downstream consumer reads. Cutting what nothing consumes is the fix; truncating a JSON
 string is not, because it produces something that no longer parses.
 
-> **This is an interim shape.** A larger field type (128 KB, one column) exists and is in private preview; the
-> flag is expected within a couple of weeks. When it lands, these columns become that type and the budget
-> disappears. Nothing else about the design changes, which is why it is worth building against the small
+> **This is an interim shape.** A larger field type — `MULTILINE_MAX`, up to 131,072 UTF-16 bytes in one column —
+> exists and is **gated off on this tenant**, confirmed by test on 2026-08-23:
+> *"Cannot create MULTILINE_MAX field: the Multi-line (Max) feature is not enabled for this tenant."* It is not
+> enableable on request. When the flag lands, these columns become that type and the budget disappears. Nothing else about the design changes, which is why it is worth building against the small
 > ceiling now rather than waiting.
 
 **There are eleven of these columns and no cap applies to them today.** The 10-column ceiling belongs to
