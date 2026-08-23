@@ -32,6 +32,23 @@ path = sys.argv[1] if len(sys.argv) > 1 else 'caseplan.json'
 doc = json.load(open(path))
 problems = []
 
+
+def stage_refs(rule):
+    """Stage ids a rule names — under BOTH spellings, which are a schema generation apart.
+
+    Schema 23.0.0 (what `uip maestro case` generates, and what you are building) writes
+    `selectedStageId`, a single string. Schema 30.0.0 (what Studio Web writes) writes
+    `selectedStageIds`, a list. This script read only the plural for its first weeks, so on
+    every CLI-authored plan the reference and reachability checks below matched nothing and
+    reported a clean run without examining anything. Measured 2026-08-23 on two independent
+    builds, both 23.0.0, both getting zero stage checking.
+    """
+    one = rule.get('selectedStageId')
+    many = rule.get('selectedStageIds') or []
+    if isinstance(many, str):
+        many = [many]
+    return ([one] if one else []) + list(many)
+
 declared = set()
 for node in doc['nodes']:
     for group in (node['data'].get('tasks') or []):
@@ -111,7 +128,7 @@ for stage in stages:
                         if ref not in own:
                             print(f'BAD REF     {label}/{scope}/{cond["id"]} names task {ref}, which is not in this stage')
                             problems.append(ref)
-                    for ref in (rule.get('selectedStageIds') or []):
+                    for ref in stage_refs(rule):
                         if ref not in node_ids:
                             print(f'BAD REF     {label}/{scope}/{cond["id"]} names stage {ref}, which does not exist')
                             problems.append(ref)
@@ -155,7 +172,7 @@ for stage in stages:
                 # `=js:false`-style guards are the deliberately inert branches; skip them.
                 if 'vars.' not in expr and 'false' in expr:
                     continue
-                for src in (rule.get('selectedStageIds') or []):
+                for src in stage_refs(rule):
                     if marks_complete.get(src):
                         print(f'UNREACHABLE {labels.get(stage["id"])} enters on exited({labels.get(src, src)}), '
                               f'but that stage marks itself COMPLETE — the rule never fires')
@@ -224,8 +241,14 @@ for node in doc['nodes']:
 # case still reporting Completed. "Read by nothing" would not have caught it: the letter was
 # read, by the notification's subject line. What it never reached was a Data Fabric write.
 #
-# Some payloads legitimately never land in a column -- raw extraction, prior claims, a poll
-# flag -- so this is a warning. On a correct plan it names three; a fourth is worth a look.
+# Plenty of payloads legitimately never land in a column, so this is a warning and there is no
+# right number of them. Do NOT count these: the test is whether each one it names is a payload
+# your own block-2 data table already says has no column, and for a stated reason -- raw
+# extraction, prior claims, a control-flow scalar, a value consumed only as a task input.
+# **A warning naming a payload that is NOT in that table is the bug.** This comment used to say
+# "on a correct plan it names three", which one correct design blew past with ten, each required
+# by another rule in the seed; an agent trusting the number hunts seven phantoms or stores
+# payloads it should not to silence them. Corrected 2026-08-23.
 write_bodies = []
 produced = set()
 for node in doc['nodes']:
@@ -271,6 +294,63 @@ for stage in stages:
     else:
         print(f'WARNING  {label} has no entry condition and no tasks — expected only of the one '
               f'deliberate placeholder; say so in your design')
+
+# --------------------------------------------------- one write per stage, and the pairing
+#
+# Two rules from `5-case/spec.md`, both broken by every build measured so far.
+#
+# 1. One entity write per stage, as its last required task. A stage holding a human gateway
+#    writes twice -- the recommendation before it opens, the decision after. Nothing writes
+#    three times: measured 2026-08-23, two independent builds each wrote the letter, the
+#    settlement and the closure separately in the approved ending, three round trips for
+#    fields that were all known at once. 14 and 15 writes against a budget of nine.
+#
+# 2. A secondary stage entered on a gate decision needs a matching DIVERTING EXIT on the
+#    origin. The entry rule alone is not enough: the origin's completion exit and the lane's
+#    entry both fire from the same event, so either both fire or neither does. Sol1 hit the
+#    deadlock on 2026-08-23 -- `Denied` completed and the case sat Running forever.
+
+for stage in stages:
+    label = stage['data'].get('label', stage['id'])
+    tasks = [t for g in (stage['data'].get('tasks') or []) for t in g]
+    writes = [t for t in tasks if 'EntityRecord' in json.dumps(t.get('data') or {})]
+    if not writes:
+        continue
+    # A human gateway is an `action` task -- the only task type a person completes. Two per
+    # plan, at the two gateways. Everything else is rpa, agent, connector or timer.
+    budget = 2 if any(t.get('type') == 'action' for t in tasks) else 1
+    if len(writes) > budget:
+        names = ', '.join(t.get('displayName') or t['id'] for t in writes)
+        print(f'WARNING  {label} makes {len(writes)} entity writes (budget {budget}) — {names}. '
+              f'Adjacent writes with no gateway between them are one write '
+              f'(`5-case/spec.md`, How many writes)')
+
+# A secondary lane entered on a gate decision, with no diverting exit anywhere, is the
+# deadlock shape. Report it against the ORIGIN, which is where the missing exit belongs.
+DECISION_ENTRY = ('selected-stage-completed', 'selected-stage-exited')
+diverts_to = set()
+for stage in stages:
+    for cond in (stage['data'].get('exitConditions') or []):
+        for group in cond['rules']:
+            for rule in group:
+                if rule.get('exitToStageId'):
+                    diverts_to.add(rule['exitToStageId'])
+
+for stage in stages:
+    if stage['data'].get('stageType') != 'secondary' or stage['id'] in diverts_to:
+        continue
+    origins = []
+    for cond in (stage['data'].get('entryConditions') or []):
+        for group in cond['rules']:
+            for rule in group:
+                if rule.get('rule') in DECISION_ENTRY:
+                    origins += [labels.get(x, x) for x in stage_refs(rule)]
+    if origins:
+        srcs = ', '.join(sorted(set(origins)))
+        print(f'WARNING  secondary {stage["data"].get("label", stage["id"])} is entered on a gate '
+              f'decision from {srcs}, but no stage carries a diverting exit to it. The lane\'s '
+              f'entry and the origin\'s completion fire from the same event — pair them, or the '
+              f'two paths are not mutually exclusive (`5-case/spec.md`, Entering a secondary lane)')
 
 # ------------------------------------------------------------- legibility (warnings)
 # Entry conditions drive execution; edges draw the picture. A plan with none runs

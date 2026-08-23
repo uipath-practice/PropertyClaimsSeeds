@@ -62,7 +62,8 @@ see what is actually wrong rather than which rule fired.
 **And all seven are registered in the solution**, not merely present on disk:
 
 ```bash
-uip solution projects list        # seven analyses, by name — reads the manifest, no tenant needed
+cd Build/ClaimCase-<seat>          # required — run from the seed root and it fails with
+uip solution projects list         # "No .uipx solution file found", even when all seven are registered
 ```
 
 Building an analysis and registering it are two different things, and only the first has an obvious symptom. A

@@ -2,6 +2,11 @@
 
 Restores block 3's output: the `ClaimCase_<seat>` entity, all 38 columns, correct types and length limits.
 
+> **Re-synced 2026-08-23** against `contracts/claim-entity.md`. Until then this file carried no `lengthLimit`
+> on any `STRING` and no `decimalPrecision` on either `DECIMAL` — so a seat that took the checkpoint to save
+> twenty minutes got a reviewer's notes silently capped at 200 characters and settlements possibly rounded to
+> whole units, which are the two failures that contract exists to prevent.
+
 ```bash
 uip df entities create ClaimCase_<seat> --file entity.json --output json
 ```

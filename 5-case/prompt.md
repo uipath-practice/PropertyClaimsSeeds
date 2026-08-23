@@ -45,18 +45,14 @@ is; leave it and the next block spends most of itself back in here.
 
 ## Do it in four passes
 
-This is the longest block. Finish each pass before starting the next, so a pass that goes wrong costs a pass
-rather than the block — and **write down where you are between them**, in the notes this block ends with. You
-will lose your working context partway through, and that note is what makes the next hour cheap.
+This is the longest block, and **you will lose your working context partway through** — write down where you
+are between passes, in the notes this block ends with. Your tooling has its own phased workflow; follow it. Two
+things it will not tell you:
 
-1. **The journey.** Every stage, how a claim enters it, what ends it. No work in them yet.
-2. **The stand-in, first.** Publish the blank screen and register it, before anything binds to it. A task that
-   stops a claim for a person is described in terms of the app's identity and its two answers, so pass 3 cannot
-   be written until this exists. Doing it here also makes passes 2 and 3 one continuous edit.
-3. **The work, the wiring and the two stops.** What happens in each stage, connected to the components you have
-   built and the automations already running, with the record written as the claim moves — and what each answer
-   at each stop does, including the endings it leads to.
-4. **Run claims through it** — the clean one, and one into each answer at each stop.
+1. **Publish the blank stand-in screen before anything binds to it.** A task that stops a claim for a person is
+   described in terms of the app's identity and its two answers, so the wiring cannot be written until the app
+   exists — and doing it first makes the journey and the wiring one continuous edit rather than two.
+2. **Finish with claims, not with a deploy** — the clean one, and one into each answer at each stop.
 
 ## Done when
 
@@ -71,6 +67,11 @@ at:
 - **Both answers work, at both stops.** Agree and it carries on; disagree and it ends the other way, with the
   claimant told the right thing. That is **four aimed runs plus the clean one — five**, and the four are the ones
   that find the bugs: every route a claim can take now exists, so every one of them can be wrong.
+
+**And the canvas can be read by someone who did not build it.** This is a deliverable, not late polish: the
+journey runs left to right, each waiting or exception stage sits directly **below** the stage that can send a
+claim to it, and the two endings stack at the far right. Every node has a position — a plan with none draws as a
+wall of boxes in declaration order, and the person reviewing your work reads the picture before the JSON.
 
 You answer the stops by hand, on a blank stand-in — **you are proving the journey, not the screen.** Get all four
 routes right now and the next block cannot break them; it only changes what the person is looking at.

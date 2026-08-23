@@ -38,6 +38,13 @@ The record exists, and everything your design says a claim accumulates has somew
 table from block 2 against it: a payload with no home is a gap you will otherwise discover at run time in block
 5, when a write fails against a column nobody created.
 
+**And you have proved it holds what it claims to.** A schema that reads correctly and a schema that stores
+correctly are different things, and both failures here are silent. Write one throwaway row — a money value with
+cents, a long reviewer note, a full-size JSON payload — read it back, confirm nothing was rounded or cut, then
+delete it. Call it `SMOKE-<seat>` so it is unmistakable. **Deleting it needs a destructive confirmation you
+should grant yourself now rather than stopping for later**: it is your row, in your folder, created by you for
+this purpose. Leaving it behind is the worse outcome — block 7 counts rows.
+
 ## One thing you will need later, so find it now
 
 The record is written by the case, and the case reaches it through a connection that **already exists and is

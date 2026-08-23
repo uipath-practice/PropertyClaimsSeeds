@@ -9,7 +9,7 @@
     "properties": {
       "attachments": {
         "type": "array",
-        "description": "The document to read, supplied as the agent input in_PolicyFile. Pass it as the `attachments` parameter.",
+        "description": "The policy document to read. Pass the agent's policy attachment as the `attachments` parameter.",
         "items": {
           "$ref": "#/definitions/job-attachment"
         }

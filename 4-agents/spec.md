@@ -37,8 +37,9 @@ structured assessment all three consume: one reader of the document, three consu
 
 ## The answer shape — pinned
 
-Every one of the seven returns the same envelope. **This is a contract, not a convention**
-(`contracts/check-envelope.md`) — it is what lets one prompt shape generate all
+The **six analytical agents** return the same envelope; **Response returns the response record instead**, because
+what it produces is a letter rather than a set of checks (`contracts/check-envelope.md` exempts it by name).
+**This is a contract, not a convention** — it is what lets one prompt shape generate all
 seven, and one screen render any of them.
 
 Four rules inside it that are easy to get wrong and expensive to discover late:
@@ -54,6 +55,18 @@ Four rules inside it that are easy to get wrong and expensive to discover late:
   10,000 and **truncates past that silently, reporting success** (`contracts/claim-entity.md`). Since the schema
   cannot enforce a length without faulting the job, the prompt is the only place the limit can live — so give
   the model a number, tell it what to leave out, and check the result rather than trusting it.
+
+### Tell it what is *not* a finding
+
+`pdd.md` §5.7 is a list of things that look like problems and are not: an assessor's incidental observation, a
+sublimit doing its job, a claimant misremembering a time of day. It exists because one build escalated **nine
+clean claims in a row**, each for a defensible reason.
+
+**Those rules only work if they are in the prompt.** The model never reads `pdd.md`; at run time it sees the
+prompt and the inputs and nothing else. So every analysis carries its own paragraph of §5.7 — the ones that
+belong to it — written as *do not flag X* rather than as a general plea for judgement. Generic prose asking an
+agent to be reasonable does not survive contact with a real claim; two builds proved it, and the wording that
+worked named the exact thing not to report.
 
 ### Say what to leave out, not just what to include
 

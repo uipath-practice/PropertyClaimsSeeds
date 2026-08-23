@@ -121,6 +121,26 @@ reading the record:
 The first two are below under *A task's inputs and outputs*; the rest are under *Bindings that resolve to
 nothing*.
 
+## The two expressions nothing else in the seed gives you
+
+**The current time is `=js:new Date().toISOString()`.** Three `DATETIME_WITH_TZ` columns need it —
+`eligibilityReviewedAt`, `reviewedAt`, `closedAt` — and on a **clean** claim nobody supplies them, because both
+gateways are skipped and there is no human task to carry a `decidedAt`. The engine's JS scope has `Date`. Proven
+on two independent builds, 2026-08-23, on live runs.
+
+The shape to use at a gateway column is *the human's value if there was one, otherwise now*:
+
+```
+=js:(vars.reviewDecidedAt || new Date().toISOString())
+```
+
+which keeps a real decision time when a reviewer was asked and stamps the automatic decision when nobody was —
+and `contracts/claim-entity.md` requires the automatic one to be recorded as a decision, not left blank.
+
+**The case's own identity is `metadata`, and it carries two fields worth using:** `=js:metadata.ExternalId` (your
+claim number) and `=js:metadata.InstanceId` (the case instance id, for `caseInstanceId`). Both proven on live
+runs. Do not expect other metadata fields to resolve.
+
 ## Bindings that resolve to nothing, and what each looks like from outside
 
 ### An empty string is not an empty value
@@ -170,7 +190,9 @@ yours to change.
 ```bash
 uip codedapp init claim-review-<seat>          # lower case; the tenant is shared
 # write action-schema.json to the shape in contracts/review-task.md
-npm install && npm run build                   # a page saying "review screen — block 6" is enough
+# On CLI 1.199.0 `init` emits a prebuilt dist/ plus uipath.json and project.uiproj — NOT an npm
+# project. There is nothing to `npm install`. Either pack the dist it gave you, or add your own
+# package.json + Vite source first if you want a rebuildable stand-in. Measured 2026-08-23.
 uip codedapp pack dist -n claim-review-<seat> --version 1.0.0
 uip codedapp publish -n claim-review-<seat> --version 1.0.0 --type Action
 uip codedapp deploy -n claim-review-<seat> --client-id <the-id-in-CONFIG.md> \
@@ -463,8 +485,8 @@ clears a stuck case is `uip maestro case instance cancel <id> --folder-key <k>`,
 message. Wait 15s, then 30s, then 45s before concluding anything.
 
 **4. If it still fails, the deployment record itself is stuck** — it survives even after every job and instance is
-final. You cannot inspect it either: `uip solution deploy list` returns `403` for a participant account, so do
-not spend time there. Deploy under **`ClaimCase-<seat>-v2`**, write that name in `5-case/notes.md`, and carry on.
+final. Inspecting it may or may not work: `uip solution deploy list` returned `403` for participant accounts up
+to 2026-08-22 and **succeeded** for one on CLI 1.199.0 on 2026-08-23, so try it once and move on if it refuses. Deploy under **`ClaimCase-<seat>-v2`**, write that name in `5-case/notes.md`, and carry on.
 This is the one sanctioned departure from the pinned name (`CONFIG.md`, *One deployment, reused*) — it exists so
 you are never blocked, and because teardown matches on the `ClaimCase-<seat>` prefix it still finds your work.
 **Do not invent any other name**: a deployment nobody can predict is one nobody can clean up.
@@ -689,8 +711,15 @@ ones return errors about themselves, which is easy to mistake for a broken run.
 | Where the case got to | `uip maestro case instance get <id> --folder-key <k>` | `case job traces` → crashes on `null` |
 | What is deployed | `uip or processes list --folder-key <k>` | `case process list` → generic error code |
 
-`uip solution deploy list` returns `403` for a participant account in this tenant even when the deploy itself
-succeeded. Use `uip or processes list --folder-key <k>` to confirm what landed.
+`uip solution deploy list` **may** return `403` for a participant account in this tenant even when the deploy
+itself succeeded — it did so until 2026-08-22 and worked for a participant account on 2026-08-23. Either way
+`uip or processes list --folder-key <k>` confirms what landed, so use that and do not read a `403` as a failed
+deploy.
+
+**Republishing an app that already exists answers `400 already exists`, and that is not a blocker.** After a
+`solution uninstall`, `uip or packages versions claim-review-<seat>` comes back empty exactly as described below
+— but `codedapp publish` at the same version can still refuse. `uip codedapp deploy` then upgrades it in place
+and succeeds. Do not read the empty version list as proof that a republish is required, or possible.
 
 **`uip or jobs start` takes the process GUID**, the `Key` from `processes list` — not the dotted
 `ProcessKey` like `ClaimCase-07.Case.ClaimLifecycle`, which fails with `HTTP 400: Undefined process`. Both look

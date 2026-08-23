@@ -6,23 +6,28 @@
       "fieldName": "claimId",
       "type": "STRING",
       "isRequired": true,
-      "isUnique": true
+      "isUnique": true,
+      "lengthLimit": 100
     },
     {
       "fieldName": "caseInstanceId",
-      "type": "STRING"
+      "type": "STRING",
+      "lengthLimit": 100
     },
     {
       "fieldName": "status",
-      "type": "STRING"
+      "type": "STRING",
+      "lengthLimit": 100
     },
     {
       "fieldName": "claimantName",
-      "type": "STRING"
+      "type": "STRING",
+      "lengthLimit": 200
     },
     {
       "fieldName": "incidentType",
-      "type": "STRING"
+      "type": "STRING",
+      "lengthLimit": 100
     },
     {
       "fieldName": "incidentDate",
@@ -38,19 +43,23 @@
     },
     {
       "fieldName": "policyId",
-      "type": "STRING"
+      "type": "STRING",
+      "lengthLimit": 100
     },
     {
       "fieldName": "totalClaimAmount",
-      "type": "DECIMAL"
+      "type": "DECIMAL",
+      "decimalPrecision": 2
     },
     {
       "fieldName": "currency",
-      "type": "STRING"
+      "type": "STRING",
+      "lengthLimit": 20
     },
     {
       "fieldName": "propertyCountry",
-      "type": "STRING"
+      "type": "STRING",
+      "lengthLimit": 100
     },
     {
       "fieldName": "claimDataJson",
@@ -69,27 +78,33 @@
     },
     {
       "fieldName": "claimFormPdfId",
-      "type": "STRING"
+      "type": "STRING",
+      "lengthLimit": 200
     },
     {
       "fieldName": "claimFormPdfName",
-      "type": "STRING"
+      "type": "STRING",
+      "lengthLimit": 500
     },
     {
       "fieldName": "policyPdfId",
-      "type": "STRING"
+      "type": "STRING",
+      "lengthLimit": 200
     },
     {
       "fieldName": "policyPdfName",
-      "type": "STRING"
+      "type": "STRING",
+      "lengthLimit": 500
     },
     {
       "fieldName": "eligibilityDecision",
-      "type": "STRING"
+      "type": "STRING",
+      "lengthLimit": 100
     },
     {
       "fieldName": "eligibilityNotes",
-      "type": "STRING"
+      "type": "STRING",
+      "lengthLimit": 4000
     },
     {
       "fieldName": "eligibilityReviewedAt",
@@ -132,23 +147,28 @@
     },
     {
       "fieldName": "assessmentReportPdfId",
-      "type": "STRING"
+      "type": "STRING",
+      "lengthLimit": 200
     },
     {
       "fieldName": "assessmentReportPdfName",
-      "type": "STRING"
+      "type": "STRING",
+      "lengthLimit": 500
     },
     {
       "fieldName": "reviewDecision",
-      "type": "STRING"
+      "type": "STRING",
+      "lengthLimit": 100
     },
     {
       "fieldName": "decisionReason",
-      "type": "STRING"
+      "type": "STRING",
+      "lengthLimit": 200
     },
     {
       "fieldName": "reviewerNotes",
-      "type": "STRING"
+      "type": "STRING",
+      "lengthLimit": 4000
     },
     {
       "fieldName": "claimResponseJson",
@@ -165,7 +185,8 @@
     },
     {
       "fieldName": "approvedPayout",
-      "type": "DECIMAL"
+      "type": "DECIMAL",
+      "decimalPrecision": 2
     }
   ]
 }

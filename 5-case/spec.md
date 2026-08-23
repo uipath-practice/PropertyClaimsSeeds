@@ -22,10 +22,9 @@ also *runs*.
 
 ## Everything lives in one solution
 
-The case, the seven agents and later the app are **one solution**, named for your seat (`CONFIG.md`). A case
-binds agents by name **inside its own solution**, so an agent published separately is not reachable from the
-case that needs it. If block 4 left your agents in a solution of their own, move them before you start here —
-that is cheaper than discovering it at deploy time.
+One solution, named for your seat (`CONFIG.md`, *One solution, one name, one place on disk*). **Check this
+before you start**: if block 4 left your agents in a solution of their own, move them now — a case cannot bind
+an agent outside its own solution, and finding that out at deploy time costs a full cycle.
 
 ## The stand-in app, and why the gateways are built here
 
@@ -115,8 +114,10 @@ schema error and require `required-tasks-completed` there; and `5-case/check_cas
 alternative diverting-exit shape as unreachable. Exactly one shape satisfies all three, and it is the one to
 build:
 
-> `required-tasks-completed` + `marksStageComplete: true` on every exit · **no routing exits anywhere** ·
-> branching expressed in the *downstream* stage's entry condition.
+> `required-tasks-completed` + `marksStageComplete: true` on every exit · **no routing exits between primary
+> stages** · branching expressed in the *downstream* stage's entry condition.
+
+**Between primary stages.** Entering a *secondary* lane is the one exception, and it is the next section.
 
 When the seed and the tool disagree, the tool wins and the disagreement is a finding (`AGENTS.md`). This row is
 here because two builds have now spent a cycle rediscovering it.
@@ -124,6 +125,35 @@ here because two builds have now spent a cycle rediscovering it.
 The fix for a branch is never to key the diverting exit on an earlier task; that only moves the race. **Delete the
 diverting exit** and let both destinations key on the *same* completion with mutually exclusive conditions — one
 event, two tests, nothing to race. `pdd.md` §3 states this as a process rule; this is what it means structurally.
+
+### Entering a secondary lane — the one place a routing exit belongs
+
+Everything above is about **primary → primary** branching, where it holds: one completion event, two mutually
+exclusive entry conditions, nothing to race.
+
+**A secondary lane is different, and the case skill is explicit.** A lane entered on a gate decision —
+`selected-stage-completed` or `selected-stage-exited` with an `IF` — *"REQUIRES a matching origin diverting exit
+— the entry alone is not enough"*. So the origin carries a **gated diverting exit** (`marksStageComplete: false`,
+`IF` on the deciding variable, `exitToStageId` → the lane) **and** its completion exit carries the **inverse**
+`IF`. The two are then mutually exclusive by construction, which is the same principle as the primary rule —
+applied on the exit side, because here there is no downstream primary stage to carry it.
+
+Why the downstream-only shape is not enough here when it is enough between primary stages: a secondary stage is
+**not in the `required-stages-completed` set**, so once the case diverts into a terminal lane nothing is left to
+close it. Measured 2026-08-23 — a build following the primary rule reached `Denied`, completed every task in it,
+and sat `Running` for ever.
+
+The two lane shapes exit differently:
+
+| Lane | Exits with | Also needs |
+|---|---|---|
+| **Returning** — `Awaiting inspection` | `return-to-origin` | nothing; the origin's own conditions carry the case on |
+| **Terminal** — `Denied` | `exit-only` | a root case-exit row with `marksCaseComplete: false` |
+
+`check_caseplan.py` warns when a secondary lane is entered on a gate decision and nothing diverts to it.
+
+**Adopted from the skill, not yet proven by us.** Three builds run today *without* the diverting exit and one of
+them deadlocked. If yours behaves differently, that is a finding worth more than this paragraph.
 
 **Give each stage exactly one way in.** Two entry conditions that can both become true is a double execution.
 
@@ -250,22 +280,37 @@ than the record.
 One consequence for the plan's shape: **a single write at the end cannot work**, because the gateways fire
 before the case ends.
 
-## The case header — authored in the designer, after your last pack
+### How many writes — one per stage, and how to count them
 
-The case app renders a configured header above the stage timeline, and it reads **case variables only** — no
-entity access, no metadata traversal. Whatever it shows, some task must already have emitted.
+**One write per stage, as the stage's last required task, carrying everything that stage produced.** Intake
+inserts the row; every later write updates it. There is exactly one exception: **a stage containing a human
+gateway writes twice** — once when the stage opens, so the reviewer's screen has something to read and the
+recommendation is on the record whether or not a human is asked, and once when the decision is in.
 
-**There is no header field in the case schema.** Nothing on the root or on `metadata` holds it, so a locally
-authored plan cannot carry one and a local `case pack` would drop it if it could. Treat this section as
-something you do in Studio Web *after* the last time you pack — or skip it and say you skipped it. Do not invent
-a field for it.
+| Stage | Writes | Carrying |
+|---|---|---|
+| Intake | 1 | the insert — identity and the intake artefacts |
+| Eligibility screening | 2 | the analysis · then the screening decision, human or automatic |
+| Awaiting inspection | 1 | the status, so a dashboard can see the claim is waiting |
+| Analysis | 1 | all four analyses together, when the parallel group finishes |
+| Claim review | 2 | the recommendation · then the decision, human or automatic |
+| Approved *or* Denied | 1 | the letter, the amount and the closure, together |
+| Missing details | 0 | it has no tasks |
 
-**Scalars only.** Binding an object renders as a literal class name, which is the most common way to make the
-header look broken. Two sections of about seven rows is the practical maximum. Keep every expression null-safe or
-an unstarted claim shows errors.
+**Two adjacent writes are one write.** If two write tasks run back to back with no gateway and no agent between
+them, they are the same moment and belong in one call. This is the rule builds break: measured on two
+independent builds on 2026-08-23, both wrote **three times** in the approved ending — the letter, then the
+settlement, then the closure — three round trips setting fields that were all known at once. One came to 14
+writes and the other to 15, against nine here.
 
-Worth doing well: the second section is most useful as the **case's own progress** — what each decider said and
-where the claim has got to — rather than more claim data, which the first section already carries.
+It is not tidiness. Every write is another chance to omit a key by accident, and the connector **destroys a
+column's content when it receives an empty string** (`contracts/claim-entity.md`). Fewer writes is fewer chances
+to lose a payload, and it is the difference between a stage whose record is one atomic statement and one that is
+three-quarters written when something faults.
+
+**`contracts/claim-entity.md` groups columns by *moment*, not by task.** Headings like *written after the
+analyses* say when a column becomes known — they are not a list of write tasks to create, and turning each
+heading into its own task is how a plan reaches fifteen.
 
 ## Deploy into your own folder, never the tenant root
 
@@ -284,6 +329,23 @@ This is the same fact as *a solution folder is not the same folder*, seen from t
 creates a **child** of your seat, and that child does not inherit the seat's processes or buckets — so bindings
 still need their folder named. Getting the parent right does not remove that; it just keeps your work where you
 can find it.
+
+## Last, in the designer: the case header
+
+The case app renders a configured header above the stage timeline, and it reads **case variables only** — no
+entity access, no metadata traversal. Whatever it shows, some task must already have emitted.
+
+**There is no header field in the case schema.** Nothing on the root or on `metadata` holds it, so a locally
+authored plan cannot carry one and a local `case pack` would drop it if it could. Treat this section as
+something you do in Studio Web *after* the last time you pack — or skip it and say you skipped it. Do not invent
+a field for it.
+
+**Scalars only.** Binding an object renders as a literal class name, which is the most common way to make the
+header look broken. Two sections of about seven rows is the practical maximum. Keep every expression null-safe or
+an unstarted claim shows errors.
+
+Worth doing well: the second section is most useful as the **case's own progress** — what each decider said and
+where the claim has got to — rather than more claim data, which the first section already carries.
 
 ## Done when
 

@@ -1,7 +1,8 @@
 # Property Claims — the exercise
 
-> **Draft, 2026-08-18.** The sequence and the prompts are real; the prose around them is a skeleton that becomes
-> lessons once a build has been through it. Blocks 1, 3 and 4 have prompts written; the rest are outlined.
+> **Draft, 2026-08-23.** The sequence and the prompts are real; the prose around them is a skeleton that becomes
+> lessons once a build has been through it. **Every block ships a full prompt, and blocks 5, 6 and 7 ship the
+> largest documents in the seed** — do not skim them because this banner used to say they were outlined.
 
 ## Getting the seed onto your machine
 
@@ -65,7 +66,7 @@ will have at the end when someone asks what the build actually cost. `AGENTS.md`
 |---|---|---|---|
 | 1 | **Extraction** — an IXP project that reads the claim form. Build your own, **or** adopt the shared one | six field groups back, damage rows repeating correctly | ~60 min · ~5 min shared |
 | 2 | **The design** — four tables (stages · work · data · traceability) and an SDD | you can answer block 2's three questions from the tables alone | ~45 min |
-| 3 | **The claim record** — a Data Fabric entity | every payload has a column | ~20 min |
+| 3 | **The claim record** — a Data Fabric entity | every payload has a home, and the ones with no column say why | ~20 min |
 | 4 | **The analyses** — seven agents | one runs on a pinned input; review grade ≥ B | ~90 min |
 | 5 | **The case** — the lifecycle, the two gateways, the wiring. **Three passes**: skeleton, wiring, deploy | a clean claim settles end to end, unattended | ~90 min |
 | 6 | **The app** — what a reviewer sees at each gateway | both gateways render; a decision writes back | ~90 min |

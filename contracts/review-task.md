@@ -24,6 +24,19 @@ task's bindings at both gateways**. Whatever you decide here, decide it once.
 | **output** | `decidedAt` | string | ISO timestamp, set when they submit. |
 | **outcome** | **exactly two** | — | What the case branches on. One means carry on, one means stop. |
 
+**How the case actually reads the outcome, because everything routes on it.** The chosen outcome comes back as a
+task output literally named **`Action`** — capital A, supplied by the platform, not declared by you alongside
+`reviewerNotes` and `decidedAt`. Bind it to a case variable like any other output:
+
+```
+name: "Action"   →   var: "eligibilityDecision"      (source "=Action")
+```
+
+and branch on `vars.eligibilityDecision`. It is **not** called `outcome`, and there is no `$xref` involved.
+Measured on two independent builds on 2026-08-23, both running live through every route. Guessing the name here
+is expensive in a specific way: a wrong one resolves to nothing, every claim takes the same branch, and the plan
+looks correct.
+
 Anything else the screen needs, it reads from the claim record (`claim-entity.md`) using `recordId`. **Do not
 thread the claim through the task payload** — that is seventeen bindings at the second gateway, each of which
 can silently arrive empty, to carry data the record already holds.

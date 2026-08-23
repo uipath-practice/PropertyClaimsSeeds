@@ -17,14 +17,18 @@ three PDFs ──▶ extraction ──▶ seven analyses ──▶ two human gat
    (given)      (block 1)       (block 4)          (block 5)           (block 3)      (block 6)
 ```
 
-The claim moves through five stages, and every stage writes what it learned to a single Data Fabric row:
+The claim moves through **five phases**, and each writes what it learned to a single Data Fabric row.
 
-| Stage | What happens |
+**These are phases, not the stages you build.** [`pdd.md`](pdd.md) §3 names **eight** stages — these five plus
+`Awaiting inspection`, `Missing details` and a `Denied` ending that branches away from `Approved`. Build the
+eight; this table is only the shape of the day.
+
+| Phase | What happens |
 |---|---|
 | **Intake** | the documents are fetched, the row is created, extraction runs, the policy and any prior claims are retrieved |
-| **Eligibility analysis** | one analysis decides whether the claim should be investigated at all — then a **human screens it** |
-| **Data analysis** | the assessor's report is validated and structured, then coverage, payout and credibility run **in parallel**, then a decision analysis reads all four |
-| **Claim review** | a **human adjuster decides** — unless nothing was flagged, in which case this stage is skipped entirely |
+| **Eligibility screening** | one analysis decides whether the claim should be investigated at all — then a **human screens it**, unless nothing failed |
+| **Analysis** | the assessor's report is validated and structured, then coverage, payout and credibility run **in parallel** |
+| **Claim review** | a decision analysis reads all four and recommends an outcome, then a **human adjuster decides** — unless nothing was flagged, in which case this stage is skipped entirely |
 | **Settlement and closure** | the letter is written, the row is closed |
 
 ## Four ideas that decide whether your build is right
@@ -97,14 +101,17 @@ Three places, and nothing anywhere else:
 | **Notes and documents you write for a block** — a design, a decision about structure, an SDD | that block's folder, e.g. `2-design/sdd.md`, `5-case/notes.md` |
 | **Findings** | the shared table, via `log-finding.py` — never a local file |
 
-**One solution, and its name is fixed.** `Build/ClaimCase-<seat>/` holds everything: a case binds agents by name
-*inside its own solution*, so agents published in a solution of their own are unreachable from the case that
-needs them. Do not create a second solution for a component, and do not invent a name — every extra solution is
-another package to version, deploy and uninstall in step, and a name nobody chose is a name nobody can find.
+**One solution, and its name is fixed** — `CONFIG.md`, *One solution, one name, one place on disk*, has the rule
+and the reason. Here it means one thing: never create a second solution for a component, however tidy it looks.
 
-**Seed filenames are fixed**, so nothing you write can collide: a block folder ships exactly `prompt.md`,
-`spec.md` and `cookbook.md` (block 1 has two prompts, and some blocks carry a `taxonomy` or a script). **Any
-other file in a block folder is yours.** Put your notes where the prompt that prompted them lives — that is
+**Seed filenames are fixed**, so nothing you write can collide: a block folder ships `prompt.md`, `spec.md` and
+`cookbook.md` (block 1 has two prompts, and some blocks carry a `taxonomy` or a script). **Any other file in a
+block folder is yours.**
+
+**A missing `spec.md` is information, not an omission** — it means the block's spec is shared and lives in
+`contracts/`, so there is nothing block-specific to say. **Block 3 has no `spec.md`: its specification is
+`contracts/claim-entity.md`**, which is also read by blocks 4, 5 and 6. Do not go looking for the file, and do
+not write one. Put your notes where the prompt that prompted them lives — that is
 where the next person will look for them.
 
 **A file that configures the platform rather than shipping inside the solution belongs in its block folder too**,
@@ -116,6 +123,18 @@ Do not scatter working folders across the seed, and do not build outside `Build/
 run `ls Build/` and see your entire solution, once.
 
 ## Rules that hold everywhere
+
+**Exit code 0 is not proof a command ran. Check `Result` and `Code`.**
+
+`uip` updates itself, and when it does it **consumes the command you asked for**: it prints
+*"Checking for updates… Updating UiPath CLI, tools, and skills"*, exits **0**, and produces no result. Two seats
+hit this on the same day, in different blocks — once on a `maestro case registry pull`, whose Phase 1 gate then
+read as satisfied against an empty cache, and once on a connection ping. Both times the next step failed
+somewhere unrelated.
+
+So: after any `uip` call whose output you are about to act on, confirm the envelope actually came back — a
+`Result` and a `Code`, or the data you asked for. If all you got was the updater, **run it again**. The second
+call works.
 
 **Fix what the earlier blocks got wrong. They are your inheritance, not your foundation.**
 

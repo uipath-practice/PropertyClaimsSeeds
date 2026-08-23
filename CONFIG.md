@@ -70,7 +70,7 @@ minutes for two people. The title is set in the case plan, where the task is rai
 under the same name:
 
 ```bash
-uip solution deploy uninstall ClaimCase-Jane --output json
+uip solution deploy uninstall ClaimCase-Jane --yes --output json   # --yes or it exits 1 asking to confirm
 uip solution deploy run --name ClaimCase-Jane --folder-name ClaimCase-Jane-Deploy \
   --parent-folder-path ClaimCase-Jane --package-name ClaimCase-Jane --package-version <v>
 ```
@@ -254,6 +254,16 @@ mangled — and the error names the JSON, not the shell.
   uip.cmd --% or jobs start <guid> --input-arguments "{\"scenario\":\"auto-settle\",\"discrepancy\":\"\"}"
   ```
 
+- **`--%` is not always enough.** On CLI 1.199.0 `uip.cmd --% ... --input-details '{...}'` still required every
+  inner quote backslash-escaped. If a JSON argument comes back as *"Invalid JSON at position 1"*, that is the
+  shell, not your JSON — escape the inner quotes, or find the `--file` form.
+- **Calling `uip` from a script? Call `node` directly.** Driving the installed `uip.ps1` shim from Python's
+  `subprocess` strips the quotes out of a JSON argv element even when argv is passed as a list. Invoking
+  `node.exe <path-to>/@uipath/cli/dist/index.js <args…>` preserves it. This is what `uip agent debug --inputs`
+  needs from a harness.
+- **Round-tripping a file with PowerShell will corrupt it silently.** `Get-Content` without `-Encoding UTF8`
+  reads UTF-8 as the legacy code page, so rewriting an `agent.json` turns every em dash into mojibake — and the
+  agent still validates. Always `Get-Content -Encoding UTF8`, and prefer editing JSON with `python3`.
 - `log-finding.py` already does the right thing; you never pass it JSON.
 
 Two more that cost a retry each: `Get-Date -AsUTC` and `ConvertFrom-Json -Depth` do not exist in this

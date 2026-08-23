@@ -127,10 +127,9 @@ ClaimGeneral[0].TotalClaimed.Value.Value     money nests once more: .Value.Value
 
 One level of property access is the only depth proven to resolve in a case expression
 ([`check-envelope.md`](check-envelope.md)), so **a case cannot reach the address, and a notification bound to it
-fails on every claim** — loudly, on a required argument. Two ways out, and pick one deliberately: have the
-eligibility analysis emit the address as its own scalar output and notify from there, or promote it to a
-claim-record column. The first is cheaper and moves the claim-received notification out of intake by a few
-seconds of case time (`pdd.md` §3). No email connection is provisioned, deliberately: what this exercise cares about is the *content*
+fails on every claim** — loudly, on a required argument. **The resolution is settled and `pdd.md` §3 states it:**
+the eligibility analysis emits the address as its own scalar output, and the claim-received notice is sent from
+eligibility screening rather than intake. This is not a choice to make at build time. No email connection is provisioned, deliberately: what this exercise cares about is the *content*
 of what the claimant is told, which an analysis produces and `pdd.md` §7 governs. Bind the letter you would have
 sent; it is then visible in the log and recorded on the claim.
 

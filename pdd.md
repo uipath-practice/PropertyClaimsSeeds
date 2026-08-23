@@ -74,7 +74,13 @@ not: approval is what a healthy claim does, and a portfolio view showing every s
 one nobody can read.
 
 **Intake.** Register the claim. Then **in parallel**: open the claim record and retrieve the documents. Then in
-parallel again: retrieve the policy, look up prior claims against it, and tell the claimant the claim was received.
+parallel again: retrieve the policy and look up prior claims against it.
+
+**Telling the claimant the claim was received belongs to intake as a matter of process, and is sent one stage
+later.** The claimant's address is not on the claim record and is buried too deep in the raw extraction for the
+case to reach; the eligibility analysis lifts it out as a plain value, so the notice goes out from eligibility
+screening (`contracts/provided-processes.md`). The claimant sees no difference — it is seconds — and this is the
+intended design rather than a workaround to rediscover.
 
 **Eligibility screening.** Run the five checks (§5.1) and record the result. **If any of the five failed, stop
 for the eligibility reviewer**; if all five passed, the claim carries on with nobody looking at it. On both of
@@ -299,6 +305,45 @@ These produce a **recommendation**, not an outcome. Nothing here closes a claim.
 List *every* reason that applies, not the first one found. Recommending approval for a claim that also meets an
 escalation condition is a contradiction, not a judgement call — **escalation wins**. Priority whenever two apply:
 **deny, then escalate, then partial approve, then approve.**
+
+### 5.7 What is not a finding
+
+Every rule above says what to look for. This one says what to leave alone, and it is the half that decides
+whether anything can settle automatically. Measured on one build over a run of clean claims: **nine separate
+escalations**, each defensible against a literal reading of the rules above and each wrong about the claim.
+
+**The test, every time: could this change the outcome?** A difference that cannot change what is paid, to whom,
+or whether the loss is covered, is *context*. Put it in the summary if a reader would want it. Do not fail a
+check for it.
+
+**Assessor report.** *Authorisation* means the assessor certified and issued the report. It does not mean the
+insurer approved anything in advance — no such approval exists in this process. Observations the assessor
+recorded that nobody claimed for are not missing data: the question is whether every **claimed** item is priced
+and usable. Two professionals describing the same roof in different words are two professionals, not a
+discrepancy.
+
+**Coverage.** Do not infer wear, defect or neglect from silence — an exclusion has to be affirmatively
+documented before it bites, and a cause the documents simply do not discuss is not an excluded one. A sudden
+covered event carries the work needed to reach the damage, including access and the failed component itself.
+And coverage never re-opens a screening question: policy status, identity, address, coverage period and the
+filing deadline belong to eligibility and have already been decided — by a human, or automatically.
+
+**Payout.** An active replacement-cost endorsement means replacement cost **now**; absent depreciation data or
+proof of completion is not a reason to fall back to actual cash value at this stage. The endorsement is active
+whether the policy words it *Yes*, *Active* or *Included*. Ordinary section limits and sublimits reduce a
+settlement **without a human** — that is the contract working as printed, and the claimant holds the document
+that says so. Only the annual aggregate is exceptional, because it rests on a history only the insurer has.
+
+**Credibility.** A contradiction is material only when the claimant's account would make the claimed cause
+impossible. Times that differ between a form and a narrative, who was present, who stopped the water — that is
+how people remember things. *Same-day assessment* means the assessor attended on **the day of the incident**;
+matching the *submission* date is unremarkable and usually just a prompt claimant.
+
+**And the error in the other direction — materiality is not leniency.** A conflict between the incident type the
+claimant reported and the cause the assessor determined is a **failing** check on peril classification, even
+when the assessor's peril is itself covered: the claim was made on one basis and would be paid on another, and
+that is a human's call. Recording it inside a check that passes is how a planted problem reaches approval with a
+note nobody reads.
 
 ## 6. What a human approval binds
 

@@ -19,6 +19,10 @@ back to the work.
 - **Primary is the path a healthy claim takes.** Everything a claim reaches only because something went wrong —
   a denial, a wait for something missing — is secondary. `pdd.md` §3 has the criterion.
 - **Every ending is a row.** A claim that is denied ends somewhere; so does one that settles.
+- **Say which secondary lanes a decision routes into, and whether each returns or ends the case.** A lane a gate
+  decision sends the claim to is built differently from one a person or an event opens — the origin has to carry
+  a matching exit — and a returning lane is built differently from a terminal one. Block 5 cannot infer either
+  from the entry description alone (`5-case/spec.md`, *Entering a secondary lane*).
 - **A waiting stage is a stage.** If the process waits for something that arrives on its own schedule, that wait
   has entry and exit conditions like anything else, and it is where a poll lives.
 - **No row without a way in**, except the one `pdd.md` §3 asks you to leave unwired. A stage you cannot describe

@@ -27,10 +27,17 @@ late, which is why they are here and not in the prompt:
 ## Proving each one
 
 ```bash
+uip agent refresh  <project-dir>                 # FIRST — after every agent.json edit
 uip agent validate <project-dir> --output json   # all seven
 uip agent review   <project-dir> --output json   # all seven — grade B or better, zero errors
 uip agent debug    <project-dir> --output json   # the five that take no attachment
 ```
+
+**`refresh` first, and it is not optional after a hand edit.** If you change `agent.json` directly — as you will,
+repairing a prompt — `validate` reads your new file but **`debug` runs the previous one from a cached artifact**.
+You then test a prompt you no longer have, conclude your fix did nothing, and change something that was already
+right. Measured 2026-08-23; the proof was the `systemPrompt` in the debug trace still being the pre-edit text.
+Refresh before `validate`, before `debug`, and before `solution pack`.
 
 **Two of the seven cannot be run from the CLI at all.** `agent debug` has no mechanism for supplying a job
 attachment, so the two document readers are validated and reviewed here and first *run* in block 5, on a real

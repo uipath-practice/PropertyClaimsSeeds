@@ -53,6 +53,24 @@ can only ever show internal names. The fix is not to relabel in the UI, it is to
 | `checks[].details` | 6 × 120 | Supplied for **every** check, passing ones included. A `pass` row renders collapsed and a `warn`/`fail` renders open, but a reviewer must still be able to expand a green check and see its evidence — the address-match example is a `pass` that carries three addresses. **Corrected 2026-08-09:** the prompts originally said not to bother with details on passing checks, which left green rows unexpandable. |
 | `checks` | 8 | — |
 
+### The decision analysis carries two more keys, and only it
+
+`pdd.md` §5.6 requires the decision analysis to produce a **recommended outcome** and a **confidence**, and the
+envelope above has nowhere to put either. So `decisionJson` — and nothing else — adds exactly two top-level keys:
+
+```json
+"recommendation": "deny | escalate | partial_approve | approve",
+"confidence":     "high | medium | low"
+```
+
+`recommendation` repeats the agent's `out_FinalDecision` scalar, because the case routes on the scalar and the
+app renders the payload, and they must not be able to disagree. `confidence` follows §5.6 rule 5 — no flags is
+high, one is medium, two or more is low — and exists nowhere else at all.
+
+Pinned 2026-08-23, after a build found the requirement in `pdd.md`, no field for it here, and four plausible
+places to hide it: inside `headline`, as a flag, in `summary`, or as an invented key. The app reads the
+recommended outcome at gateway 2, so a renderer written against one guess breaks on another.
+
 ## Declare it as an `object`, never as a `string`
 
 The envelope is a **structured output**: `"type": "object"` with these properties spelled out in the schema. The

@@ -17,12 +17,6 @@ You are being asked for the document a solution architect produces before a team
 solution is made of, how a claim moves through it, what data passes between the parts, and who is accountable for
 catching each thing that can go wrong.**
 
-## Why it is worth the hour
-
-Everything after this is assembly, and assembling against a design you wrote is far cheaper than assembling
-against a process description you re-read each time. Blocks 4 and 5 are long enough that you will lose your
-thread partway through; this document is what you come back to instead of the process description.
-
 ## What the design has to settle
 
 - **The claim's journey, end to end** — every stage a claim can be in, how it gets there, and what ends it.
@@ -37,6 +31,11 @@ thread partway through; this document is what you come back to instead of the pr
   shown, and what the process does with their answer.
 - **What happens at the same time.** Independent checks written as a sequence get built as a sequence, and the
   claim takes four times as long for no reason.
+- **The name of every check, as a closed list per analysis.** This is the only point in the exercise where all
+  seven analyses are in front of you at once; the block that builds them writes seven prompts separately and has
+  every reason to invent a neighbouring name in each. Nine of the names are already fixed by the process
+  description — take those verbatim — and settle the rest here, in one sitting, rather than discovering in
+  block 7 that two analyses report the same concern under two spellings.
 
 ## Done when
 
@@ -48,9 +47,6 @@ You can answer these three from your own document, without going back to the pro
 
 If any answer sends you back to `pdd.md`, the design is not finished — and the cost of that lands in block 5,
 not here.
-
-**This block writes no code**, so nothing goes in `Build/` — the four tables and the SDD are markdown in
-`2-design/`.
 
 **Log as you go.** Every retry, every surprise, everything these instructions failed to explain, and
 anything that took longer than it should have — dead ends included, they are the point. `AGENTS.md`

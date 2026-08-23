@@ -6,14 +6,6 @@ what the tooling will do to you along the way.
 Nothing in this block touches the platform, which makes it the one block where a mistake costs only your own
 time. It is also the block whose mistakes are cheapest to fix and most expensive to leave.
 
-## Skill
-
-`uipath-planner`. Some harnesses load it the moment they see a `pdd.md` and some require you to invoke it by
-name — **load it explicitly if yours does not**, and read the next section for what to keep from what it
-produces.
-
-Everything you need is in this folder if it does not load; you are not at a disadvantage without it.
-
 ## The four tables, and why they are the deliverable
 
 `2-design/spec.md` states what the design has to answer. In practice it lands as **four tables plus prose**, and

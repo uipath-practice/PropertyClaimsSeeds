@@ -114,9 +114,13 @@ routes then populate it, and `pdd.md` §3 says the same thing from the process s
 |---|---|
 | Payout agent | `recommended`, as its **own top-level output `out_SettlementJSON`** — *not* nested inside `out_PayoutChecksJSON`. Lifting it out of another output would need `=js:(vars.outPayoutChecksJson?.settlement)`, a two-level read into an agent's `json` output, which is the **unproven** retracted rule 3b.6. A separate output binds with `=js:(vars.outSettlementJson)` — no property access at all. |
 | Action App | `final` + `overrides`, as **task outputs** — outputs survive completion where inputs do not, so a completed task renders the table with no entity read |
-| `Record Adjuster Decision` | copies `final` into the entity, and `final.net` into `approvedPayout` |
+| `Record Adjuster Decision` | copies `final` into the entity — **but not `approvedPayout`** |
+| `Authorise Settlement` | `approvedPayout`, from `final.net` if a human overrode anything and the agent's `recommended.net` otherwise. It is in the approved ending, so it runs on the clean route too |
 
 ### The two gateways write different columns
+
+`approvedPayout` is deliberately **not** in either column: it belongs to the approved ending, per the paragraph
+above, so that a clean claim populates it too.
 
 What the two decisions *are* is `pdd.md` §4's table. What they write is this one, and getting it wrong is not
 theoretical: they were writing the same three columns until 2026-08-10, so gateway 2 destroyed gateway 1's
@@ -124,7 +128,7 @@ record.
 
 | | Gateway 1 — eligibility | Gateway 2 — final review |
 |---|---|---|
-| Writes | `eligibilityDecision`, `eligibilityNotes`, `eligibilityReviewedAt` | `reviewDecision`, `reviewerNotes`, `reviewedAt`, `settlementJson.final`, `approvedPayout` |
+| Writes | `eligibilityDecision`, `eligibilityNotes`, `eligibilityReviewedAt` | `reviewDecision`, `reviewerNotes`, `reviewedAt`, `settlementJson.final` |
 
 The app's wording follows the *process* distinction: at gateway 2 the action is
 *"Approve and send for settlement"*, not "continue". A reviewer approving a payment should be told that is what

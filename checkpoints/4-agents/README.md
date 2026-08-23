@@ -1,5 +1,13 @@
 # Checkpoint — the seven analyses
 
+> **Re-synced 2026-08-23**, after a build audited these against the current contracts and found seven defects:
+> `Decision` could not see the report validation and treated any failed analysis as a denial; `Response` wrote
+> the letter in the claimant's language and lacked the two scalars the notification binds to; `Eligibility`
+> contradicted itself on stopping at the first failure and asked for two fields the envelope has no room for;
+> `Payout` made the settlement optional and flagged over-claiming at half the rate `pdd.md` sets; `Credibility`
+> reported the payout analysis's concern as its own; and two attachment tools named an input that does not
+> exist. **Audit a checkpoint before you trust it** — that is what found these.
+
 Seven working agent projects. Copy them into `Build/ClaimCase-<seat>/`, **one folder each at the top level**, and
 register them with `uip solution projects add`. Do not nest them under an `agents/` folder: `uip agent debug`
 only searches one level up and will tell you the solution does not exist (`4-agents/cookbook.md`).

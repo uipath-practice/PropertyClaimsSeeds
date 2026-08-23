@@ -27,9 +27,14 @@ Data Fabric entities can live at tenant level or in an Orchestrator folder. **Yo
 which means one extra flag and one changed failure mode:
 
 ```bash
-FK=$(uip or folders list --all --name ClaimCase-<seat> --output json --output-filter "[0].Key")
-uip df entities create ClaimCase_<seat> --file <schema>.json --folder-key $FK --output json
-uip df entities list --native-only --folder-key $FK --output json      # confirm
+# Exact-name match, not `--output-filter "[0].Key"` — that keeps the envelope and `--name` is a
+# prefix match, so `[0]` is a coin toss between your seat and its -Deploy folder.
+# known-issues/cli-commands.md has both traps and the PowerShell form.
+FK=$(uip or folders list --all --name ClaimCase-<seat> --output json \
+     | python3 -c "import json,sys; print(next(f['Key'] for f in json.load(sys.stdin)['Data'] \
+                                               if f['Name']=='ClaimCase-<seat>'))")
+uip df entities create ClaimCase_<seat> --file <schema>.json --folder-key "$FK" --output json
+uip df entities list --native-only --folder-key "$FK" --output json      # confirm
 ```
 
 Without `--folder-key` the create is refused:
@@ -104,7 +109,7 @@ keep the seat token anyway. It is what makes a row, a log line or a runtime erro
 
 If you find entities from an earlier attempt at this use case — a normalised model with names like `Claim`,
 `Policy`, `DamagedItem` — **leave them alone** and do not bind to them by accident. They are not this design,
-and the tenant is shared. On a clean tenant you will see only `SystemUser`, which is Data Fabric's own.
+and the tenant is shared. On a clean tenant you will see `SystemUser`, which is Data Fabric's own, and `WorkshopFindings`, which is the findings table you have been logging to since the first minutes of the exercise. Neither is a leftover and neither is yours to touch.
 
 ## The types you actually need
 
@@ -152,10 +157,29 @@ you will want to diff it when block 5 reports a column it cannot find.
 
 ```bash
 uip df entities list --native-only --folder-key <your-seat-folder-key> --output json   # the entity exists
-uip df entities get <entity-id> --folder-key <your-seat-folder-key> --output json      # every contract column
 uip is connections list uipath-uipath-dataservice --refresh --all-folders --output json  # the shared connection
+
+# A raw `entities get` on 38 columns is upwards of 22,000 tokens and will be truncated on you.
+# Ask for the four things that can be wrong:
+uip df entities get <entity-id> --folder-key <your-seat-folder-key> --output json \
+  --output-filter "Fields[].{n:Name,t:Type,len:LengthLimit,dp:DecimalPrecision}"
 ```
 
-Then check no column is capped at 200 by accident — every `MULTILINE_TEXT` in the output should carry
-`lengthLimit: 10000`. A missing one is the single most likely way this block ships broken, because nothing fails
-and nothing warns; you simply lose everything past the 200th character on every claim from here on.
+**Audit three things, and only these three.** "No column is capped at 200" is the wrong test — four columns are
+*deliberately* 200 or below, so a check that flags every 200 flags four correct columns and buries the real one.
+
+| Must read | Columns |
+|---|---|
+| `lengthLimit: 10000` | every `MULTILINE_TEXT` — a missing one loses everything past character 200, silently, on every claim from here on |
+| `lengthLimit: 4000` | `eligibilityNotes`, `reviewerNotes` |
+| `decimalPrecision: 2` | `totalClaimAmount`, `approvedPayout` |
+
+**Two things in that output are the platform's, not yours, and both look like drift the first time.** `get`
+returns a **39th field, `RecordOwner`** (a `RELATIONSHIP`), which you did not send; and it stamps a
+`LengthLimit` on typed columns that have no length at all — `1000` on `DATE`, `DATETIME_WITH_TZ` and `DECIMAL`,
+`100` on `BOOLEAN`. Ignore both. **Only `STRING` and `MULTILINE_TEXT` limits are yours.**
+
+Neither failure mode announces itself, so **round-trip a value** rather than reading the schema and believing it:
+insert one row with cents in both decimals, a 1,000-character note and a ~9,000-character JSON payload, read it
+all back unchanged, then delete the row. Four minutes, and it is the only thing that separates a correct
+`decimalPrecision` from a plausible-looking one.

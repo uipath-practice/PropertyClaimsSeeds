@@ -40,9 +40,21 @@ from source documents. They are outputs, not inputs, on the agent that creates t
 
 ## The columns
 
-`claimId` is the key: required, unique, and equal to the case's `ExternalId`. Everything else is written by
-exactly one stage — the stage that first has the data, and **only `claimId` is required**; a row is created
-carrying three columns, so anything else marked required would break intake.
+`claimId` is the **business** key: `isRequired` and `isUnique`, and equal to the case's `ExternalId`. It is not the primary key and there is no schema option to make it one — Data Fabric always keeps its own system `Id` as the primary key, and every `records update` addresses a row by that `Id`, never by `claimId`. Do not go looking for an `isPrimaryKey` flag. Everything else has **one writer
+per route** — the stage that first has the data on the path the claim actually took — and **only `claimId` is
+required**; a row is created carrying three columns, so anything else marked required would break intake.
+
+*Per route*, not *one writer full stop*, because two columns genuinely need two and the rule read literally
+loses data on one of them. **`decisionReason`** is written by the claim review when a review happens, and by the
+**screening denial** when the claim never gets that far — otherwise the one column a list view shows is empty on
+exactly the claims that were refused. **`settlementJson`** carries the agent's `recommended` from the analysis
+and the adjuster's `final` from the review. Both are still one writer on any single claim, which is the property
+that matters: what this rule exists to prevent is two stages writing the same column on the **same** claim, which
+is how gateway 2 destroyed gateway 1's record until 2026-08-10.
+
+**The groups below are moments, not tasks.** A heading says when a column becomes known. It is not an
+instruction to create a write task per heading — how many writes a plan should make, and where, is
+`5-case/spec.md`, *How many writes*.
 
 Types are Data Fabric's own. The suffix decides the two temporal ones: a column named `…Date` is a calendar date
 (`DATE`), a column named `…At` is the instant something happened (`DATETIME_WITH_TZ`). Six further types are
@@ -78,7 +90,7 @@ capped a reviewer's notes at 200 characters without noticing.
 | Column | Type | Source |
 |---|---|---|
 | `claimId` | `STRING`, **key, required, unique** | the case `ExternalId` |
-| `caseInstanceId` | `STRING` | the case instance id, from case metadata |
+| `caseInstanceId` | `STRING` | `=js:metadata.InstanceId` — the case metadata carries exactly two usable fields, this and `ExternalId` |
 | `status` | `STRING` | a lifecycle word your case sets; the dashboard filters on it |
 
 Nothing else can be written here. The row is created *before* extraction and before the document retrievals, so
@@ -131,14 +143,23 @@ applies to `reviewDecision` at the second gateway.
 |---|---|---|---|
 | `assessmentReportJson` | `MULTILINE_TEXT` · 10,000 | `credibilityChecksJson` | `MULTILINE_TEXT` · 10,000 |
 | `assessmentReportValidationJson` | `MULTILINE_TEXT` · 10,000 | `settlementJson` | `MULTILINE_TEXT` · 10,000 |
-| `coverageChecksJson` | `MULTILINE_TEXT` · 10,000 | `decisionJson` | `MULTILINE_TEXT` · 10,000 |
-| `payoutChecksJson` | `MULTILINE_TEXT` · 10,000 | `assessmentReportPdfId` · `assessmentReportPdfName` | `STRING` |
+| `coverageChecksJson` | `MULTILINE_TEXT` · 10,000 | `assessmentReportPdfId` · `assessmentReportPdfName` | `STRING` |
+| `payoutChecksJson` | `MULTILINE_TEXT` · 10,000 | | |
 
-### Written when the claim review closes, and at closure
+`decisionJson` is **not** here. The decision analysis runs in claim review — see the next group.
+
+### Written during claim review, and at closure
+
+The decision analysis runs **in claim review**, not alongside the other analyses ([`pdd.md`](../pdd.md) §3): the
+analyses establish the evidence, and the judgement that reads them belongs with the stage that records it. So
+this stage writes **twice** — `decisionJson` when the stage opens, before the gateway, so the reviewer's screen
+has something to read and the recommendation is on the record whether or not a human is asked; the rest when the
+review closes.
 
 | Column | Type | Column | Type |
 |---|---|---|---|
-| `reviewRequired` | `BOOLEAN` | `decisionReason` | `STRING`, ≤ 200 |
+| `decisionJson` *(written on open)* | `MULTILINE_TEXT` · 10,000 | `decisionReason` | `STRING`, ≤ 200 |
+| `reviewRequired` | `BOOLEAN` | | |
 | `reviewDecision` | `STRING` | | |
 | `reviewerNotes` | `STRING` | `claimResponseJson` | `MULTILINE_TEXT` · 10,000 |
 | `reviewedAt` | `DATETIME_WITH_TZ` | `closedAt` | `DATETIME_WITH_TZ` |
