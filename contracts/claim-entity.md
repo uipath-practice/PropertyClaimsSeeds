@@ -88,6 +88,14 @@ Grouped by the moment they are written, because that ordering is the part that m
 
 **A component's inputs are capped all together, and the usable budget measures ~8,700.** So three 10,000-character columns cannot be handed to one consumer, however comfortably each fits its own column. Count what a consumer is given, not what each producer wrote.
 
+**Over the cap it degrades silently — it does not refuse to start, and nothing anywhere says the word *cap*.** Measured on one live claim with four consumers at or over it (8,695 · 8,704 · 8,969 · 13,490): every job reported `State: Successful`, the case reported `Completed`, and one of them returned an empty list. That emptiness surfaced three components later as *unreadable*, and turned a claim that should have settled into an escalation. **You cannot watch for a start failure, because there isn't one.** The only place the truth is visible is the trace's `agentRun` start arguments — sum them per consumer, and do it before you believe a green run.
+
+**A payload budget written into a producer's prompt is a request, not a contract.** One asking for 1,800 characters returned 7,262 and 6,687 on later runs of the same claim. If a downstream budget depends on it, enforce it in code after the component returns.
+
+## Nothing writes this for you
+
+**There is no write mechanism in the platform for you to bind — you build one.** The design names an owner and a moment for every column; it does not and cannot name a mechanism, and the obvious guesses are all wrong. `=datafabric.` is a **read** prefix and has no write counterpart. None of the provided automations writes the record. And the case's own `caseAppEnabled` / `caseUnifiedSchemaEnabled` metadata reads as though persistence might be automatic. **It is not.** Build a component that writes, and call it wherever the design says a column is written — see `3d-case/cookbook.md`, *Writing to a folder-scoped entity*, because the activity it must use is not the one any tool will offer you.
+
 ## How the write actually behaves
 
 **It is a patch, not a replace**, and the three cases are not symmetric:

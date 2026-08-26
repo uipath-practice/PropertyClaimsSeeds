@@ -42,7 +42,7 @@ A mismatch here faults at run time having packed and deployed cleanly.
 
 ## What each one does
 
-**`Retrieve Property Claim`** generates a claim and uploads all three documents. `in_ClaimID` is the number stamped on them — pass your case's own external id so the case and the documents agree. `in_Scenario` and `in_Discrepancy` aim the run at a known problem; leave them empty for a random claim. Safe to call once per claim, and **it should not run again if a stage re-enters** — regenerating a claimant's documents mid-case is not a thing that happens in reality.
+**`Retrieve Property Claim`** generates a claim and uploads all three documents. `in_ClaimID` is the number stamped on them — pass your case's own external id so the case and the documents agree. `in_Scenario` and `in_Discrepancy` aim the run at a known problem; leave them empty for a random claim. **`in_Scenario` is a closed list of five** — `random` · `auto-settle` · `eligibility-fail` · `review-fail` · `both-fail` — and anything else is not rejected, it just gives you a random claim. `in_Discrepancy` pins one exact injector by name, and those names come from the answer key, which `4-verify` tells you when you may read. Safe to call once per claim, and **it should not run again if a stage re-enters** — regenerating a claimant's documents mid-case is not a thing that happens in reality.
 
 Its `out_ClaimID` is the file it wrote, which is the number you passed in. **You almost certainly should not bind it** — binding it to your own claim identifier gives that value two sources, and the one you did not intend wins whenever they differ.
 

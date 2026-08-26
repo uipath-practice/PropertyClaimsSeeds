@@ -29,7 +29,7 @@ Guard every parse (`|| '{}'`) and every property read (`?.`). This is the single
 |---|---|
 | Three tasks that should run together run one after another | **Parallelism is expressed by grouping, not by ordering.** Sequencing them does not make them concurrent. |
 | A skipped human gate leaves the claim waiting forever | **Whatever runs after a gate needs its own way to start.** A gate that never opens starts nothing. |
-| A clean claim stops anyway | The skip test is `!== false`, **never `=== true`** — fail *towards* the human, but do not treat "not yet written" as "flagged". |
+| A clean claim stops anyway, or a flagged one sails through | The skip test is `!== false`, **never `=== true`**, and there are two independent reasons. Fail *towards* the human, so "not yet written" must not read as "flagged" — and **a boolean case variable arrives at a condition as the string `'true'`**, so `=== true` is false even when the value is genuinely true. Measured: a component returned a real JSON `true`, the variable was declared `boolean`, the record showed `True`, and **both human gates were unreachable** — every part of it looking correct. |
 | A stage is entered twice | Two entry conditions that can both be true at once is a double execution waiting to happen. Mutually exclusive is fine. |
 | The case never completes | A stage exits on a condition, and a condition nothing can satisfy is a dead case. Every exit needs something that can make it true. |
 | A validation app says *not available yet* while the case runs perfectly | The screen is built from what has been **written**. A write that feeds a human step must sit **before** it. |
@@ -54,6 +54,8 @@ Deploy a solution packed without it and the job faults at run time with *"entry 
 ## Canvas
 
 **Do not author edges** — they are retired, and hand-written ones are ignored or worse. **Place the stages yourself**: a stage with no layout entry crashes the designer outright, with an error naming nothing that appears in the plan.
+
+> **This contradicts the `uipath-maestro-case` skill, which says to emit `layout: {}` and never a position** on the grounds that the canvas auto-arranges. **Follow this page.** The skill's rule is about not wasting tokens on fields the frontend strips; ours is about a designer that will not open. A crash outranks a token count, and you will find out which is right the moment you try to look at your plan.
 
 **Placing them is not decoration.** Edges are gone, so position is the only thing left that shows a reader how the claim moves — and the case diagram is the first picture anyone sees of the whole process, including people who will never read the plan. Three rules, and they cost nothing at authoring time:
 

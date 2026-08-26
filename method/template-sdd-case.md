@@ -40,6 +40,8 @@ Case Definition Blueprint for <CASE_NAME>.
 
 **Source PDD:** `<PATH>` version <N.N>
 
+> **This line and the *Design Feedback to PDD* section deliberately contradict the `uipath-maestro-case` template**, whose output rules forbid the string `PDD` anywhere. That rule exists to stop a generated SDD leaking how it was generated; provenance and feedback upward are a different thing, and both are load-bearing in this method — a design that cannot say what it was designed from cannot be reviewed against it. **Keep them.** They are inert to the build, which reads the document as written and checks nothing.
+
 ---
 
 <!-- DO NOT RENAME: uipath-planner detects SDDs via this exact heading or the marker below. -->
