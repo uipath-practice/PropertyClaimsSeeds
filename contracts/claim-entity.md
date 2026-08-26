@@ -92,9 +92,21 @@ Grouped by the moment they are written, because that ordering is the part that m
 
 **A payload budget written into a producer's prompt is a request, not a contract.** One asking for 1,800 characters returned 7,262 and 6,687 on later runs of the same claim. If a downstream budget depends on it, enforce it in code after the component returns.
 
-## Nothing writes this for you
+## The case writes this itself — you do not build a writer
 
-**There is no write mechanism in the platform for you to bind — you build one.** The design names an owner and a moment for every column; it does not and cannot name a mechanism, and the obvious guesses are all wrong. `=datafabric.` is a **read** prefix and has no write counterpart. None of the provided automations writes the record. And the case's own `caseAppEnabled` / `caseUnifiedSchemaEnabled` metadata reads as though persistence might be automatic. **It is not.** Build a component that writes, and call it wherever the design says a column is written — see `3d-case/cookbook.md`, *Writing to a folder-scoped entity*, because the activity it must use is not the one any tool will offer you.
+**Write it from the case, with `execute-connector-activity` tasks.** The reference solution populates all 39 columns from **seven** such tasks and has no writer component of any kind; `Record Eligibility Assessment` alone writes seventeen columns in one call. A separate component that exists only to write the record is a project to publish, deploy, version and bind for something the case already does.
+
+**Read nested payloads inline rather than flattening them first.** A `=js:` expression with optional chaining reaches as far as you need:
+
+```
+claimantName    =js:(vars.claimDataJson?.ClaimClaimant?.[0]?.Name)
+claimFormPdfId  =js:(vars.claimFormPdf?.ID)
+reviewRequired  =js:(vars.isEligible === false || vars.isComplete === false)
+```
+
+So a *normaliser* component is not needed either. What **is** worth surfacing as a plain scalar is anything read in more than one place — and the component that already produces the value is where to surface it, not a new component downstream of it.
+
+**Two things decide which activity version you need**, and getting it wrong costs a day: a **tenant-level** entity works with the default activities, a **folder-scoped** one needs the V3 form. Yours is folder-scoped (`CONFIG.md`), so see `3d-case/cookbook.md`, *Writing to a folder-scoped entity*.
 
 ## How the write actually behaves
 

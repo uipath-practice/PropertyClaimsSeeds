@@ -59,6 +59,16 @@ Three near-misses that have each cost time: **`uipath-maestro-bpmn` is not the c
 
 Two things keep it honest. **Read the block's prompt anyway** — later blocks bind these things by name, and debugging a wiring problem in something you have never looked at is the most expensive hour available here. And **log it**: which checkpoint, when, and what had gone wrong. That is the clearest signal we get about where this is too hard.
 
+## Push the solution to Studio Web at the end of every block
+
+**`uip solution upload Build/ClaimCase-<seat> --force`.** Everything you build is local until you do, and a solution that has never been uploaded is invisible in Studio Web however correct it is — including the case plan, which is the one artifact anybody looking over your shoulder wants to see.
+
+**Do it at the end of every block, not once at the end.** It costs a command, it is how a human watches the build take shape, and a solution uploaded only at the end is one where nothing could be reviewed while it still mattered.
+
+**`--force` is required after the first upload and it wipes Studio Web's version history** for that solution. That is the right trade here — your history is in git and in `PROGRESS.md`, and the cloud copy is a view rather than a source.
+
+**One rule that makes this safe: never edit in Studio Web.** The sync runs one way for you. Opening the designer is fine — reading, looking at the case diagram, showing someone. Editing there and then uploading again from local silently discards whichever side you did not keep.
+
 ## Keep a running record of where the build is
 
 **`PROGRESS.md`, at the root of this folder, and it is the one file here you should be generous with.** Everything else in this seed is kept short deliberately. This one is not — it is written for the agent running the next block, which starts with an empty context, no memory of what you did, and no way to find out except by redoing it.
