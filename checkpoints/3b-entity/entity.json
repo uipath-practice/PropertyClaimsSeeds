@@ -178,15 +178,6 @@
     {
       "fieldName": "reviewedAt",
       "type": "DATETIME_WITH_TZ"
-    },
-    {
-      "fieldName": "closedAt",
-      "type": "DATETIME_WITH_TZ"
-    },
-    {
-      "fieldName": "approvedPayout",
-      "type": "DECIMAL",
-      "decimalPrecision": 2
     }
   ]
 }

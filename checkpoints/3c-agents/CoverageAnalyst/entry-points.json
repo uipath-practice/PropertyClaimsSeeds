@@ -13,17 +13,21 @@
             "type": "string",
             "description": "The claim reference."
           },
-          "in_ClaimDataJSON": {
+          "in_DamageInventoryJSON": {
             "type": "string",
-            "description": "The claim as structured data, including the damage inventory and the incident type."
+            "description": "The damage inventory and the incident, on their own: {claimId, currency, incident{...}, damageInventory:[{ref,category,location,description,claimed,action}], totalClaimed}. Every item you assign has a ref - use it."
           },
-          "in_PolicyDataJSON": {
+          "in_PolicyCoverageJSON": {
             "type": "string",
-            "description": "The policy as structured data, including the exclusions, named perils, special conditions and endorsements with their sentences."
+            "description": "The coverage view of the policy: {policyId, currency, sections:[{code,name,limit,deductible}], sublimits:[{section,category,limit}], deductible, annualAggregate, namedPerils:[...]}. Everything your rules test about what the policy covers and to what limit. The policy's period, payment status and parties are screening's business and are deliberately absent. The exclusion, condition and endorsement WORDING is in in_PolicyClausesJSON."
           },
-          "in_AssessmentReportJSON": {
+          "in_PolicyClausesJSON": {
             "type": "string",
-            "description": "The assessment as structured data, including the assessor's cause determination."
+            "description": "The policy's wording: {exclusions:[{heading,text}], conditions:[{name,text}], endorsements:[{name,text}]}. These are the sentences BR-16 requires you to quote."
+          },
+          "in_CauseDetermination": {
+            "type": "string",
+            "description": "The assessor's cause determination, as a plain sentence. This is what BR-15 compares the claim form's incident type against, and what governs the coverage reading where the two conflict."
           },
           "in_EligibilityDecision": {
             "type": "string",
@@ -36,11 +40,10 @@
         },
         "required": [
           "in_ClaimID",
-          "in_ClaimDataJSON",
-          "in_PolicyDataJSON",
-          "in_AssessmentReportJSON",
-          "in_EligibilityDecision",
-          "in_EligibilityNotes"
+          "in_DamageInventoryJSON",
+          "in_PolicyCoverageJSON",
+          "in_PolicyClausesJSON",
+          "in_CauseDetermination"
         ]
       },
       "output": {
@@ -240,12 +243,17 @@
           "out_FlagSubjects": {
             "type": "string",
             "description": "The comma-separated set of distinct escalationSubject values raised by this component that are not none, or the single word none when there are none. This component may only ever raise its own subject."
+          },
+          "out_CoverageAssignmentsJSON": {
+            "type": "string",
+            "description": "The machine-readable half of your answer, as JSON: {claimId, items:[{ref, section, verdict, ruleId}]}. One entry per damage item, using the ref it arrived with. verdict is exactly covered or excluded. section is Dwelling, Other Structures, Personal Property or Loss of Use. ruleId is the BR rule that decided it. This is what the settlement join reads - it never re-reads your prose to recover a verdict you already made. Every item in the inventory appears exactly once (BR-14). Budget 1200 characters. Emit STRICTLY VALID JSON - keys and string values wrapped in double quotes, exactly as JSON requires. The only prohibition is that no text VALUE may contain a double-quote character of its own."
           }
         },
         "required": [
           "out_Findings",
           "out_Conclusion",
-          "out_FlagSubjects"
+          "out_FlagSubjects",
+          "out_CoverageAssignmentsJSON"
         ]
       }
     }

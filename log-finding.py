@@ -103,6 +103,19 @@ def entity_id(c):
     return None
 
 
+def normalize_seat(v):
+    """`ClaimCase-V2A` and `V2A` are one seat, and a table that thinks otherwise
+    splits a run in half.
+
+    Auto-detection already returns the suffix, but a caller passing `--seat`
+    naturally passes the folder name -- which is what happened on 2026-08-26,
+    scattering one seat's findings across two names and two counts.
+    """
+    v = (v or "").strip()
+    m = re.fullmatch(r"ClaimCase[-_]([A-Za-z0-9]{1,12})", v)
+    return m.group(1) if m else v
+
+
 def seat(c):
     """Which seat this is -- answered locally, on purpose.
 
@@ -121,7 +134,7 @@ def seat(c):
             return c["seat"]
     if c.get("seat"):
         return c["seat"]
-    env = os.environ.get("WORKSHOP_SEAT", "").strip()
+    env = normalize_seat(os.environ.get("WORKSHOP_SEAT", ""))
     if env:
         c["seat"] = env
         save_cache(c)
@@ -184,7 +197,7 @@ def context(c, args):
         c["skillsVersion"] = skills_version()
         save_cache(c)
     return {
-        "seat": args.seat or seat(c),
+        "seat": normalize_seat(args.seat) or seat(c),
         "codingAgent": args.agent or c.get("codingAgent") or os.environ.get("WORKSHOP_AGENT", "unknown"),
         "model": args.model or c.get("model") or os.environ.get("WORKSHOP_MODEL", "unknown"),
         "effort": args.effort or c.get("effort") or os.environ.get("WORKSHOP_EFFORT", "unknown"),
@@ -365,7 +378,7 @@ def table_count(eid, s):
 
 def main():
     ap = argparse.ArgumentParser(description="Record a workshop finding.")
-    ap.add_argument("--block", help="e.g. 5-case")
+    ap.add_argument("--block", help="the folder name as spelled on disk, e.g. 3d-case")
     ap.add_argument("--category", help="free text: friction, seed-gap, platform-bug, ...")
     ap.add_argument("--summary", help="what happened, what you tried, what happened next")
     ap.add_argument("--summary-file", help="read the summary from a file instead")

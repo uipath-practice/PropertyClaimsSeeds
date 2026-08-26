@@ -62,7 +62,7 @@
         "properties": {
           "out_PolicyDataJSON": {
             "type": "string",
-            "description": "The policy as structured data, one line of compact JSON, at most 8000 characters, in the shape given in the system prompt."
+            "description": "The policy FACTS, as JSON: {policyId, policyholder, insuredAddress{street,city,state,postcode,country}, period{effective,expiration}, paymentStatus, currency, sections:[{code,name,limit,deductible}], sublimits:[{section,category,limit}], deductible, annualAggregate, namedPerils:[...], endorsements:[{name,status}], specialConditions:[{name,present}]}. FACTS ONLY - no clause prose; the sentences go in out_PolicyClausesJSON. Budget 1800 characters. No text value may contain a double-quote character."
           },
           "out_Findings": {
             "type": "object",
@@ -224,13 +224,18 @@
           "out_FlagSubjects": {
             "type": "string",
             "description": "The comma-separated set of distinct escalationSubject values raised by this component that are not none, or the single word none when there are none. This component may only ever raise its own subject."
+          },
+          "out_PolicyClausesJSON": {
+            "type": "string",
+            "description": "The policy's WORDING, as JSON: {exclusions:[{heading,text}], conditions:[{name,text}], endorsements:[{name,text}]}. Every exclusion, special condition and endorsement the policy prints, each carrying its own sentence VERBATIM. Budget 2800 characters: shorten a sentence with an ellipsis before dropping it, and NEVER drop a clause - a missing exclusion reads downstream as an exclusion the policy does not have. No text value may contain a double-quote character."
           }
         },
         "required": [
           "out_PolicyDataJSON",
           "out_Findings",
           "out_Conclusion",
-          "out_FlagSubjects"
+          "out_FlagSubjects",
+          "out_PolicyClausesJSON"
         ]
       }
     }

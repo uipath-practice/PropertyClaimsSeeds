@@ -8,7 +8,7 @@
 | A claim faulted and the error names something you never wrote | Read the incident detail **from the end** — it runs to tens of thousands of characters and the cause is at the bottom. A node id that appears nowhere in your design usually means a condition was evaluated at case start. |
 | The answer key is not where you expect | It is named after the claim, not `manifest.json`, and lives beside the claim form. |
 | A gateway will not open for testing | Aim the run at it. A clean claim skips both gates by design, so the reviewer's screen you are trying to test never appears. |
-| You complete a task from the command line and the case does not move on | Hand back every identifier the task was given — anything writing task data replaces the payload rather than merging. `3e-validation/cookbook.md` has the shape. |
+| You complete a task from the command line and the case does not move on | Hand back every identifier the task was given — anything writing task data replaces the payload rather than merging. `3f-validation/cookbook.md` has the shape. |
 | A fix works and you cannot tell whether it broke something else | Re-run the clean claim after every fix. It is the cheapest regression you have, and over-flagging is the failure that reappears. |
 
 ## Two runs are not the same as two claims

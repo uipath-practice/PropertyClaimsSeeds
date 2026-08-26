@@ -29,7 +29,17 @@ that runs at all. Run it after every edit and before every pack.
 import json, re, sys
 
 path = sys.argv[1] if len(sys.argv) > 1 else 'caseplan.json'
-doc = json.load(open(path))
+if path in ('-h', '--help'):
+    print(__doc__.strip())
+    sys.exit(0)
+try:
+    doc = json.load(open(path))
+except FileNotFoundError:
+    print(f'cannot read {path} — pass the path to your caseplan.json', file=sys.stderr)
+    sys.exit(2)
+except json.JSONDecodeError as e:
+    print(f'{path} is not valid JSON: {e}', file=sys.stderr)
+    sys.exit(2)
 problems = []
 
 
@@ -297,7 +307,7 @@ for stage in stages:
 
 # --------------------------------------------------- one write per stage, and the pairing
 #
-# Two rules from `5-case/spec.md`, both broken by every build measured so far.
+# Two rules from `3d-case/cookbook.md`, *Structure* — both broken by every build measured so far.
 #
 # 1. One entity write per stage, as its last required task. A stage holding a human gateway
 #    writes twice -- the recommendation before it opens, the decision after. Nothing writes
@@ -309,6 +319,22 @@ for stage in stages:
 #    origin. The entry rule alone is not enough: the origin's completion exit and the lane's
 #    entry both fire from the same event, so either both fire or neither does. Sol1 hit the
 #    deadlock on 2026-08-23 -- `Denied` completed and the case sat Running forever.
+
+# 3. A plan that writes the record ZERO times passes every other rule here and every
+#    platform gate, then reaches the validation app with an empty table. Measured
+#    2026-08-26: seven stages, thirty-one tasks, not one entity write, and this script
+#    said `0 referential problems`. The budget rule below only ever looked for too
+#    many. Components computing the values is not the same as anything storing them.
+_all_writes = [t for stage in stages
+               for g in (stage['data'].get('tasks') or []) for t in g
+               if 'EntityRecord' in json.dumps(t.get('data') or {})]
+if stages and not _all_writes:
+    print('WARNING  the plan never writes the claim record — no task anywhere carries an '
+          'entity write. Every screen and every report reads that record, so a plan like '
+          'this deploys, runs green and renders nothing. **This is a warning and not a '
+          'failure only because a component you invoke may do the write itself** — if one '
+          'does, this line is discharged; if none does, nothing is storing anything. '
+          'The check that cannot be fooled is the record having rows after a run.')
 
 for stage in stages:
     label = stage['data'].get('label', stage['id'])
@@ -323,7 +349,7 @@ for stage in stages:
         names = ', '.join(t.get('displayName') or t['id'] for t in writes)
         print(f'WARNING  {label} makes {len(writes)} entity writes (budget {budget}) — {names}. '
               f'Adjacent writes with no gateway between them are one write '
-              f'(`5-case/spec.md`, How many writes)')
+              f'(`3d-case/cookbook.md`, Structure)')
 
 # A secondary lane entered on a gate decision, with no diverting exit anywhere, is the
 # deadlock shape. Report it against the ORIGIN, which is where the missing exit belongs.
@@ -350,7 +376,7 @@ for stage in stages:
         print(f'WARNING  secondary {stage["data"].get("label", stage["id"])} is entered on a gate '
               f'decision from {srcs}, but no stage carries a diverting exit to it. The lane\'s '
               f'entry and the origin\'s completion fire from the same event — pair them, or the '
-              f'two paths are not mutually exclusive (`5-case/spec.md`, Entering a secondary lane)')
+              f'two paths are not mutually exclusive (`3d-case/cookbook.md`, Structure)')
 
 # ------------------------------------------- expressions must survive t=0, when nothing is set
 #
@@ -390,7 +416,7 @@ for stage in stages:
         if why:
             print(f'T-ZERO      {label}/{scope}/{cond["id"]} {why} — at case start every agent '
                   f'variable is empty and this throws, faulting the whole claim '
-                  f'(`5-case/spec.md`, Every condition is evaluated once at case start)')
+                  f'(`3d-case/cookbook.md`, The whole claim faults at case start)')
             problems.append(cond['id'])
 
 # ------------------------------------------------------------- legibility (warnings)

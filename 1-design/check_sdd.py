@@ -246,6 +246,117 @@ def check_sla_fidelity(text, pdd, r):
             r.add("FAIL", "SLA-2", f"stage {name!r} has an SLA in the PDD and none in the design")
 
 
+def _cells(line):
+    return [c.strip() for c in line.strip().strip("|").split("|")]
+
+
+def _table(text, header_pat):
+    """Rows of the first table whose header row matches, as lists of cells."""
+    lines = text.split("\n")
+    for i, ln in enumerate(lines):
+        if ln.strip().startswith("|") and header_pat.search(ln):
+            hdr, rows = _cells(ln), []
+            # a real design interleaves notes and blockquotes between rows, so run
+            # to the next heading rather than stopping at the first non-row line
+            for nxt in lines[i + 2:]:
+                t = nxt.strip()
+                if t.startswith("#"):
+                    break
+                if t.startswith("|"):
+                    rows.append(_cells(nxt))
+            return hdr, rows
+    return None, []
+
+
+def _owners(cell):
+    """The task ids an owner cell names. The case itself normalises to CASE."""
+    ids = set(re.findall(r"\bS?\d+\.\d+\b", cell))
+    if not ids and re.search(r"\bcase\b|\bevery stage\b", cell, re.I):
+        return {"CASE"}
+    return ids
+
+
+def check_table_integrity(text, r):
+    """A table interrupted mid-way renders its remaining rows as literal text.
+
+    Markdown ends a table at the first line that is not a row, so a note or a
+    blockquote placed between rows turns everything below it into a paragraph of
+    pipes — confirmed against GitHub's own renderer. Measured 2026-08-26: a design
+    put an explanatory blockquote inside its Write-Ownership Matrix, and the seven
+    rows below it — every column the human review path writes — stopped being a
+    table. They are invisible to a reader skimming the tables and to any tool that
+    parses them, which is how a contradiction survives review in the first place.
+
+    Put the note above the table or below it, never inside it.
+    """
+    lines, i, fence = text.split("\n"), 0, False
+    while i < len(lines):
+        t = lines[i].strip()
+        if t.startswith("```"):
+            fence = not fence
+            i += 1
+            continue
+        if fence or not t.startswith("|"):
+            i += 1
+            continue
+        j = i
+        while j < len(lines) and lines[j].strip().startswith("|"):
+            j += 1
+        block = lines[i:j]
+        if not any(re.fullmatch(r"\|[\s:|-]+\|", b.strip()) for b in block):
+            first = block[0].strip()
+            r.add("FAIL", "TBL-1",
+                  f"{len(block)} row(s) with no header above them render as literal "
+                  f"text, not a table — {first[:70]}... "
+                  "A note between rows ends the table; move it above or below")
+        i = j
+
+
+def check_write_ownership(text, r):
+    """Two tables naming different writers for the same column is a design that contradicts itself.
+
+    Measured 2026-08-26 on a real build: the Case Entity table gave three envelope
+    columns to tasks 4.1, 4.2 and 4.4 — their producers — while the Write-Ownership
+    Matrix forty lines below gave all three to task 5.1, which never reads them. The
+    build follows the matrix, so 5.1 was handed three 10,000-character columns as
+    inputs and **could not start**: a component's inputs are capped near 8,700 all
+    together. The gate passed both versions, which is why this rule exists.
+
+    Whichever table is right, disagreement is the defect — it is caught here in a
+    second, or at 3d as a component that will not run.
+    """
+    # the header must carry both, or `| Field | Value |` in the handoff block wins
+    hdr_e, ent = _table(text, re.compile(r"\|\s*Field\s*\|.*\|\s*Written by\s*\|"))
+    hdr_m, mat = _table(text, re.compile(r"\|\s*Entity\.Field\s*\|"))
+    if hdr_m is None or hdr_e is None:
+        return  # not every design carries both tables
+    wi = hdr_e.index("Written by")
+
+    declared = {}
+    for row in ent:
+        if len(row) > wi and re.fullmatch(r"[a-z][A-Za-z0-9]*", row[0]):
+            declared[row[0]] = _owners(row[wi])
+
+    assigned = {}
+    for row in mat:
+        if len(row) < 2:
+            continue
+        for f in re.findall(r"\.([a-zA-Z][A-Za-z0-9]*)", row[0]):
+            assigned[f] = _owners(row[1])
+
+    for f in sorted(set(declared) & set(assigned)):
+        a, b = declared[f], assigned[f]
+        if a and b and a != b:
+            r.add("FAIL", "OWN-1",
+                  f"{f}: the Case Entity table says {', '.join(sorted(a))} writes it, "
+                  f"the Write-Ownership Matrix says {', '.join(sorted(b))}. "
+                  "The build follows the matrix — if that owner does not already consume "
+                  "the column, it is handed one it never reads")
+    for f in sorted(set(declared) - set(assigned)):
+        r.add("WARN", "OWN-2", f"{f} is a column with no row in the Write-Ownership Matrix — "
+                               "nothing declares who owns the write")
+
+
 def check_nature(text, pdd, r, tasks):
     """The check that catches a design shaped by what was lying around the tenant.
 
@@ -319,6 +430,8 @@ def main():
     check_tasks(tasks, r)
     check_bindings(text, r, tasks)
     check_reachability(text, r)
+    check_table_integrity(text, r)
+    check_write_ownership(text, r)
     if a.pdd:
         try:
             pdd_text = open(a.pdd, encoding="utf-8").read()

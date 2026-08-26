@@ -6,7 +6,7 @@ A property claim arrives as three documents that do not always agree with each o
 
 ## Contents
 
-[Get the seed](#get-the-seed) · [What you are building](#what-you-are-building) · [The sequence](#the-sequence) · [How a block works](#how-a-block-works) · [What already exists](#what-already-exists) · [What finished means](#what-finished-means)
+[Get the seed](#get-the-seed) · [What you are building](#what-you-are-building) · [The sequence](#the-sequence) · [How a block works](#how-a-block-works) · [Clearing context](#clearing-your-agents-context-between-blocks) · [What already exists](#what-already-exists) · [What finished means](#what-finished-means)
 
 ## Get the seed
 
@@ -46,21 +46,24 @@ Start your coding agent **in this folder** — `AGENTS.md` and `CLAUDE.md` are p
 
 ## The sequence
 
-| Block | You produce | Done when |
-|---|---|---|
-| **1 · [Design](1-design/prompt.md)** | `sdd.md` — the architecture | a solution architect could hand it to a developer and walk away |
-| **2 · [Plan](2-plan/prompt.md)** | `tasks.md` — what gets built in what order | the list works top to bottom with nothing blocked by something below it |
-| **3 · Build** — five runs, in order | | |
-| &nbsp;&nbsp;a · [Extraction](3a-extraction/prompt.md) | a model that reads the claim form, or the shared one adopted | an unlabelled form comes back complete |
-| &nbsp;&nbsp;b · [Claim record](3b-entity/prompt.md) | the store every step writes to | a value with cents and a 9,000-character payload round-trip unchanged |
-| &nbsp;&nbsp;c · [Checks and analyses](3c-agents/prompt.md) | the components that decide things | each returns what `PDD.md` §7 says — including *nothing* on a clean claim |
-| &nbsp;&nbsp;d · [The case](3d-case/prompt.md) | the lifecycle, deployed | a clean claim settles with no task ever raised |
-| &nbsp;&nbsp;e · [Validation app](3e-validation/prompt.md) | what a reviewer sees and decides on | both gates render in a browser and a decision writes back |
-| **4 · [Verify](4-verify/prompt.md)** | a results table | every planted problem caught by the component that owns it, and a clean claim settled untouched |
-| **5 · [Ship](5-ship/prompt.md)** | a packaged solution and a handover | it deploys into a folder that never held it, and a claim runs through |
-| **6 · Process app** — *later* | the in-flight view `PDD.md` §11 asks for | it shows live claims, their stage and their SLA |
+| Block | You produce | Done when | Go and look at it |
+|---|---|---|---|
+| **1 · [Design](1-design/prompt.md)** | `sdd.md` — the architecture | a solution architect could hand it to a developer and walk away | the document — read Section 2 and see whether the stages match how a claim really moves |
+| **2 · [Plan](2-plan/prompt.md)** | `tasks.md` — what gets built in what order | the list works top to bottom with nothing blocked by something below it | the list — every generation task should be followed by something that checks it |
+| **3 · Build** — six runs, in order | | | |
+| &nbsp;&nbsp;a · [Extraction](3a-extraction/prompt.md) | a model that reads the claim form, or the shared one adopted | an unlabelled form comes back complete | the extraction result over a real form, field by field, with its confidence |
+| &nbsp;&nbsp;b · [Claim record](3b-entity/prompt.md) | the store every step writes to | a value with cents and a 9,000-character payload round-trip unchanged | the table in Data Fabric, and a row in it |
+| &nbsp;&nbsp;c · [Checks and analyses](3c-agents/prompt.md) | the components that decide things | each returns what `PDD.md` §7 says — including *nothing* on a clean claim | one agent's trace — what it was given, what it concluded, and why |
+| &nbsp;&nbsp;d · [The case](3d-case/prompt.md) | the lifecycle, authored and validated | both gates are green and the plan opens in the designer | **the case diagram** — the whole process as a picture, for the first time |
+| &nbsp;&nbsp;e · [Run it](3e-run/prompt.md) | the lifecycle, deployed and proven | a clean claim settles with no task ever raised, and the four human routes work | **a live instance, stages completing one after another** — the moment it stops being files |
+| &nbsp;&nbsp;f · [Validation app](3f-validation/prompt.md) | what a reviewer sees and decides on | both gates render in a browser and a decision writes back | the reviewer's screen in Action Center, with a real claim on it |
+| **4 · [Verify](4-verify/prompt.md)** | a results table | every planted problem caught by the component that owns it, and a clean claim settled untouched | your own results table against the answer key |
+| **5 · [Ship](5-ship/prompt.md)** | a packaged solution and an operator runbook | it deploys into a folder that never held it, and a claim runs through | the solution running somewhere it has never run before |
+| **6 · Process app** — *later* | the in-flight view `PDD.md` §11 asks for | it shows live claims, their stage and their SLA | — |
 
-**Block 3 is five separate runs, not one.** Each piece is built and proven before the next begins — that is the sequencing rule the method insists on, and it is what keeps the last day from being one enormous debugging session.
+**Block 3 is six separate runs, not one.** Each piece is built and proven before the next begins — that is the sequencing rule the method insists on, and it is what keeps the last day from being one enormous debugging session.
+
+**Authoring the case and running it are two blocks on purpose.** They fail in completely different ways: a plan that will not validate is a design problem, and a plan that validates and then misbehaves is a binding problem. Kept together, the second gets debugged through repeated deploys of the first. **Take the look at the diagram before you deploy** — it is the cheapest review you will ever do on this build, and the stage order being wrong is obvious in a picture and invisible in JSON.
 
 **Block 6 comes after everything else and is not written yet.** `PDD.md` §11 asks for a real-time view of claims in flight, and §4.4 says why: the only thing doing that job today is a shared spreadsheet that gets overwritten daily. It is a genuine requirement rather than a bonus, and it is the one part of the process nothing else in this build addresses.
 
@@ -73,6 +76,21 @@ read the brief  →  prompt your agent  →  it builds  →  run the gate  →  
 **The gate is a command, not an opinion.** This pipeline fails late and quietly, and a mistake three blocks back costs far more to find than the same mistake caught at its own gate.
 
 **Block 1 decides the day.** It creates nothing on the platform, which makes it the easy one to rush, and it is where the build stops living in your agent's context and starts living on disk. Everything after it is assembly if block 1 is right, and invention if it is not.
+
+## Clearing your agent's context between blocks
+
+**A block boundary is the safe place to start your agent fresh, and you should use it.** Everything a later block needs is on disk — `sdd.md`, `tasks.md`, the components you built and published — which is the whole reason the blocks are separate runs. Nothing of value lives only in the conversation.
+
+What you carry forward is nothing; what you lose by *not* clearing is real. An agent running near its limit compacts itself, and a compaction quietly drops the detail of what it just built — so it starts re-deriving decisions it already made, and any finding it was holding to write up later is simply gone.
+
+| Your model's context | What to do |
+|---|---|
+| **~1M tokens** | You can run from block 1 through authoring the case without clearing. Clear before deploying and running it, and again before the app. |
+| **~250k tokens** | **Clear or compact after every block.** You will otherwise be compacting mid-block, which is the worst moment for it — halfway through something, with the reasoning that got you there being summarised away. |
+
+**Log findings as you go, not at the end** — see [`AGENTS.md`](AGENTS.md), *Log what you learn*. This is the rule clearing depends on: what survives a fresh start is what you already sent.
+
+**If a block goes badly wrong, clear and start it again from the brief.** A long recovery conversation carries every wrong turn with it, and re-running a block from a clean context against artifacts that are already on disk is usually faster than untangling one.
 
 ## What already exists
 

@@ -11,6 +11,7 @@ This is the seed for the Property Claims exercise. It describes what to build; y
 | generated code — the case, the analyses, the screen | `Build/ClaimCase-<seat>/`, **one solution** |
 | documents you write for a block — a design, a task list, notes | the block's own folder |
 | findings | the shared table, via `log-finding.py`. **Never a local file** |
+| where the build has got to — what exists, what broke, what is next | `PROGRESS.md`, at the root of this folder. **The one file that spans blocks**, and the one to be generous with |
 
 **Paths in this seed are relative to this folder**, always — `contracts/claim-entity.md`, never `../contracts/`. A block citing a path outside itself is telling you the knowledge is shared.
 
@@ -58,6 +59,35 @@ Three near-misses that have each cost time: **`uipath-maestro-bpmn` is not the c
 
 Two things keep it honest. **Read the block's prompt anyway** — later blocks bind these things by name, and debugging a wiring problem in something you have never looked at is the most expensive hour available here. And **log it**: which checkpoint, when, and what had gone wrong. That is the clearest signal we get about where this is too hard.
 
+## Keep a running record of where the build is
+
+**`PROGRESS.md`, at the root of this folder, and it is the one file here you should be generous with.** Everything else in this seed is kept short deliberately. This one is not — it is written for the agent running the next block, which starts with an empty context, no memory of what you did, and no way to find out except by redoing it.
+
+**Read it before you start. Add to it before you finish.** Append, never rewrite: a fact that turned out to be wrong is corrected by a new line saying so, because the next block needs to know it was once believed.
+
+| Put in it | Why |
+|---|---|
+| **Every name, key, id, folder, version and connection** you created or found | these are yours alone — no document that ships with this seed can know them, and each one costs a command to rediscover |
+| **The command that produced each**, and its **raw output** | so the next block re-verifies in one line instead of researching. Paste the real output; a summary of it is worth less than the thing |
+| **What the next block will need** — read its `prompt.md` before you finish and stage it | the cheapest minute in the whole exercise |
+| **What went wrong and how you fixed it**, including what you tried first | the wrong turn is often more useful than the fix, because it is what the next block is about to take |
+| **What you would do differently, and what you would do next** | you have context nobody after you will have |
+| **What you could not verify** | an open question inherited out loud beats a silent assumption |
+
+Length is not a virtue here and neither is brevity — **write what a competent stranger would need to carry on without you.**
+
+### Three places a problem gets written, and they are not copies
+
+The same event legitimately appears in all three. They are written for different readers, at different distances, and they have different lifetimes.
+
+| | Who reads it | Lifetime | Shape |
+|---|---|---|---|
+| `PROGRESS.md` | the next block of **this** build | dies with this build | as long as it needs to be, raw output and all |
+| the **findings table** | the people who maintain this exercise | one round | one finding, one thing, dated |
+| `cookbook.md` | **every future participant** | until the platform changes | a short hint — and **not yours to write.** It is distilled by the maintainers once the same thing has been seen on more than one build |
+
+So: hit a wall, and write it **everywhere it belongs** — at length in `PROGRESS.md` so the next block does not hit it, and as a finding so it can become a cookbook line for everyone who comes after. Neither one makes the other redundant.
+
 ## Log what you learn
 
 **One command, one sink.** Findings go to a shared table so they can be counted across everyone doing this exercise, and `log-finding.py` is the whole interface to it. There is no local findings file.
@@ -81,6 +111,8 @@ Four optional fields turn a finding into a recommendation: **`--source`** where 
 
 **Never paste a secret, and never paste a whole file.** This table is shared with everyone on this tenant.
 
+**Log a finding the moment you have it — not at the end of the task, and never at the end of the block.** Your context will be compacted, more than once on a long block, and a finding you were holding to write up later does not survive it. What survives is what you already sent. This is not tidiness: whole rounds have reached the end of a block with a working build and almost nothing to show for how it was reached, which is the half of the exercise we cannot reconstruct afterwards. **If you notice it, send it, then carry on** — it costs one command.
+
 **End every block with `python3 log-finding.py --retry`** and report the count it gives back — that number is a fact about the table rather than about a command, and if it is short of what you logged, say so. Telemetry that fails quietly is worth more to us than the findings it swallowed.
 
 ### A finding is not only a complaint
@@ -96,8 +128,6 @@ The table's job is to make the next version of this seed better, and better is a
 ### Before you finish a block
 
 Re-read what you were handed and log the two-sided answer, one finding per file: **up to three sections you never needed, and up to three you would have failed without.** One line each, naming the section. Both halves or neither — a list of what to cut with nothing to keep is an opinion; the two together are a measurement.
-
-Write findings **while they are fresh**, not in a batch at the end.
 
 ### Before you finish the exercise
 

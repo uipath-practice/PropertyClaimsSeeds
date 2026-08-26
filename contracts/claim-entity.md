@@ -4,7 +4,7 @@ The Data Fabric entity behind what `PDD.md` calls the claim record.
 
 `PDD.md` §1.5 P5 asks for *"a store for the claim entity that outlives any single step and can be read while the claim is in flight"*. This is that store, and this schema is **pinned**.
 
-**Pinned, and it is worth knowing why**, because the method would normally have you design it. Every later checkpoint — the agents, the validation app — binds to these column names, so a seat that invents its own schema can no longer take any of them. Designing a thirty-eight column table teaches little; losing every downstream recovery path costs a day. Design it yourself if you want the exercise, then reconcile against this before you create anything.
+**Pinned, and it is worth knowing why**, because the method would normally have you design it. Every later checkpoint — the agents, the validation app — binds to these column names, so a seat that invents its own schema can no longer take any of them. Designing a thirty-six column table teaches little; losing every downstream recovery path costs a day. Design it yourself if you want the exercise, then reconcile against this before you create anything.
 
 It is **yours to build, in your seat folder** — see [`CONFIG.md`](../CONFIG.md), *The claim entity*.
 

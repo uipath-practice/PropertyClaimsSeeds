@@ -8,7 +8,7 @@
 | A redeploy leaves a second deployment behind | Same name, higher version — `CONFIG.md`, *Deploying*. Uninstall is recovery, not the loop. |
 | `upload --force` loses your version history | It wipes what the designer holds. Know that before you reach for it. |
 | The deployed solution runs and the same package fails elsewhere | Something it needs was on your seat rather than in the package. Deploy into a folder that has never held this solution and run a claim there. |
-| The app is missing after a deploy that reported success | It is not part of the solution unless it was explicitly added. `3e-validation/cookbook.md`, last row. |
+| The app is missing after a deploy that reported success | It is not part of the solution unless it was explicitly added. `3f-validation/cookbook.md`, last row. |
 
 ## Promotion is pack once, deploy many
 

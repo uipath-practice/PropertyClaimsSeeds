@@ -1,6 +1,6 @@
-# SDD — ClaimCase-V2A
+# SDD — ClaimCase-<seat>
 
-Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
+Case Definition Blueprint for ClaimCase-<seat> — Property Claims Handling.
 
 ---
 
@@ -8,7 +8,8 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 
 | Version | Date | Author | What changed |
 |---|---|---|---|
-| 1.0 | 2026-08-25 | uipath-maestro-case \| Solution Architect, seat ClaimCase-V2A | Initial design |
+| 1.0 | 2026-08-25 | uipath-maestro-case \| Solution Architect, seat ClaimCase-<seat> | Initial design |
+| 1.1 | 2026-08-26 | Build, seat ClaimCase-<seat> | **Input-budget correction.** Tasks 5.1 and 2.6 could not have started: a component's arguments are capped at ~8,700 characters all together and they were handed seven and six payloads. Envelope columns moved to the tasks that produce them; 5.1 rebound to conclusions and escalation subjects; the policy split into facts and verbatim clauses at task 1.6; task 4.2 given the damage inventory and a cause-determination scalar rather than the whole claim and the whole assessment; both `action` gates trimmed to identifiers with the screen reading the record; per-payload budgets and per-consumer totals written into the Data Model. Also fixed: the Write-Ownership Matrix contradicted the Case Entity table on who writes the three stage-4 envelope columns |
 
 **Source PDD:** `PDD.md` version 1.0 (2026-08-25, signed)
 
@@ -41,7 +42,7 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 | 1 | **Platform constraints** (Constraint Gate) | Automation Cloud; no product blocked | §2.1 names the delivery model as Automation Cloud and §2.1 rules no product out, so the full Solutions path (Case + Agents + API Workflows + Data Fabric + Coded App) is available. |
 | 2 | **Scope** (Level 1) | Case Management | A claim is open for days or weeks, is worked by more than one person, carries stage and case deadlines, and has to be readable while in flight (§5.4, §5.5, §11) — that is a case, not a flow. |
 | 3 | **Stage model** | Six primary stages on the healthy path plus two secondary lanes — `Denied` (terminal) and `Missing details` (deferred) | §5.5 marks stages 1–6 required for overall completion and stages 7–8 exceptional; *Approved* is the healthy ending and *Denied* is the unhappy one, so a portfolio view does not read every settled claim as an exception. |
-| 4 | **Task classification** | 8 `agent`, 10 `api-workflow` (across 12 task bindings), 6 `process`, 2 `action`, 1 `wait-for-timer`, 1 `wait-for-connector` | Every type is taken from §5.3's Decision-nature column: *judgement* work runs on an agent, *rule-expressible* work on a deterministic runner, and the two human decisions on `action`. Nothing was typed from what the tenant happens to hold. |
+| 4 | **Task classification** | 8 `agent`, 10 `api-workflow` (across 12 task bindings), 6 `rpa`, 2 `action`, 1 `wait-for-timer`, 1 `wait-for-connector` | Every type is taken from §5.3's Decision-nature column: *judgement* work runs on an agent, *rule-expressible* work on a deterministic runner, and the two human decisions on `action`. Nothing was typed from what the tenant happens to hold. |
 | 5 | **Resource resolution posture** | portable-intent-with-unresolved-identities | The six provided automations resolve by name and folder; every generated component and both Action App identities resolve against the seat's own solution at build time, so no tenant id is pinned here. |
 | 6 | **Settlement arithmetic ownership** | `4.3` computes the whole settlement blind to coverage; `5.1` joins the coverage verdicts onto it | §5.4 says 4.2 ∥ 4.3 ∥ 4.4 and that **none reads another's output**, while BR-20 needs a coverage verdict per line — the only place both are legal is step 5.1, which §5.3 already defines as reading every finding from stages 2 and 4. |
 | 7 | **Shared finding shape** | One *finding envelope* returned by every check and analysis | §5.7 H2 puts every finding on one screen side by side; eight differently-shaped payloads is a screen nobody can build, and §7's *one concern, one owner* rule is only enforceable if every component reports in the same grammar. |
@@ -101,6 +102,7 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
    - [Secondary Stage: Missing details](#secondary-stage-missing-details) — 1 task
 3. [Personas & App Views](#section-3-personas--app-views) — 5 personas
 4. [Integrations](#section-4-integrations)
+5. [Data Model](#data-model) — the finding envelope, [the two budgets](#the-two-budgets-and-the-numbers-that-satisfy-them), the claim record
 
 ---
 
@@ -110,7 +112,7 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 
 | Property | Value |
 |---|---|
-| Case Name | ClaimCase-V2A |
+| Case Name | ClaimCase-<seat> |
 | Case Description | Handles one household property damage claim from the moment it is filed to the moment the claimant is told the outcome. It reads the claim form, the policy and the independent assessor report, screens the claim before an inspection is paid for, decides what the policy covers and what it pays, and puts a human in front of the two decisions that need one. A claim with nothing wrong with it settles without any human being asked to look. |
 | Case Identifier | Type: constant. Constant → Prefix: `CLM` |
 | Priority | Choiceset: Urgent, High, Medium, Low — Default: Medium |
@@ -175,13 +177,16 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 | totalClaimAmount | Variable | double | | | `"0"` | The sum of the damage inventory, in the currency of the claim |
 | currency | Variable | string | | | `""` | The currency the claim is stated in. Never converted |
 | claimDataJson | Variable | string | | | `"{}"` | The claim form as structured claim data, flattened to plain values |
+| damageInventoryJson | Variable | string | | | `"{}"` | The damage inventory and the incident, on their own. The narrow half of the claim, for the component that assigns items to coverage sections and must read the policy wording beside them. **Never stored** — `claimDataJson` already holds every value in it |
 | claimFormPdf | Variable | file | | | | The claim form as a job attachment |
 | claimFormPdfId | Variable | string | | | `""` | Attachment id of the claim form |
 | claimFormPdfName | Variable | string | | | `""` | Bucket filename of the claim form |
 | policyPdf | Variable | file | | | | The policy document as a job attachment |
 | policyPdfId | Variable | string | | | `""` | Attachment id of the policy document |
 | policyPdfName | Variable | string | | | `""` | Bucket filename of the policy document |
-| policyDataJson | Variable | string | | | `"{}"` | The policy as structured policy data, carrying the clause sentences a decision may have to quote |
+| policyDataJson | Variable | string | | | `"{}"` | The policy **facts** — parties, insured address, period, payment status, sections with limits and deductibles, sublimits, annual aggregate, named perils, endorsement titles. No clause prose |
+| policyClausesJson | Variable | string | | | `"{}"` | The policy's exclusions, special conditions and endorsement wording **verbatim**, one sentence each. Read only by task 4.2, which has to quote them (BR-16). **Never stored** — it is a payload carried between two steps, and the quotes that matter land on the record inside 4.2's own envelope evidence |
+| policyCoverageJson | Variable | string | | | `"{}"` | The **coverage view** of the policy — sections, sublimits, deductible, annual aggregate, named perils, currency. What task 4.2's rules test and nothing else. Written by task 1.7a alongside the two payloads above, read by task 4.2 alone, and **never stored**: every fact in it is already in `policyDataJson` on the record |
 | previousClaimsJson | Variable | string | | | `"{\"status\":\"unread\"}"` | Claims already settled against this policy in the current period. The default says *unread*, never *none*, because B-05 is explicit that an unavailable history is not a zero |
 | eligibilityChecksJson | Variable | string | | | `"{}"` | All five screening checks with their results and reasons, passes included |
 | reviewRequiredEligibility | Variable | boolean | | | `"false"` | Whether at least one screening check failed and H1 must therefore open |
@@ -195,6 +200,8 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 | assessmentReportJson | Variable | string | | | `"{}"` | The assessor report as structured assessment data. Everything downstream reads this, not the document |
 | assessmentReportValidationJson | Variable | string | | | `"{}"` | The report validation finding envelope — BR-06 to BR-09 |
 | coverageChecksJson | Variable | string | | | `"{}"` | The coverage finding envelope — BR-10 to BR-16, with every damage item assigned and marked |
+| coverageAssignmentsJson | Variable | string | | | `"[]"` | One compact entry per damage item — item reference, coverage section, covered or excluded, and the rule id that decided it. The machine-readable half of task 4.2's answer, and the only part of it task 5.1 reads |
+| causeDetermination | Variable | string | | | `""` | The assessor's cause determination, surfaced as a plain scalar by task 4.1 so that BR-15 is answerable without handing the whole assessment to task 4.2 |
 | settlementJson | Variable | string | | | `"{}"` | The settlement line by line, with section subtotals, every cap that bound it and a net amount |
 | payoutChecksJson | Variable | string | | | `"{}"` | The settlement finding envelope — BR-20 to BR-29 |
 | credibilityChecksJson | Variable | string | | | `"{}"` | The credibility finding envelope — four behavioural reads, BR-30 to BR-33 |
@@ -228,7 +235,11 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 
 **A `*ChecksJson` column is written by the deterministic component that consumes the envelope**, never straight from an agent output: task 2.6 writes `eligibilityChecksJson`, task 4.3 writes its own `payoutChecksJson`, and task 5.1 writes `assessmentReportValidationJson`, `coverageChecksJson` and `credibilityChecksJson`. That component is also where the column's character budget is enforced, and it runs before the gate that reads it, so C3 still holds.
 
-**Two limits govern every payload in this design, and they are different limits.** The first is the record's: a column holds 10,000 characters and its producer budgets to 8,000. The second is the consumer's: **the arguments a component is started with are capped, and the cap is on all of them together.** Three payloads that each fit their own column will not fit one component's input, so every consumer carries an input budget and every producer is told the smallest budget any of its consumers imposes.
+**Two limits govern every payload in this design, they are different limits, and the smaller one is not the record's.** A column holds 10,000 characters. **A component's start arguments are capped all together at roughly 8,700**, so three payloads that each fit their own column will not fit one component's input and the job never starts. The column budget is therefore not a payload budget: every payload is budgeted to the **smallest share any of its consumers can give it**, and the numbers are in the [Data Model](#the-two-budgets-and-the-numbers-that-satisfy-them) rather than left as an instruction. Three consequences run through Section 2 and are the reason several tasks are shaped the way they are:
+
+- **The policy is two payloads, not one.** `policyDataJson` carries the facts — parties, address, period, status, sections, limits, sublimits, deductible, aggregate. `policyClausesJson` carries the exclusions, conditions and endorsement wording **verbatim**, and goes only to the one component that has to quote them (task 4.2, BR-16). A single policy payload measures 4,000–6,000 characters against a 15,000-character document and cannot share a component's input with anything else.
+- **A fan-in reads conclusions, not documents.** Task 5.1 decides whether a human is needed; BR-40 to BR-45 are met by escalation **subject**, so it is given each component's `out_Conclusion` and `out_FlagSubjects` and the two payloads it actually joins. It is never handed an envelope it does not read.
+- **No component is handed a payload purely so that it can be the one to write it.** Each envelope is written to its own column at the completion of the task that produced it.
 
 ---
 
@@ -258,17 +269,17 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 
 | # | Task Name | Type | Activation Mode | Starts When | Required | Run Only Once | Persona | SLA |
 |---|---|---|---|---|---|---|---|---|
-| 1 | Collect the claim and the documents filed with it | process | parallel | stage enters | Yes | Yes | — | — |
-| 2 | Transform the claim form into structured claim data | process | parallel-after-predecessor | after task 1 | Yes | Yes | — | — |
+| 1 | Collect the claim and the documents filed with it | rpa | parallel | stage enters | Yes | Yes | — | — |
+| 2 | Transform the claim form into structured claim data | rpa | parallel-after-predecessor | after task 1 | Yes | Yes | — | — |
 | 3 | Normalise the structured claim data into readable claim fields | api-workflow | parallel-after-predecessor | after task 2 | Yes | Yes | — | — |
-| 4 | Collect the policy document for the policy number on the form | process | parallel-after-predecessor | after task 3 | Yes | Yes | — | — |
-| 5 | Collect claims already settled against this policy in the current policy period | process | parallel-after-predecessor | after task 3 | Yes | Yes | — | — |
+| 4 | Collect the policy document for the policy number on the form | rpa | parallel-after-predecessor | after task 3 | Yes | Yes | — | — |
+| 5 | Collect claims already settled against this policy in the current policy period | rpa | parallel-after-predecessor | after task 3 | Yes | Yes | — | — |
 | 6 | Read the policy document for the policy number on the form | agent | parallel-after-predecessor | after task 4 | Yes | Yes | — | — |
-| 7 | Notify the claimant that the claim was received | process | parallel-after-predecessor | after task 3 | Yes | Yes | — | — |
+| 7 | Notify the claimant that the claim was received | rpa | parallel-after-predecessor | after task 3 | Yes | Yes | — | — |
 
 ##### Task 1.1: Collect the claim and the documents filed with it
 
-**Type:** `process`
+**Type:** `rpa`
 **Activation Mode:** parallel
 **Design Rationale:** §5.3 steps 1.1 and 1.2 are one deployed automation — it registers the claim and lands all three documents in the Document Store in a single run. Calling it twice would regenerate the claimant's documents mid-case, which is not a thing that happens in reality, so the two steps are one task and it runs once only.
 **Description:** Registers the claim under the case's own claim reference and assembles the claim form, the policy and the assessor report against it in the Document Store.
@@ -288,7 +299,7 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 ###### Process / Agent / RPA / API Workflow Task Detail
 
 **Resolved Resource:** Retrieve Property Claim
-**Folder Path:** ClaimCase-V2A
+**Folder Path:** ClaimCase-<seat>
 **Resource Identity:** `propery-insurance-claims` version 1.0.36
 **Binding Sub-Type:** ProcessOrchestration
 **Dispatch / Operation:** —
@@ -313,7 +324,7 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 
 ##### Task 1.2: Transform the claim form into structured claim data
 
-**Type:** `process`
+**Type:** `rpa`
 **Activation Mode:** parallel-after-predecessor
 **Design Rationale:** §5.6 makes the claim form the only one of the three documents that is a form — one layout, one place for every field — so it is read by a document model rather than by an agent. The model is already published and tagged live, so this task adopts it rather than training a replacement.
 **Description:** Runs the extraction model over the claim form and returns the claim as structured data with per-field confidence, the policy number, and the form itself as a file.
@@ -333,7 +344,7 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 ###### Process / Agent / RPA / API Workflow Task Detail
 
 **Resolved Resource:** Extract Claim Data (IXP)
-**Folder Path:** ClaimCase-V2A
+**Folder Path:** ClaimCase-<seat>
 **Resource Identity:** `Extract.Claim.Data._IXP_` version 1.0.2
 **Binding Sub-Type:** ProcessOrchestration
 **Dispatch / Operation:** —
@@ -375,7 +386,7 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 
 ###### Process / Agent / RPA / API Workflow Task Detail
 
-**Resolved Resource:** ClaimCase-V2A-ClaimDataNormaliser
+**Resolved Resource:** ClaimCase-<seat>-ClaimDataNormaliser
 **Folder Path:** <UNRESOLVED>
 **Resource Identity:** <UNRESOLVED>
 **Binding Sub-Type:** Api
@@ -393,6 +404,7 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 | Field | Binding / Value |
 |---|---|
 | out_ClaimDataJSON | -> claimDataJson |
+| out_DamageInventoryJSON | -> damageInventoryJson |
 | out_ClaimantName | -> claimantName |
 | out_ClaimantEmail | -> claimantEmail |
 | out_IncidentType | -> incidentType |
@@ -408,7 +420,7 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 
 ##### Task 1.4: Collect the policy document for the policy number on the form
 
-**Type:** `process`
+**Type:** `rpa`
 **Activation Mode:** parallel-after-predecessor
 **Design Rationale:** §5.3 step 1.4 fetches the policy by the number on the claim form, which is why it cannot start until the form has been read. It runs at the same time as the claim-history lookup and the receipt, and all three must finish before screening starts.
 **Description:** Retrieves the policy document for this claim's policy number from Policy Administration and attaches it to the claim.
@@ -428,7 +440,7 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 ###### Process / Agent / RPA / API Workflow Task Detail
 
 **Resolved Resource:** Retrieve Policy Document
-**Folder Path:** ClaimCase-V2A
+**Folder Path:** ClaimCase-<seat>
 **Resource Identity:** `Retrieve.Policy.Document` version 1.0.0
 **Binding Sub-Type:** ProcessOrchestration
 **Dispatch / Operation:** —
@@ -447,7 +459,7 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 
 ##### Task 1.5: Collect claims already settled against this policy in the current policy period
 
-**Type:** `process`
+**Type:** `rpa`
 **Activation Mode:** parallel-after-predecessor
 **Design Rationale:** The annual aggregate is the one cap that rests on a history the claimant cannot see, and §4.4 PP9 records that checking it last, or not at all, is how claims get over-settled today. Fetching it in Intake — in parallel with the policy, long before the settlement is computed — is what stops that repeating.
 **Description:** Looks up what earlier settled claims on this policy have already paid in the current policy period.
@@ -467,7 +479,7 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 ###### Process / Agent / RPA / API Workflow Task Detail
 
 **Resolved Resource:** Retrieve Previous Claims
-**Folder Path:** ClaimCase-V2A
+**Folder Path:** ClaimCase-<seat>
 **Resource Identity:** `Retrieve.Previous.Claims` version 1.0.0
 **Binding Sub-Type:** ProcessOrchestration
 **Dispatch / Operation:** —
@@ -491,7 +503,9 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 **Type:** `agent`
 **Activation Mode:** parallel-after-predecessor
 **Design Rationale:** §5.6 marks the policy free-form contract prose with **high** layout variability — no two insurers word one the same way — and says a decision has to quote the exact sentence it relied on. Reading it is judgement, and three of the five screening checks plus the whole of coverage depend on the answer. §5.3 names no separate step for it because §5.3 describes business activity rather than components; the read is what makes step 1.4's document usable, so it sits here.
-**Description:** Reads the policy into structured policy data — the policyholder, the insured property address, the policy period, the payment status, the coverage sections and their limits, the sublimits, the deductible, the annual aggregate, the exclusions as written sentences, the named perils, the endorsements and the special conditions — and reports anything it could not find rather than guessing at it.
+**Description:** Reads the policy into two payloads and reports anything it could not find rather than guessing at it. `out_PolicyDataJSON` carries the **facts** — the policyholder, the insured property address, the policy period, the payment status, the coverage sections and their limits, the sublimits, the deductible, the annual aggregate, the named perils and the endorsement titles. `out_PolicyClausesJSON` carries the **wording** — the exclusions, the special conditions and the endorsement text, one verbatim sentence each.
+
+**Why two payloads and not one.** Five components read this policy and only one of them quotes it. The document runs to about 15,000 characters and a single structured payload measures 4,000–6,000, which is more than a component's entire input allowance once anything else travels beside it. Splitting on *facts a rule tests* versus *sentences a judgement quotes* is the split the readers already imply: BR-01 and BR-04 test dates and a status, BR-02 and BR-03 test names and an address, BR-22 to BR-25 apply printed numbers — none of them needs a sentence. BR-16 needs nothing else. **A clause is shortened with an ellipsis before it is dropped and a clause is never dropped** — a missing exclusion reads downstream as an exclusion the policy does not have.
 
 **Entry Condition:**
 
@@ -507,7 +521,7 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 
 ###### Process / Agent / RPA / API Workflow Task Detail
 
-**Resolved Resource:** ClaimCase-V2A-PolicyDocumentReader
+**Resolved Resource:** ClaimCase-<seat>-PolicyDocumentReader
 **Folder Path:** <UNRESOLVED>
 **Resource Identity:** <UNRESOLVED>
 **Binding Sub-Type:** Agent
@@ -526,15 +540,68 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 | Field | Binding / Value |
 |---|---|
 | out_PolicyDataJSON | -> policyDataJson |
+| out_PolicyClausesJSON | -> policyClausesJson |
 | out_Findings | — |
 | — | policyPdfId = `=js:vars.policyPdf.ID` |
 | — | policyPdfName = `=js:vars.policyPdf.FullName` |
 
 > **Rules this task owns:** B-01 — where no policy document exists for the number on the form, the claim is referred to the eligibility reviewer with the policy number quoted. E-02 — an unreadable policy is parked and referred, never treated as an empty one. It owns no eligibility rule; whether the policy was in force is BR-01's question and whether the policyholder is the claimant is BR-02's, and this task establishes the facts those checks read without ruling on either.
 
+##### Task 1.7a: Canonicalise the policy payloads and hold them to budget
+
+**Type:** `api-workflow`
+**Activation Mode:** parallel-after-predecessor
+**Design Rationale:** Task 1.6 is an agent, and its two payloads are declared `type: string`. A JSON Schema cannot constrain the inside of a string, so the key names those payloads use and the character budgets they must respect exist only as English in a `description` — a request, not a contract. **`[MEASURED]`** across three live runs of that agent at `temperature 0`, the *declared* output names never varied once, while the keys inside the strings did: one run returned `policyId`, `period{effective,expiration}` and `insuredAddress` as designed, and two returned `policyNumber`, `effectiveDate`, `expirationDate`, `insuredPropertyAddress` and four invented `*AsWritten` keys. The same two runs returned 6,687 and 7,262 characters against a stated budget of 1,800. This task is where both become code.
+**Description:** Rewrites the policy facts and the policy wording under the key names the contract pins, truncates each to its budget, and derives the narrower coverage view that task 4.2 reads. Reports the policy unreadable where it does not parse, and names any fact a later rule needs that the payload does not carry.
+
+**Entry Condition:**
+
+| WHEN | IF | Display Name |
+|---|---|---|
+| selected-tasks-completed | Task 1.6 | Policy read |
+
+**Task envelope**
+
+| Required | Run Only Once | Skip Condition |
+|---|---|---|
+| Yes | Yes | — |
+
+###### Process / Agent / RPA / API Workflow Task Detail
+
+**Resolved Resource:** ClaimCase-<seat>-PolicyPayloadNormaliser
+**Folder Path:** <UNRESOLVED>
+**Resource Identity:** <UNRESOLVED>
+**Binding Sub-Type:** Api
+**Dispatch / Operation:** —
+
+**Inputs:**
+
+| Field | Type | Binding |
+|---|---|---|
+| in_ClaimID | String | `=metadata.ExternalId` |
+| in_PolicyDataJSON | String | `=vars.policyDataJson` |
+| in_PolicyClausesJSON | String | `=vars.policyClausesJson` |
+
+**Outputs:**
+
+| Field | Binding / Value |
+|---|---|
+| out_PolicyDataJSON | -> policyDataJson |
+| out_PolicyClausesJSON | -> policyClausesJson |
+| out_PolicyCoverageJSON | -> policyCoverageJson |
+| out_Findings | — |
+| out_Conclusion | — |
+| out_FlagSubjects | — |
+
+> **It reads the two variables it writes back, and that is deliberate.** Every later consumer reads what this task returns rather than what the agent wrote, so there is exactly one canonical form of the policy in the case and one place that decides it. The task is `Run Only Once` and gated on 1.6, so it cannot race the producer it is repairing.
+
+> **It sits in Intake, not in screening, and the placement is the whole point.** **`[MEASURED]`** on one live claim, *four* consumers were started over the platform's argument cap — 2.2 identity at 8,695, 2.3 property address at 8,704, 4.1 assessor report at 8,969 and 4.2 coverage at 13,490 — every one of them because the policy payload arrived at 6,687 characters. Two of those four run **in parallel with the first screening check**, so a repair placed anywhere inside stage 2 races the consumers it is meant to protect. The first deterministic step after the producer is the only placement that is early enough for all of them.
+
+> **Rules this task owns:** none. It rules on nothing and decides no claim. It reports the policy *unreadable* where the payload does not parse — which is not the same as empty, and no later rule may read it as a fact about the policy — and it names any of `policyId`, `period`, `paymentStatus` or `sections` that the payload does not carry, so that a rule needing one reports it rather than assuming it.
+
 ##### Task 1.7: Notify the claimant that the claim was received
 
-**Type:** `process`
+**Type:** `rpa`
 **Activation Mode:** parallel-after-predecessor
 **Design Rationale:** BR-50 allows the claimant exactly two letters and this is the first. It needs only the contact details the claim form gave up, so it runs alongside the policy and history lookups rather than behind them.
 **Description:** Tells the claimant the claim was received, and records that they were told.
@@ -554,7 +621,7 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 ###### Process / Agent / RPA / API Workflow Task Detail
 
 **Resolved Resource:** Client Notification
-**Folder Path:** ClaimCase-V2A
+**Folder Path:** ClaimCase-<seat>
 **Resource Identity:** `Client.Notification` version 1.0.0
 **Binding Sub-Type:** ProcessOrchestration
 **Dispatch / Operation:** —
@@ -598,7 +665,7 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 | WHEN | IF | Exit Type | Marks Stage Complete | Display Name |
 |---|---|---|---|---|
 | required-tasks-completed | `=js:(vars.eligibilityDecision !== "Refuse")` | exit-only | Yes | Referred for inspection |
-| selected-tasks-completed("Record the eligibility decision and transfer the claim for inspection") | `=js:(vars.eligibilityDecision === "Refuse")` | exit-only | No | Refused at screening |
+| selected-tasks-completed("Record the eligibility decision and transfer the claim for inspection") | `=js:(vars.eligibilityDecision === "Refuse")` | exit-only, diverting to `Denied` | **Yes** | Refused at screening |
 
 **The two rows are mutually exclusive by construction** — one tests the reviewer's decision, the other its exact inverse — so a refused claim diverts to the `Denied` lane and a proceeding claim completes the stage, and neither path can fire both. The divert row's target is the `Denied` secondary stage.
 
@@ -646,7 +713,7 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 
 ###### Process / Agent / RPA / API Workflow Task Detail
 
-**Resolved Resource:** ClaimCase-V2A-PolicyStatusCheck
+**Resolved Resource:** ClaimCase-<seat>-PolicyStatusCheck
 **Folder Path:** <UNRESOLVED>
 **Resource Identity:** <UNRESOLVED>
 **Binding Sub-Type:** Api
@@ -670,6 +737,8 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 
 > **Rules this task owns:** BR-01, and the §6.3 payment-status mapping. Lapsed, cancelled, expired, or unpaid from a date before the loss all fail; current, paid and paid in full pass subject to the period. It does not test the period itself — that is BR-04's question and this check may cite its answer but never restate it.
 
+> **The policy it reads is the canonical one.** Task 1.7a rewrote both policy payloads to the contract's key names and to budget before this stage was entered, so this check and every other consumer read one agreed form of the policy rather than whatever shape the reader happened to return on the day.
+
 ##### Task 2.2: Validate that the claimant and the policyholder are the same person
 
 **Type:** `agent`
@@ -691,7 +760,7 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 
 ###### Process / Agent / RPA / API Workflow Task Detail
 
-**Resolved Resource:** ClaimCase-V2A-IdentityCheck
+**Resolved Resource:** ClaimCase-<seat>-IdentityCheck
 **Folder Path:** <UNRESOLVED>
 **Resource Identity:** <UNRESOLVED>
 **Binding Sub-Type:** Agent
@@ -736,7 +805,7 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 
 ###### Process / Agent / RPA / API Workflow Task Detail
 
-**Resolved Resource:** ClaimCase-V2A-PropertyAddressCheck
+**Resolved Resource:** ClaimCase-<seat>-PropertyAddressCheck
 **Folder Path:** <UNRESOLVED>
 **Resource Identity:** <UNRESOLVED>
 **Binding Sub-Type:** Agent
@@ -782,7 +851,7 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 
 ###### Process / Agent / RPA / API Workflow Task Detail
 
-**Resolved Resource:** ClaimCase-V2A-CoveragePeriodCheck
+**Resolved Resource:** ClaimCase-<seat>-CoveragePeriodCheck
 **Folder Path:** <UNRESOLVED>
 **Resource Identity:** <UNRESOLVED>
 **Binding Sub-Type:** Api
@@ -827,7 +896,7 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 
 ###### Process / Agent / RPA / API Workflow Task Detail
 
-**Resolved Resource:** ClaimCase-V2A-FilingDeadlineCheck
+**Resolved Resource:** ClaimCase-<seat>-FilingDeadlineCheck
 **Folder Path:** <UNRESOLVED>
 **Resource Identity:** <UNRESOLVED>
 **Binding Sub-Type:** Agent
@@ -873,7 +942,7 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 
 ###### Process / Agent / RPA / API Workflow Task Detail
 
-**Resolved Resource:** ClaimCase-V2A-ScreeningResultBuilder
+**Resolved Resource:** ClaimCase-<seat>-ScreeningResultBuilder
 **Folder Path:** <UNRESOLVED>
 **Resource Identity:** <UNRESOLVED>
 **Binding Sub-Type:** Api
@@ -884,12 +953,12 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 | Field | Type | Binding |
 |---|---|---|
 | in_ClaimID | String | `=metadata.ExternalId` |
-| in_PolicyStatusFindingsJSON | String | `"Eligibility screening"."Validate that the policy was in force on the date of loss".out_Findings` |
-| in_IdentityFindingsJSON | String | `"Eligibility screening"."Validate that the claimant and the policyholder are the same person".out_Findings` |
-| in_AddressFindingsJSON | String | `"Eligibility screening"."Validate that the claim and the policy describe the same property".out_Findings` |
-| in_CoveragePeriodFindingsJSON | String | `"Eligibility screening"."Validate that the incident date falls inside the policy period".out_Findings` |
-| in_FilingDeadlineFindingsJSON | String | `"Eligibility screening"."Validate that the claim was filed within the filing deadline".out_Findings` |
-| in_PolicyReadFindingsJSON | String | `"Intake"."Read the policy document for the policy number on the form".out_Findings` |
+| in_PolicyStatusFindingsJSON | Object | `"Eligibility screening"."Validate that the policy was in force on the date of loss".out_Findings` |
+| in_IdentityFindingsJSON | Object | `"Eligibility screening"."Validate that the claimant and the policyholder are the same person".out_Findings` |
+| in_AddressFindingsJSON | Object | `"Eligibility screening"."Validate that the claim and the policy describe the same property".out_Findings` |
+| in_CoveragePeriodFindingsJSON | Object | `"Eligibility screening"."Validate that the incident date falls inside the policy period".out_Findings` |
+| in_FilingDeadlineFindingsJSON | Object | `"Eligibility screening"."Validate that the claim was filed within the filing deadline".out_Findings` |
+| in_PolicyReadFindingsJSON | Object | `"Intake"."Read the policy document for the policy number on the form".out_Findings` |
 
 **Outputs:**
 
@@ -926,12 +995,12 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 
 ###### Action Task Detail (type: `action`)
 
-**HITL Implementation:** Action App: claim-review-v2a
+**HITL Implementation:** Action App: claim-review-<seat>
 **Action App ID:** <UNRESOLVED>
 **Deployment Folder:** <UNRESOLVED>
 **actionType:** EligibilityReview
 **Recipient:** Role: Eligibility reviewer
-**Priority:** High · **Task Title:** Eligibility review for V2A · **Labels:** ClaimCase-V2A, EligibilityReview
+**Priority:** High · **Task Title:** Eligibility review for this seat · **Labels:** ClaimCase-<seat>, EligibilityReview
 
 **Input Schema:**
 
@@ -941,11 +1010,10 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 | claimantName | String | `=vars.claimantName` | Yes |
 | totalClaimAmount | Number | `=vars.totalClaimAmount` | Yes |
 | currency | String | `=vars.currency` | Yes |
-| eligibilityChecksJson | String | `=vars.eligibilityChecksJson` | Yes |
-| claimDataJson | String | `=vars.claimDataJson` | Yes |
-| policyDataJson | String | `=vars.policyDataJson` | Yes |
 | claimFormPdfName | String | `=vars.claimFormPdfName` | Yes |
 | policyPdfName | String | `=vars.policyPdfName` | Yes |
+
+> **The task carries identifiers; the screen reads the record.** Every payload this gate shows — the five checks with their reasons, the claim, the policy — is on `ClaimCase_<seat>` and was written before the gate opened (C3), and the app's shared registration is scoped to read exactly that (`CONFIG.md`). Carrying them in the task data as well duplicates the record and makes the payload large, which costs twice: anything that writes task data **replaces** the payload rather than merging into it, so every value a decided task must still carry is one that has to be re-sent by hand.
 
 > **All five checks, passes included, and not a summary** (§5.7 H1). The reviewer changes nothing — they decide, they do not edit — so no settlement, amount or claim field is writable from this screen. Nothing about money has been decided at this point, which is why the role carries no monetary authority.
 
@@ -987,7 +1055,7 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 
 ###### Process / Agent / RPA / API Workflow Task Detail
 
-**Resolved Resource:** ClaimCase-V2A-EligibilityDecisionRecord
+**Resolved Resource:** ClaimCase-<seat>-EligibilityDecisionRecord
 **Folder Path:** <UNRESOLVED>
 **Resource Identity:** <UNRESOLVED>
 **Binding Sub-Type:** Api
@@ -1031,7 +1099,7 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 
 | WHEN | IF | Interrupting | Display Name |
 |---|---|---|---|
-| selected-stage-completed("Eligibility screening") | — | No | Referred for inspection |
+| selected-stage-completed("Eligibility screening") | `=js:(vars.eligibilityDecision !== "Refuse")` | No | Referred for inspection |
 
 > A refused claim never completes screening — it diverts — so this entry needs no guard of its own.
 
@@ -1055,12 +1123,12 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 
 | # | Task Name | Type | Activation Mode | Starts When | Required | Run Only Once | Persona | SLA |
 |---|---|---|---|---|---|---|---|---|
-| 1 | Wait for the assessor report to become available | process | parallel | stage enters, and again after each wait | Yes | No | — | — |
+| 1 | Wait for the assessor report to become available | rpa | parallel | stage enters, and again after each wait | Yes | No | — | — |
 | 2 | Wait before re-checking for the assessor report | wait-for-timer | conditional-gate | after task 1, only while the report is not ready | No | No | — | — |
 
 ##### Task 3.1: Wait for the assessor report to become available
 
-**Type:** `process`
+**Type:** `rpa`
 **Activation Mode:** parallel
 **Design Rationale:** Readiness is answered by a call rather than announced by an event, so the wait is expressed as *call it, test the flag, move on or wait and call again*. The task runs more than once by design, which is why it is not run-only-once — and it is the only task in this stage marked required, so the stage's completion is gated on the flag rather than on the call having happened.
 **Description:** Asks the Document Store whether the assessor report for this claim exists yet, and attaches it when it does.
@@ -1081,7 +1149,7 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 ###### Process / Agent / RPA / API Workflow Task Detail
 
 **Resolved Resource:** Retrieve Inspection Report
-**Folder Path:** ClaimCase-V2A
+**Folder Path:** ClaimCase-<seat>
 **Resource Identity:** `Retrieve.Inspection.Report` version 1.0.0
 **Binding Sub-Type:** ProcessOrchestration
 **Dispatch / Operation:** —
@@ -1191,7 +1259,7 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 
 ###### Process / Agent / RPA / API Workflow Task Detail
 
-**Resolved Resource:** ClaimCase-V2A-AssessorReportValidator
+**Resolved Resource:** ClaimCase-<seat>-AssessorReportValidator
 **Folder Path:** <UNRESOLVED>
 **Resource Identity:** <UNRESOLVED>
 **Binding Sub-Type:** Agent
@@ -1211,9 +1279,11 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 | Field | Binding / Value |
 |---|---|
 | out_AssessmentReportJSON | -> assessmentReportJson |
+| out_CauseDetermination | -> causeDetermination |
 | out_Findings | — |
 | out_Conclusion | — |
 | out_FlagSubjects | — |
+| — | assessmentReportValidationJson = `=js:JSON.stringify(vars.$xref('Analysis','Validate the assessor report and transform it into structured assessment data','out_Findings'))` |
 | — | assessmentReportPdfId = `=js:vars.assessmentReport.ID` |
 | — | assessmentReportPdfName = `=js:vars.assessmentReport.FullName` |
 | — | status = "Under analysis" |
@@ -1241,7 +1311,7 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 
 ###### Process / Agent / RPA / API Workflow Task Detail
 
-**Resolved Resource:** ClaimCase-V2A-CoverageAnalyst
+**Resolved Resource:** ClaimCase-<seat>-CoverageAnalyst
 **Folder Path:** <UNRESOLVED>
 **Resource Identity:** <UNRESOLVED>
 **Binding Sub-Type:** Agent
@@ -1252,21 +1322,30 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 | Field | Type | Binding |
 |---|---|---|
 | in_ClaimID | String | `=metadata.ExternalId` |
-| in_ClaimDataJSON | String | `=vars.claimDataJson` |
-| in_PolicyDataJSON | String | `=vars.policyDataJson` |
-| in_AssessmentReportJSON | String | `=vars.assessmentReportJson` |
+| in_DamageInventoryJSON | String | `=vars.damageInventoryJson` |
+| in_PolicyCoverageJSON | String | `=vars.policyCoverageJson` |
+| in_PolicyClausesJSON | String | `=vars.policyClausesJson` |
+| in_CauseDetermination | String | `=vars.causeDetermination` |
 | in_EligibilityDecision | String | `=vars.eligibilityDecision` |
-| in_EligibilityNotes | String | `=vars.eligibilityNotes` |
+| in_EligibilityNotes | String | `=js:(vars.eligibilityNotes \|\| '').slice(0, 600)` |
 
-> The eligibility decision and its written reason are passed in **so that this task does not re-raise what a reviewer already settled**. §5.7 is explicit: a finding the reviewer saw and approved is settled, their reason wins where it contradicts a finding, and where the touchpoint was skipped the step receives an explicit *no human has spoken* rather than a blank it would read as approval of everything.
+> **The widest reader in the design, and the one the input allowance binds hardest.** It is given the damage inventory rather than the whole claim, because BR-14 assigns *items* and the claimant's contact details and payment totals cannot change a coverage verdict. It is given the assessor's **cause determination** as a scalar rather than the assessment payload, because that single value is all BR-15 tests. And it is the only component given `policyClausesJson`, because BR-16 is the only rule that has to quote a sentence. Those three substitutions are what let it read the policy wording verbatim at all — with the whole claim and the whole assessment beside them it would not start.
+
+> **A fourth substitution, added after measurement.** It reads `policyCoverageJson` rather than `policyDataJson` — the same policy facts with two groups removed. The period, payment status, policyholder and insured address are screening's business (BR-01 to BR-04) and no coverage rule tests them. `specialConditions` and `endorsements` are removed because their *wording* already arrives beside them in `policyClausesJson`; sending the `{name, present}` summary as well is the same fact twice, in the one component with the least room to spend on it. **`[MEASURED]`** the narrowing is 2,239 characters to 1,615, and it is what brings this task's worst case from 8,282 back under the 8,000 ceiling.
+
+> The eligibility decision and its written reason are passed in **so that this task does not re-raise what a reviewer already settled**. §5.7 is explicit: a finding the reviewer saw and approved is settled, their reason wins where it contradicts a finding, and where the touchpoint was skipped the step receives an explicit *no human has spoken* rather than a blank it would read as approval of everything. **The note travels truncated to 600 characters** — the reviewer's full 4,000 characters live on the record and on both screens, and a component needs enough to see what was granted, not the whole paragraph.
 
 **Outputs:**
 
 | Field | Binding / Value |
 |---|---|
+| out_CoverageAssignmentsJSON | -> coverageAssignmentsJson |
+| — | coverageChecksJson = `=js:JSON.stringify(vars.$xref('Analysis','Decide which coverage sections respond to the loss and mark every damage item covered or excluded','out_Findings'))` |
 | out_Findings | — |
 | out_Conclusion | — |
 | out_FlagSubjects | — |
+
+> **Two outputs carry one answer, for two different readers.** `out_CoverageChecksJSON` is the envelope a human reads — every exclusion walked, every sentence quoted. `out_CoverageAssignmentsJSON` is the same verdicts as one compact row per damage item — item reference, section, covered or excluded, deciding rule id — and is what task 5.1 joins onto the settlement. Asking a machine to re-read prose to recover a verdict it already made is how the join breaks on a claim nobody tested.
 
 > **Rules this task owns:** BR-10 (dwelling and other structures are open peril — every relevant exclusion walked and answered individually; *"no exclusions apply"* with nothing walked is not an answer), BR-11 (personal property is named peril), BR-12 (loss of use follows the underlying peril), BR-13 (the vacancy condition and its 15% reduction, **only where someone recorded the vacancy**), BR-14 (no item left unassigned), BR-15 (where the form's incident type conflicts with the assessor's cause determination the determination governs and the peril classification check **fails**, even where the assessor's peril is itself covered), BR-16 (quote the sentence relied on), BR-72 (do not infer wear, defect or neglect from silence), BR-73 (a sudden covered event carries the work needed to reach the damage), BR-74 (**coverage never re-opens a screening question** — policy status, identity, address, coverage period and the filing deadline were decided at stage 2) and BR-78 (a condition nobody wrote down is not engaged). It computes no amount; whether a cap binds is BR-22 to BR-25's question.
 
@@ -1291,7 +1370,7 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 
 ###### Process / Agent / RPA / API Workflow Task Detail
 
-**Resolved Resource:** ClaimCase-V2A-SettlementCalculator
+**Resolved Resource:** ClaimCase-<seat>-SettlementCalculator
 **Folder Path:** <UNRESOLVED>
 **Resource Identity:** <UNRESOLVED>
 **Binding Sub-Type:** Api
@@ -1302,10 +1381,12 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 | Field | Type | Binding |
 |---|---|---|
 | in_ClaimID | String | `=metadata.ExternalId` |
-| in_ClaimDataJSON | String | `=vars.claimDataJson` |
+| in_DamageInventoryJSON | String | `=vars.damageInventoryJson` |
 | in_PolicyDataJSON | String | `=vars.policyDataJson` |
 | in_AssessmentReportJSON | String | `=vars.assessmentReportJson` |
 | in_PreviousClaimsJSON | String | `=vars.previousClaimsJson` |
+
+> **It reads the inventory, not the whole claim.** This task touches exactly two things on the claim — the damage inventory and the claimed total — and both are in `damageInventoryJson`, which is budgeted 600 characters smaller than `claimDataJson`. Handing it the larger payload bought nothing and spent the allowance of the design's second-tightest consumer. It keeps the full `policyDataJson` rather than 4.2's coverage view, because BR-24's annual aggregate and BR-13's endorsements are exactly the fields that view removes.
 
 **Outputs:**
 
@@ -1340,7 +1421,7 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 
 ###### Process / Agent / RPA / API Workflow Task Detail
 
-**Resolved Resource:** ClaimCase-V2A-CredibilityAnalyst
+**Resolved Resource:** ClaimCase-<seat>-CredibilityAnalyst
 **Folder Path:** <UNRESOLVED>
 **Resource Identity:** <UNRESOLVED>
 **Binding Sub-Type:** Agent
@@ -1360,6 +1441,7 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 
 | Field | Binding / Value |
 |---|---|
+| — | credibilityChecksJson = `=js:JSON.stringify(vars.$xref('Analysis','Decide how credible the claim is as presented','out_Findings'))` |
 | out_Findings | — |
 | out_Conclusion | — |
 | out_FlagSubjects | — |
@@ -1387,7 +1469,7 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 | WHEN | IF | Exit Type | Marks Stage Complete | Display Name |
 |---|---|---|---|---|
 | required-tasks-completed | `=js:(vars.finalOutcome !== "Deny")` | exit-only | Yes | Claim approved |
-| selected-tasks-completed("Record the outcome and the final settlement amount") | `=js:(vars.finalOutcome === "Deny")` | exit-only | No | Claim denied |
+| selected-tasks-completed("Record the outcome and the final settlement amount") | `=js:(vars.finalOutcome === "Deny")` | exit-only, diverting to `Denied` | **Yes** | Claim denied |
 
 **There is no automatic route to a denial** (E3). A Deny recommendation always opens the human task whatever else is true, so `finalOutcome` can only read `Deny` after a named adjuster decided it — which is what C1 requires and what makes this pair of gates safe.
 
@@ -1414,7 +1496,7 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 **Type:** `api-workflow`
 **Activation Mode:** parallel
 **Design Rationale:** §5.3 marks step 5.1 rule-expressible and §7.6 gives it an ordered, fully specified rule set with a stated priority — Deny, then Escalate, then Partial approve, then Approve — and a confidence that is a count of flags. This is the step that decides whether a human is needed at all, so its answer must be identical on two runs of the same claim; a judgement runner here would make straight-through processing unreproducible. It is also the only place where a coverage verdict and a settlement line may legally meet, because §5.4 forbids their producers reading each other.
-**Description:** Joins the coverage verdicts onto the settlement lines, applies the decision rules to every finding from stages 2 and 4, and records a recommended outcome, every reason that applies, and a confidence — before anybody is asked to look at it.
+**Description:** Joins the coverage verdicts onto the settlement lines, applies the decision rules to the conclusion and escalation subjects each component reported, and records a recommended outcome, every reason that applies, and a confidence — before anybody is asked to look at it.
 
 **Entry Condition:**
 
@@ -1430,7 +1512,7 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 
 ###### Process / Agent / RPA / API Workflow Task Detail
 
-**Resolved Resource:** ClaimCase-V2A-DecisionRules
+**Resolved Resource:** ClaimCase-<seat>-DecisionRules
 **Folder Path:** <UNRESOLVED>
 **Resource Identity:** <UNRESOLVED>
 **Binding Sub-Type:** Api
@@ -1441,15 +1523,25 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 | Field | Type | Binding |
 |---|---|---|
 | in_ClaimID | String | `=metadata.ExternalId` |
-| in_EligibilityChecksJSON | String | `=vars.eligibilityChecksJson` |
+| in_EligibilityConclusion | String | `"Eligibility screening"."Create the screening result".out_Conclusion` |
+| in_EligibilityFlagSubjects | String | `"Eligibility screening"."Create the screening result".out_FlagSubjects` |
 | in_EligibilityDecision | String | `=vars.eligibilityDecision` |
 | in_EligibilityNotes | String | `=vars.eligibilityNotes` |
-| in_AssessmentReportValidationJSON | String | `=vars.assessmentReportValidationJson` |
-| in_CoverageChecksJSON | String | `=vars.coverageChecksJson` |
+| in_ReportConclusion | String | `"Analysis"."Validate the assessor report and transform it into structured assessment data".out_Conclusion` |
+| in_ReportFlagSubjects | String | `"Analysis"."Validate the assessor report and transform it into structured assessment data".out_FlagSubjects` |
+| in_CoverageConclusion | String | `"Analysis"."Decide which coverage sections respond to the loss and mark every damage item covered or excluded".out_Conclusion` |
+| in_CoverageFlagSubjects | String | `"Analysis"."Decide which coverage sections respond to the loss and mark every damage item covered or excluded".out_FlagSubjects` |
+| in_PayoutConclusion | String | `"Analysis"."Transform the covered items into a settlement".out_Conclusion` |
+| in_PayoutFlagSubjects | String | `"Analysis"."Transform the covered items into a settlement".out_FlagSubjects` |
+| in_CredibilityConclusion | String | `"Analysis"."Decide how credible the claim is as presented".out_Conclusion` |
+| in_CredibilityFlagSubjects | String | `"Analysis"."Decide how credible the claim is as presented".out_FlagSubjects` |
+| in_CoverageAssignmentsJSON | String | `=vars.coverageAssignmentsJson` |
 | in_SettlementJSON | String | `=vars.settlementJson` |
-| in_PayoutChecksJSON | String | `=vars.payoutChecksJson` |
-| in_CredibilityChecksJSON | String | `=vars.credibilityChecksJson` |
 | in_PolicyDataJSON | String | `=vars.policyDataJson` |
+
+> **Five conclusions and five subject lists, not five envelopes.** This task decides whether a human is needed, and BR-40 to BR-45 are met **by escalation subject** — never by scanning prose for worry. Every component already returns exactly the two values that answer them, so it is given those and not the payloads behind them. Handing it the five envelopes instead is the shape that cannot start: five payloads at their own column budgets is more than five times a component's whole input allowance, and the job is refused before a single rule runs.
+>
+> The two payloads it does receive are the two it genuinely joins — the settlement lines and, per damage item, the coverage verdict to attach to them. It re-applies section caps and the single deductible from `policyDataJson`, whose facts half carries every printed number and no clause prose.
 
 **Outputs:**
 
@@ -1457,9 +1549,6 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 |---|---|
 | out_DecisionJSON | -> decisionJson |
 | out_SettlementJSON | -> settlementJson |
-| out_AssessmentReportValidationJSON | -> assessmentReportValidationJson |
-| out_CoverageChecksJSON | -> coverageChecksJson |
-| out_CredibilityChecksJSON | -> credibilityChecksJson |
 | out_RecommendedOutcome | -> recommendedOutcome |
 | out_ReviewRequired | -> reviewRequired |
 | out_NetPayable | -> netSettlementAmount |
@@ -1469,6 +1558,8 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 | — | status = "Awaiting claim review" |
 
 > **Rules this task owns:** BR-40 to BR-45, and the coverage join. It writes `settlementJson` a second time: task 4.3's lines are carried through **verbatim and unedited**, with each line's coverage verdict from 4.2 attached, excluded lines zeroed, and the section caps and the single deductible re-applied to give the net payable of record. It raises **no finding of its own** — where the join changes the net it cites BR-20 and BR-25 as the rules it applied, and the findings themselves stay owned by the components that made them.
+>
+> **It writes no envelope column either.** Each of the four stage-4 envelopes is written to its own column by the task that produced it, which is both what the Case Entity table always said and the only ownership that survives C3 — every one of them lands before this task runs, so the reviewer's screen is complete whether or not the recommendation reaches it.
 >
 > **BR-44 is the rule the whole design turns on.** A claim settles without a human when, and only when, nothing is flagged and the net payable is within 20% of the dwelling limit. Anything unreadable or absent counts as flagged. **The rule can only skip an approval** — a Deny recommendation always opens the human task, with no exception (C1).
 >
@@ -1495,12 +1586,12 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 
 ###### Action Task Detail (type: `action`)
 
-**HITL Implementation:** Action App: claim-review-v2a
+**HITL Implementation:** Action App: claim-review-<seat>
 **Action App ID:** <UNRESOLVED>
 **Deployment Folder:** <UNRESOLVED>
 **actionType:** ClaimReview
 **Recipient:** Role: Claims adjuster
-**Priority:** High · **Task Title:** Claim review for V2A · **Labels:** ClaimCase-V2A, ClaimReview
+**Priority:** High · **Task Title:** Claim review for this seat · **Labels:** ClaimCase-<seat>, ClaimReview
 
 **Input Schema:**
 
@@ -1510,20 +1601,12 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 | claimantName | String | `=vars.claimantName` | Yes |
 | totalClaimAmount | Number | `=vars.totalClaimAmount` | Yes |
 | currency | String | `=vars.currency` | Yes |
-| decisionJson | String | `=vars.decisionJson` | Yes |
-| settlementJson | String | `=vars.settlementJson` | Yes |
-| coverageChecksJson | String | `=vars.coverageChecksJson` | Yes |
-| payoutChecksJson | String | `=vars.payoutChecksJson` | Yes |
-| credibilityChecksJson | String | `=vars.credibilityChecksJson` | Yes |
-| assessmentReportValidationJson | String | `=vars.assessmentReportValidationJson` | Yes |
-| eligibilityChecksJson | String | `=vars.eligibilityChecksJson` | Yes |
-| eligibilityDecision | String | `=vars.eligibilityDecision` | Yes |
-| eligibilityNotes | String | `=vars.eligibilityNotes` | Yes |
+| recommendedOutcome | String | `=vars.recommendedOutcome` | Yes |
 | claimFormPdfName | String | `=vars.claimFormPdfName` | Yes |
 | policyPdfName | String | `=vars.policyPdfName` | Yes |
 | assessmentReportPdfName | String | `=vars.assessmentReportPdfName` | Yes |
 
-> **Every finding side by side, and not a summary** (§5.7 H2). The screening result and the eligibility reviewer's reason are on the screen too, because an exception a reviewer already granted must read as granted rather than as an outstanding breach. Every one of these five envelopes shares one shape, which is what makes a single screen able to render them.
+> **Every finding side by side, and not a summary** (§5.7 H2) — read from the record by `claimId`, not carried in the task. All seven payloads this gate shows are written before it opens (C3), so the screen is complete the moment the task appears. The screening result and the eligibility reviewer's reason are on the screen too, because an exception a reviewer already granted must read as granted rather than as an outstanding breach. Every one of these five envelopes shares one shape, which is what makes a single screen able to render them.
 
 **Output Schema:**
 
@@ -1567,7 +1650,7 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 
 ###### Process / Agent / RPA / API Workflow Task Detail
 
-**Resolved Resource:** ClaimCase-V2A-ClaimDecisionRecord
+**Resolved Resource:** ClaimCase-<seat>-ClaimDecisionRecord
 **Folder Path:** <UNRESOLVED>
 **Resource Identity:** <UNRESOLVED>
 **Binding Sub-Type:** Api
@@ -1620,7 +1703,7 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 
 | WHEN | IF | Interrupting | Display Name |
 |---|---|---|---|
-| selected-stage-completed("Claim review") | — | No | Claim approved |
+| selected-stage-completed("Claim review") | `=js:(vars.finalOutcome !== "Deny")` | No | Claim approved |
 
 #### Stage Exit Conditions
 
@@ -1634,7 +1717,7 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 |---|---|---|---|---|---|---|---|---|
 | 1 | Create the approval letter | agent | parallel | stage enters | Yes | Yes | — | — |
 | 2 | Transfer the authorised amount to Settlements | api-workflow | parallel-after-predecessor | after task 1 | Yes | Yes | — | — |
-| 3 | Notify the claimant of the outcome with the approval letter | process | parallel-after-predecessor | after task 1 | Yes | Yes | — | — |
+| 3 | Notify the claimant of the outcome with the approval letter | rpa | parallel-after-predecessor | after task 1 | Yes | Yes | — | — |
 | 4 | Archive the claim | api-workflow | fan-in | after tasks 2 and 3 | Yes | Yes | — | — |
 
 ##### Task 6.1: Create the approval letter
@@ -1658,7 +1741,7 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 
 ###### Process / Agent / RPA / API Workflow Task Detail
 
-**Resolved Resource:** ClaimCase-V2A-DecisionLetterAuthor
+**Resolved Resource:** ClaimCase-<seat>-DecisionLetterAuthor
 **Folder Path:** <UNRESOLVED>
 **Resource Identity:** <UNRESOLVED>
 **Binding Sub-Type:** Agent
@@ -1675,8 +1758,6 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 | in_FinalOutcome | String | `=vars.finalOutcome` |
 | in_DecisionJSON | String | `=vars.decisionJson` |
 | in_SettlementJSON | String | `=vars.settlementJson` |
-| in_ClaimDataJSON | String | `=vars.claimDataJson` |
-| in_EligibilityChecksJSON | String | `=vars.eligibilityChecksJson` |
 | in_EligibilityNotes | String | `=vars.eligibilityNotes` |
 | in_ReviewerNotes | String | `=vars.reviewerNotes` |
 | in_DecisionReason | String | `=vars.decisionReason` |
@@ -1693,6 +1774,8 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 | out_FlagSubjects | — |
 
 > **Rules this task owns:** BR-50, BR-51 and BR-52. **The letter explains; it never analyses.** By the time it is drafted the claim has an outcome and every concern raised was ruled on before it, so it explains the outcome using them and never re-opens their questions — and it never asks an approved claimant for a document the decision did not depend on. It is the second and last letter; there is no third, and never one saying the claim is still under review.
+>
+> **It is given the decision, the settlement and both reviewers' reasons, and not the claim or the screening envelope.** Everything a letter has to say about the claimant is already a case scalar and everything it has to say about screening is in the reviewer's own words, so the two payloads removed here were read by nothing and were most of this component's input weight.
 
 ##### Task 6.2: Transfer the authorised amount to Settlements
 
@@ -1715,7 +1798,7 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 
 ###### Process / Agent / RPA / API Workflow Task Detail
 
-**Resolved Resource:** ClaimCase-V2A-SettlementAuthorisation
+**Resolved Resource:** ClaimCase-<seat>-SettlementAuthorisation
 **Folder Path:** <UNRESOLVED>
 **Resource Identity:** <UNRESOLVED>
 **Binding Sub-Type:** Api
@@ -1750,7 +1833,7 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 
 ##### Task 6.3: Notify the claimant of the outcome with the approval letter
 
-**Type:** `process`
+**Type:** `rpa`
 **Activation Mode:** parallel-after-predecessor
 **Design Rationale:** BR-51 puts the letter inside the message, so the letter is drafted before this runs. §5.4 runs it in parallel with the authorisation, and both must finish before the claim closes. E-03 is explicit that if the message cannot be sent the decision still stands — the claim is decided, only the telling failed.
 **Description:** Sends the claimant the decision and its reason, carrying the approval letter.
@@ -1770,7 +1853,7 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 ###### Process / Agent / RPA / API Workflow Task Detail
 
 **Resolved Resource:** Client Notification
-**Folder Path:** ClaimCase-V2A
+**Folder Path:** ClaimCase-<seat>
 **Resource Identity:** `Client.Notification` version 1.0.0
 **Binding Sub-Type:** ProcessOrchestration
 **Dispatch / Operation:** —
@@ -1810,7 +1893,7 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 
 ###### Process / Agent / RPA / API Workflow Task Detail
 
-**Resolved Resource:** ClaimCase-V2A-ClaimClosure
+**Resolved Resource:** ClaimCase-<seat>-ClaimClosure
 **Folder Path:** <UNRESOLVED>
 **Resource Identity:** <UNRESOLVED>
 **Binding Sub-Type:** Api
@@ -1855,14 +1938,16 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 
 | WHEN | IF | Interrupting | Display Name |
 |---|---|---|---|
-| selected-stage-exited("Eligibility screening") | `=js:(vars.eligibilityDecision === "Refuse")` | Yes | Refused at screening |
-| selected-stage-exited("Claim review") | `=js:(vars.finalOutcome === "Deny")` | Yes | Denied at claim review |
+| selected-stage-completed("Eligibility screening") | `=js:(vars.eligibilityDecision === "Refuse")` | Yes | Refused at screening |
+| selected-stage-completed("Claim review") | `=js:(vars.finalOutcome === "Deny")` | Yes | Denied at claim review |
 
 #### Stage Exit Conditions
 
 | WHEN | IF | Exit Type | Marks Stage Complete | Display Name |
 |---|---|---|---|---|
 | required-tasks-completed | — | exit-only | Yes | Claim refused |
+
+**Why `completed` and not `exited`, and why both exits mark the stage complete.** `[MEASURED]` `3d-case/check_caseplan.py` rejects a `selected-stage-exited` entry rule naming a stage that has **any** exit marking itself complete — the rule never fires, and the script's own comment records that this cost two deploy cycles with *no error, no incident, every task green, and the downstream stage simply never started*. Both origins here have a marks-complete happy path, so `exited` could never have worked. A stage entry condition also cannot name a task belonging to another stage, which rules out keying the lane off the recording task. What is left, and what fires, is `selected-stage-completed` on each origin with the refusing guard, paired with the **inverse** guard on that origin's healthy successor — so exactly one of the two entries is ever true. Both exits therefore mark their stage complete: screening and review each did their job whichever way the claim went, and marking the divert complete does not complete the case, because `required-stages-completed` still waits on stages a refused claim never enters. The diverting exit additionally carries `exitToStageId`, which is what pairs the lane's entry with its origin's departure.
 
 **Terminal, not returning.** The lane exits rather than rejoining, and the case-exit row `Claim refused` closes the case without marking it complete — a refusal is a valid ending and not a successful one.
 
@@ -1871,7 +1956,7 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 | # | Task Name | Type | Activation Mode | Starts When | Required | Run Only Once | Persona | SLA |
 |---|---|---|---|---|---|---|---|---|
 | 1 | Create the refusal letter | agent | parallel | stage enters | Yes | Yes | — | — |
-| 2 | Notify the claimant of the outcome with the refusal letter | process | parallel-after-predecessor | after task 1 | Yes | Yes | — | — |
+| 2 | Notify the claimant of the outcome with the refusal letter | rpa | parallel-after-predecessor | after task 1 | Yes | Yes | — | — |
 | 3 | Archive the claim as refused | api-workflow | parallel-after-predecessor | after task 1 | Yes | Yes | — | — |
 
 ##### Task S1.1: Create the refusal letter
@@ -1895,7 +1980,7 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 
 ###### Process / Agent / RPA / API Workflow Task Detail
 
-**Resolved Resource:** ClaimCase-V2A-DecisionLetterAuthor
+**Resolved Resource:** ClaimCase-<seat>-DecisionLetterAuthor
 **Folder Path:** <UNRESOLVED>
 **Resource Identity:** <UNRESOLVED>
 **Binding Sub-Type:** Agent
@@ -1913,8 +1998,6 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 | in_FinalOutcome | String | `=vars.finalOutcome` |
 | in_DecisionJSON | String | `=vars.decisionJson` |
 | in_SettlementJSON | String | `=vars.settlementJson` |
-| in_ClaimDataJSON | String | `=vars.claimDataJson` |
-| in_EligibilityChecksJSON | String | `=vars.eligibilityChecksJson` |
 | in_EligibilityNotes | String | `=vars.eligibilityNotes` |
 | in_ReviewerNotes | String | `=vars.reviewerNotes` |
 | in_DecisionReason | String | `=vars.decisionReason` |
@@ -1932,7 +2015,7 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 
 ##### Task S1.2: Notify the claimant of the outcome with the refusal letter
 
-**Type:** `process`
+**Type:** `rpa`
 **Activation Mode:** parallel-after-predecessor
 **Design Rationale:** BR-51 puts the letter inside the message and BR-50 makes this the claimant's second and last letter. §5.4 runs it in parallel with recording the refusal, and both finish before the claim closes.
 **Description:** Sends the claimant the refusal and its reason, carrying the refusal letter.
@@ -1952,7 +2035,7 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 ###### Process / Agent / RPA / API Workflow Task Detail
 
 **Resolved Resource:** Client Notification
-**Folder Path:** ClaimCase-V2A
+**Folder Path:** ClaimCase-<seat>
 **Resource Identity:** `Client.Notification` version 1.0.0
 **Binding Sub-Type:** ProcessOrchestration
 **Dispatch / Operation:** —
@@ -1992,7 +2075,7 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 
 ###### Process / Agent / RPA / API Workflow Task Detail
 
-**Resolved Resource:** ClaimCase-V2A-ClaimClosure
+**Resolved Resource:** ClaimCase-<seat>-ClaimClosure
 **Folder Path:** <UNRESOLVED>
 **Resource Identity:** <UNRESOLVED>
 **Binding Sub-Type:** Api
@@ -2140,12 +2223,12 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 
 | App | View | Persona | Key Components |
 |---|---|---|---|
-| claim-review-v2a | Eligibility review | Eligibility reviewer | All five screening checks with result, reason and quoted evidence, passes included; the claim form and policy filenames; the claimant, the total claimed and the currency; Proceed and Refuse with a mandatory written reason |
-| claim-review-v2a | Claim review | Claims adjuster | Every stage-4 finding side by side in one shape — report validation, coverage, settlement, credibility — plus the screening result and the eligibility reviewer's granted exceptions; the recommended outcome with every reason and its confidence; the settlement line by line with every cap that bound it named; per-line override entry with a mandatory reason; Approve, Partial approve and Deny |
-| ClaimCase-V2A Case App | Claim list | Claims team lead | Every open claim: reference, claimant, stage, time in stage, distance to the claim deadline, amount claimed, recommended outcome where one exists (RP1) |
-| ClaimCase-V2A Case App | Awaiting a human | Claims team lead | Claims sitting at eligibility review or claim review, and for how long (RP2) |
-| ClaimCase-V2A Case App | SLA and ageing | Claims team lead, Claims Operations Manager | Claims at risk or breached, at claim and stage level (RP4) |
-| ClaimCase-V2A Case App | Claim detail | Claims team lead, Claims adjuster | Per-claim drill-down: stage history, every finding, the settlement, the decision and the letter |
+| claim-review-<seat> | Eligibility review | Eligibility reviewer | All five screening checks with result, reason and quoted evidence, passes included; the claim form and policy filenames; the claimant, the total claimed and the currency; Proceed and Refuse with a mandatory written reason |
+| claim-review-<seat> | Claim review | Claims adjuster | Every stage-4 finding side by side in one shape — report validation, coverage, settlement, credibility — plus the screening result and the eligibility reviewer's granted exceptions; the recommended outcome with every reason and its confidence; the settlement line by line with every cap that bound it named; per-line override entry with a mandatory reason; Approve, Partial approve and Deny |
+| ClaimCase-<seat> Case App | Claim list | Claims team lead | Every open claim: reference, claimant, stage, time in stage, distance to the claim deadline, amount claimed, recommended outcome where one exists (RP1) |
+| ClaimCase-<seat> Case App | Awaiting a human | Claims team lead | Claims sitting at eligibility review or claim review, and for how long (RP2) |
+| ClaimCase-<seat> Case App | SLA and ageing | Claims team lead, Claims Operations Manager | Claims at risk or breached, at claim and stage level (RP4) |
+| ClaimCase-<seat> Case App | Claim detail | Claims team lead, Claims adjuster | Per-claim drill-down: stage history, every finding, the settlement, the decision and the letter |
 
 > **The reviewer screens read the claim record and never write it.** A decision belongs on the record because a case task put it there, which is what makes it auditable — the screen returns the reviewer's answer to the case, and the case writes it. Claimant contact details and the identity reference are masked in every view outside the claims team (§6.4).
 >
@@ -2168,29 +2251,29 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 
 | Workflow | Folder | Resource ID | Inputs → Outputs | Used By Tasks |
 |---|---|---|---|---|
-| ClaimCase-V2A-ClaimDataNormaliser | <UNRESOLVED> | <UNRESOLVED> | in_ClaimID, in_ClaimIXPData → out_ClaimDataJSON, out_ClaimantName, out_ClaimantEmail, out_IncidentType, out_IncidentDate, out_DateOfSubmission, out_TotalClaimAmount, out_Currency, out_PropertyCountry, out_Findings, out_Conclusion, out_FlagSubjects | 1.3 |
-| ClaimCase-V2A-PolicyStatusCheck | <UNRESOLVED> | <UNRESOLVED> | in_ClaimID, in_PolicyDataJSON, in_IncidentDate → out_Findings, out_Conclusion, out_FlagSubjects | 2.1 |
-| ClaimCase-V2A-CoveragePeriodCheck | <UNRESOLVED> | <UNRESOLVED> | in_ClaimID, in_PolicyDataJSON, in_IncidentDate → out_Findings, out_Conclusion, out_FlagSubjects | 2.4 |
-| ClaimCase-V2A-ScreeningResultBuilder | <UNRESOLVED> | <UNRESOLVED> | in_ClaimID, six envelopes → out_Findings, out_ReviewRequired, out_EligibilityDecision, out_Conclusion, out_FlagSubjects | 2.6 |
-| ClaimCase-V2A-EligibilityDecisionRecord | <UNRESOLVED> | <UNRESOLVED> | in_ClaimID, in_EligibilityChecksJSON, in_ReviewRequired, in_ReviewerDecision, in_ReviewerNotes, in_ReviewedAt → out_EligibilityNotes, out_EligibilityReviewedAt, out_Findings, out_Conclusion, out_FlagSubjects | 2.8 |
-| ClaimCase-V2A-SettlementCalculator | <UNRESOLVED> | <UNRESOLVED> | in_ClaimID, in_ClaimDataJSON, in_PolicyDataJSON, in_AssessmentReportJSON, in_PreviousClaimsJSON → out_SettlementJSON, out_Findings, out_Conclusion, out_FlagSubjects | 4.3 |
-| ClaimCase-V2A-DecisionRules | <UNRESOLVED> | <UNRESOLVED> | in_ClaimID plus every stage-2 and stage-4 envelope → out_DecisionJSON, out_SettlementJSON, out_RecommendedOutcome, out_ReviewRequired, out_NetPayable, out_Findings, out_Conclusion, out_FlagSubjects | 5.1 |
-| ClaimCase-V2A-ClaimDecisionRecord | <UNRESOLVED> | <UNRESOLVED> | in_ClaimID, in_DecisionJSON, in_SettlementJSON, in_RecommendedOutcome, in_ReviewRequired, in_ReviewerDecision, in_ReviewerNotes, in_ReviewedAt, in_OverridesJSON → out_DecisionJSON, out_SettlementJSON, out_FinalOutcome, out_NetPayable, out_ReviewerNotes, out_ReviewedAt, out_OverridesJSON, out_DecisionReason, out_Findings, out_Conclusion, out_FlagSubjects | 5.3 |
-| ClaimCase-V2A-SettlementAuthorisation | <UNRESOLVED> | <UNRESOLVED> | in_ClaimID, in_SettlementJSON, in_DecisionJSON, in_FinalOutcome, in_NetPayable, in_Currency, in_ReviewRequired, in_ReviewDecision → out_AuthorisedAmount, out_AuthorisedBy, out_DecisionJSON, out_Findings, out_Conclusion, out_FlagSubjects | 6.2 |
-| ClaimCase-V2A-ClaimClosure | <UNRESOLVED> | <UNRESOLVED> | in_ClaimID, in_Ending, in_FinalOutcome, in_DecisionJSON and the ending's own payload → out_ClaimOutcome, out_DecisionReason, out_Findings, out_Conclusion, out_FlagSubjects | 6.4 (in_Ending=Approved), S1.3 (in_Ending=Denied) |
+| ClaimCase-<seat>-ClaimDataNormaliser | <UNRESOLVED> | <UNRESOLVED> | in_ClaimID, in_ClaimIXPData → out_ClaimDataJSON, out_DamageInventoryJSON, out_ClaimantName, out_ClaimantEmail, out_IncidentType, out_IncidentDate, out_DateOfSubmission, out_TotalClaimAmount, out_Currency, out_PropertyCountry, out_Findings, out_Conclusion, out_FlagSubjects | 1.3 |
+| ClaimCase-<seat>-PolicyStatusCheck | <UNRESOLVED> | <UNRESOLVED> | in_ClaimID, in_PolicyDataJSON, in_IncidentDate → out_Findings, out_Conclusion, out_FlagSubjects | 2.1 |
+| ClaimCase-<seat>-CoveragePeriodCheck | <UNRESOLVED> | <UNRESOLVED> | in_ClaimID, in_PolicyDataJSON, in_IncidentDate → out_Findings, out_Conclusion, out_FlagSubjects | 2.4 |
+| ClaimCase-<seat>-ScreeningResultBuilder | <UNRESOLVED> | <UNRESOLVED> | in_ClaimID, six envelopes → out_Findings, out_ReviewRequired, out_EligibilityDecision, out_Conclusion, out_FlagSubjects | 2.6 |
+| ClaimCase-<seat>-EligibilityDecisionRecord | <UNRESOLVED> | <UNRESOLVED> | in_ClaimID, in_EligibilityChecksJSON, in_ReviewRequired, in_ReviewerDecision, in_ReviewerNotes, in_ReviewedAt → out_EligibilityNotes, out_EligibilityReviewedAt, out_Findings, out_Conclusion, out_FlagSubjects | 2.8 |
+| ClaimCase-<seat>-SettlementCalculator | <UNRESOLVED> | <UNRESOLVED> | in_ClaimID, in_ClaimDataJSON, in_PolicyDataJSON, in_AssessmentReportJSON, in_PreviousClaimsJSON → out_SettlementJSON, out_Findings, out_Conclusion, out_FlagSubjects | 4.3 |
+| ClaimCase-<seat>-DecisionRules | <UNRESOLVED> | <UNRESOLVED> | in_ClaimID, five conclusion/flag-subject pairs, in_EligibilityDecision, in_EligibilityNotes, in_CoverageAssignmentsJSON, in_SettlementJSON, in_PolicyDataJSON → out_DecisionJSON, out_SettlementJSON, out_RecommendedOutcome, out_ReviewRequired, out_NetPayable, out_Findings, out_Conclusion, out_FlagSubjects | 5.1 |
+| ClaimCase-<seat>-ClaimDecisionRecord | <UNRESOLVED> | <UNRESOLVED> | in_ClaimID, in_DecisionJSON, in_SettlementJSON, in_RecommendedOutcome, in_ReviewRequired, in_ReviewerDecision, in_ReviewerNotes, in_ReviewedAt, in_OverridesJSON → out_DecisionJSON, out_SettlementJSON, out_FinalOutcome, out_NetPayable, out_ReviewerNotes, out_ReviewedAt, out_OverridesJSON, out_DecisionReason, out_Findings, out_Conclusion, out_FlagSubjects | 5.3 |
+| ClaimCase-<seat>-SettlementAuthorisation | <UNRESOLVED> | <UNRESOLVED> | in_ClaimID, in_SettlementJSON, in_DecisionJSON, in_FinalOutcome, in_NetPayable, in_Currency, in_ReviewRequired, in_ReviewDecision → out_AuthorisedAmount, out_AuthorisedBy, out_DecisionJSON, out_Findings, out_Conclusion, out_FlagSubjects | 6.2 |
+| ClaimCase-<seat>-ClaimClosure | <UNRESOLVED> | <UNRESOLVED> | in_ClaimID, in_Ending, in_FinalOutcome, in_DecisionJSON and the ending's own payload → out_ClaimOutcome, out_DecisionReason, out_Findings, out_Conclusion, out_FlagSubjects | 6.4 (in_Ending=Approved), S1.3 (in_Ending=Denied) |
 
 ### Agents
 
 | Agent | Folder | Resource ID (+version) | Inputs → Outputs (or shared contract) | Used By Tasks |
 |---|---|---|---|---|
-| ClaimCase-V2A-PolicyDocumentReader | <UNRESOLVED> | <UNRESOLVED> | in_ClaimID, in_PolicyDocument, in_ClaimDataJSON → out_PolicyDataJSON + shared finding-envelope contract | 1.6 |
-| ClaimCase-V2A-IdentityCheck | <UNRESOLVED> | <UNRESOLVED> | in_ClaimID, in_ClaimDataJSON, in_PolicyDataJSON → shared finding-envelope contract | 2.2 |
-| ClaimCase-V2A-PropertyAddressCheck | <UNRESOLVED> | <UNRESOLVED> | in_ClaimID, in_ClaimDataJSON, in_PolicyDataJSON, in_PropertyCountry → shared finding-envelope contract | 2.3 |
-| ClaimCase-V2A-FilingDeadlineCheck | <UNRESOLVED> | <UNRESOLVED> | in_ClaimID, in_ClaimDataJSON, in_IncidentDate, in_DateOfSubmission → shared finding-envelope contract | 2.5 |
-| ClaimCase-V2A-AssessorReportValidator | <UNRESOLVED> | <UNRESOLVED> | in_ClaimID, in_AssessorReport, in_ClaimDataJSON, in_PolicyDataJSON → out_AssessmentReportJSON + shared finding-envelope contract | 4.1 |
-| ClaimCase-V2A-CoverageAnalyst | <UNRESOLVED> | <UNRESOLVED> | in_ClaimID, in_ClaimDataJSON, in_PolicyDataJSON, in_AssessmentReportJSON, in_EligibilityDecision, in_EligibilityNotes → shared finding-envelope contract | 4.2 |
-| ClaimCase-V2A-CredibilityAnalyst | <UNRESOLVED> | <UNRESOLVED> | in_ClaimID, in_ClaimDataJSON, in_AssessmentReportJSON, in_PreviousClaimsJSON, in_PropertyCountry → shared finding-envelope contract | 4.4 |
-| ClaimCase-V2A-DecisionLetterAuthor | <UNRESOLVED> | <UNRESOLVED> | in_ClaimID, in_LetterKind, in_ClaimantName, in_Currency, the decision and settlement payloads and both reviewers' reasons → out_ClaimResponseJSON, out_LetterSubject, out_LetterBody + shared finding-envelope contract | 6.1 (approval), S1.1 (refusal) |
+| ClaimCase-<seat>-PolicyDocumentReader | <UNRESOLVED> | <UNRESOLVED> | in_ClaimID, in_PolicyDocument, in_ClaimDataJSON → out_PolicyDataJSON, out_PolicyClausesJSON + shared finding-envelope contract | 1.6 |
+| ClaimCase-<seat>-IdentityCheck | <UNRESOLVED> | <UNRESOLVED> | in_ClaimID, in_ClaimDataJSON, in_PolicyDataJSON → shared finding-envelope contract | 2.2 |
+| ClaimCase-<seat>-PropertyAddressCheck | <UNRESOLVED> | <UNRESOLVED> | in_ClaimID, in_ClaimDataJSON, in_PolicyDataJSON, in_PropertyCountry → shared finding-envelope contract | 2.3 |
+| ClaimCase-<seat>-FilingDeadlineCheck | <UNRESOLVED> | <UNRESOLVED> | in_ClaimID, in_ClaimDataJSON, in_IncidentDate, in_DateOfSubmission → shared finding-envelope contract | 2.5 |
+| ClaimCase-<seat>-AssessorReportValidator | <UNRESOLVED> | <UNRESOLVED> | in_ClaimID, in_AssessorReport, in_ClaimDataJSON, in_PolicyDataJSON → out_AssessmentReportJSON, out_CauseDetermination + shared finding-envelope contract | 4.1 |
+| ClaimCase-<seat>-CoverageAnalyst | <UNRESOLVED> | <UNRESOLVED> | in_ClaimID, in_DamageInventoryJSON, in_PolicyDataJSON, in_PolicyClausesJSON, in_CauseDetermination, in_EligibilityDecision, in_EligibilityNotes → out_CoverageAssignmentsJSON + shared finding-envelope contract | 4.2 |
+| ClaimCase-<seat>-CredibilityAnalyst | <UNRESOLVED> | <UNRESOLVED> | in_ClaimID, in_ClaimDataJSON, in_AssessmentReportJSON, in_PreviousClaimsJSON, in_PropertyCountry → shared finding-envelope contract | 4.4 |
+| ClaimCase-<seat>-DecisionLetterAuthor | <UNRESOLVED> | <UNRESOLVED> | in_ClaimID, in_LetterKind, in_ClaimantName, in_Currency, the decision and settlement payloads and both reviewers' reasons → out_ClaimResponseJSON, out_LetterSubject, out_LetterBody + shared finding-envelope contract | 6.1 (approval), S1.1 (refusal) |
 
 > Every agent runs at `temperature` 0 on model `gpt-5.6-terra`. The temperature is not a preference: a reviewer comparing two runs of one claim must not see two results (SC6). A model change is a contract change — it changes tool-call behaviour — so any swap is recorded rather than made quietly.
 
@@ -2198,12 +2281,14 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 
 | Process | Folder | Resource ID | Inputs → Outputs | Used By Tasks |
 |---|---|---|---|---|
-| Retrieve Property Claim | ClaimCase-V2A | `propery-insurance-claims` 1.0.36 | in_Scenario, in_Discrepancy, in_ClaimID → out_ClaimID (not bound) | 1.1 |
-| Extract Claim Data (IXP) | ClaimCase-V2A | `Extract.Claim.Data._IXP_` 1.0.2 | in_ClaimID → out_PolicyID, out_ClaimIXPDataJSON, out_ClaimFormPDF | 1.2 |
-| Retrieve Policy Document | ClaimCase-V2A | `Retrieve.Policy.Document` 1.0.0 | in_PolicyID → out_PolicyPDF | 1.4 |
-| Retrieve Previous Claims | ClaimCase-V2A | `Retrieve.Previous.Claims` 1.0.0 | in_PolicyID → out_PreviousClaimsJSON | 1.5 |
-| Retrieve Inspection Report | ClaimCase-V2A | `Retrieve.Inspection.Report` 1.0.0 | in_ClaimID → out_ReportReady, out_AssessmentReport | 3.1 |
-| Client Notification | ClaimCase-V2A | `Client.Notification` 1.0.0 | in_Subject, in_Body, in_Recepient → none | 1.7, 6.3, S1.2 |
+| Retrieve Property Claim | ClaimCase-<seat> | `propery-insurance-claims` 1.0.36 | in_Scenario, in_Discrepancy, in_ClaimID → out_ClaimID (not bound) | 1.1 |
+| Extract Claim Data (IXP) | ClaimCase-<seat> | `Extract.Claim.Data._IXP_` 1.0.2 | in_ClaimID → out_PolicyID, out_ClaimIXPDataJSON, out_ClaimFormPDF | 1.2 |
+| Retrieve Policy Document | ClaimCase-<seat> | `Retrieve.Policy.Document` 1.0.0 | in_PolicyID → out_PolicyPDF | 1.4 |
+| Retrieve Previous Claims | ClaimCase-<seat> | `Retrieve.Previous.Claims` 1.0.0 | in_PolicyID → out_PreviousClaimsJSON | 1.5 |
+| Retrieve Inspection Report | ClaimCase-<seat> | `Retrieve.Inspection.Report` 1.0.0 | in_ClaimID → out_ReportReady, out_AssessmentReport | 3.1 |
+| Client Notification | ClaimCase-<seat> | `Client.Notification` 1.0.0 | in_Subject, in_Body, in_Recepient → none | 1.7, 6.3, S1.2 |
+
+**Why `rpa` and not `process` for the six deployed automations.** `[MEASURED]` The caseplan task-type enum has both, and `process` is the word `PDD.md` uses — but it resolves against a different index. `uip maestro case tasks describe --type process --id <key>` answers *No process entry found ... in processOrchestration-index.json*, which is empty on this tenant; the same key under `--type rpa` returns the automation's real arguments. An Orchestrator automation published as a package is bound as `rpa`. Typed as `process` the binding resolves to nothing and the claim faults about five seconds in, having executed nothing.
 
 > **The folder is named explicitly on every one of these.** They live in the seat folder, and deploying the solution creates a sub-folder that does not inherit its parent's processes. A binding without the folder resolves to an empty folder and faults about five seconds into the case, on a message that names the process rather than the folder it was looked for in.
 >
@@ -2233,19 +2318,19 @@ Case Definition Blueprint for ClaimCase-V2A — Property Claims Handling.
 
 | Component | Reuse or Build | Where it lives | Consumers | Built before |
 |---|---|---|---|---|
-| The six retrieval and correspondence automations | Reuse | ClaimCase-V2A | Tasks 1.1, 1.2, 1.4, 1.5, 1.7, 3.1, 6.3, S1.2 | Already deployed |
+| The six retrieval and correspondence automations | Reuse | ClaimCase-<seat> | Tasks 1.1, 1.2, 1.4, 1.5, 1.7, 3.1, 6.3, S1.2 | Already deployed |
 | property-claims-shared-45fcad56-ixp | Reuse | Tenant | Extract Claim Data (IXP) | Already published |
 | Shared Data Fabric Connection | Reuse | Shared | The claim record | Already provisioned |
-| Claim record entity `ClaimCase_V2A` | Build new | ClaimCase-V2A | Every task, both reviewer screens, the in-flight view | Every component that writes to it |
+| Claim record entity `ClaimCase_<seat>` | Build new | ClaimCase-<seat> | Every task, both reviewer screens, the in-flight view | Every component that writes to it |
 | The finding envelope | Build new | The solution's shared contract | Every check and analysis, both reviewer screens | Every component that returns findings |
-| ClaimCase-V2A-DecisionLetterAuthor | Build new | The solution | Tasks 6.1 and S1.1 | Both endings |
-| ClaimCase-V2A-ClaimClosure | Build new | The solution | Tasks 6.4 and S1.3 | Both endings |
+| ClaimCase-<seat>-DecisionLetterAuthor | Build new | The solution | Tasks 6.1 and S1.1 | Both endings |
+| ClaimCase-<seat>-ClaimClosure | Build new | The solution | Tasks 6.4 and S1.3 | Both endings |
 
 ### Environments (DEV / UAT / PROD)
 
 | Environment | Orchestrator folder | Connections | Notes |
 |---|---|---|---|
-| DEV | ClaimCase-V2A, with the solution deployed into ClaimCase-V2A-Deploy | Shared Data Fabric Connection, in the Shared folder | The only environment provisioned for this build. One deployment name, redeployed in place at a higher package version. |
+| DEV | ClaimCase-<seat>, with the solution deployed into ClaimCase-<seat>-Deploy | Shared Data Fabric Connection, in the Shared folder | The only environment provisioned for this build. One deployment name, redeployed in place at a higher package version. |
 | UAT | <UNRESOLVED> | <UNRESOLVED> | Not provisioned. |
 | PROD | <UNRESOLVED> | <UNRESOLVED> | Not provisioned. |
 
@@ -2318,9 +2403,9 @@ Every check and analysis in this design returns the same payload shape. This is 
 | W9 | **Materiality is not leniency.** A real problem is never recorded inside a check that passes. BR-15 is the counter-example: a peril conflict **fails** even when the assessor's peril is itself covered. | BR-77. Recording a real problem inside a passing check is how it reaches approval with a note nobody reads. |
 | W10 | **A clean claim returns findings with every `result` a pass, `flag` false everywhere, `escalationSubject` `none` everywhere, `context` and `unreadable` empty, and `out_FlagSubjects` the literal `none`.** That is a complete, correct answer and not a silence. | Roughly a third of claims carry nothing wrong. A build that finds something on every claim has learned to always answer *yes* to *"is anything wrong here?"* — the easiest way to look thorough and the least useful. This is what SC5 measures. |
 
-### Case Entity — ClaimCase_V2A
+### Case Entity — ClaimCase_<seat>
 
-Created in the seat folder `ClaimCase-V2A` with `--folder-key`, over the shared Data Fabric connection. The schema is pinned by `contracts/claim-entity.md`; it is reproduced here because it is architecture — it decides what the reviewer screens show, what a validation task writes back, what extraction maps into and what every report reads.
+Created in the seat folder `ClaimCase-<seat>` with `--folder-key`, over the shared Data Fabric connection. The schema is pinned by `contracts/claim-entity.md`; it is reproduced here because it is architecture — it decides what the reviewer screens show, what a validation task writes back, what extraction maps into and what every report reads.
 
 | Field | Type | Required | Constraints | Source | Written by | Description |
 |---|---|---|---|---|---|---|
@@ -2367,7 +2452,57 @@ Created in the seat folder `ClaimCase-V2A` with `--folder-key`, over the shared 
 
 **4,000 characters, not 200, on both note fields.** These are a reviewer's own words and the only place their reasoning survives; 200 cuts a paragraph mid-sentence and tells nobody it did.
 
-**Every JSON column is capped at 10,000 characters and every producer budgets to 8,000.** The cap is not silent — an over-length write faults the whole claim — so each component that produces a payload carries its own budget rather than a hope, and 8,000 leaves room for a claim with more damage rows than usual. Where a payload would exceed it, the component drops its lowest-value detail first: raw quotes are truncated with an ellipsis before any finding is dropped, and a finding is never dropped.
+**Every JSON column is capped at 10,000 characters and an over-length write faults the whole claim.** That is the *column* budget and it is not the binding one — see [the two budgets](#the-two-budgets-and-the-numbers-that-satisfy-them) below. Where a payload would exceed its budget the component drops its lowest-value detail first: raw quotes and clause sentences are truncated with an ellipsis, and a finding, an exclusion, a limit, a named peril or a damage item is **never** dropped.
+
+### The two budgets, and the numbers that satisfy them
+
+**A column holds 10,000 characters. A component's start arguments hold roughly 8,700 — all of them together.** The second number is the one that shapes this design, because it is smaller than two columns and the case starts every component with arguments. `[MEASURED]` A live run was refused at about 8,700 characters against a documented 10,000, the difference being the platform's own envelope.
+
+Budgeting each producer to the column would therefore guarantee failure: any consumer reading two payloads would be handed 16,000 characters. **So every payload is budgeted to the smallest share any of its consumers can give it, and every consumer's total is stated.** The working ceiling is **8,000 characters of arguments per component**, leaving ~700 of margin under the measured cap.
+
+| Payload | Budget | Produced by | Why this number |
+|---|---|---|---|
+| `claimDataJson` | 3,000 | 1.3 | 2,840 measured on a five-item claim, flattened; ~4,500 at twelve items, which is where the ellipsis starts on descriptions |
+| `damageInventoryJson` | 2,400 | 1.3 | The inventory and the incident only. Never stored — every value in it is already in `claimDataJson` |
+| `policyDataJson` | 2,400 | 1.6, **enforced at 1.7a** | Facts only: parties, address, period, status, sections, limits, sublimits, deductible, aggregate, named perils. All numbers and short strings. **`[MEASURED]`** 2,239 canonical on the §13.1 policy — 4 sections, 9 sublimits, 16 named perils, 6 special conditions. The original 1,800 was an estimate and it was wrong; the payload is made of short facts, so nothing can be ellipsised to reach it and nothing can be dropped without losing a fact some rule reads |
+| `policyClausesJson` | 2,800 | 1.6, **enforced at 1.7a** | Exclusions, conditions and endorsement wording verbatim, ellipsised at ~200 characters each. Read by task 4.2 alone. Never stored. **`[MEASURED]`** 2,797 for the §13.1 policy's 24 clauses, and **2,718 is the floor** — below it the shortener would have to drop a clause, which this design forbids outright, because a missing exclusion reads downstream as an exclusion the policy does not have |
+| `policyCoverageJson` | 1,800 | 1.7a | `policyDataJson` less the screening fields no coverage rule tests and less the two groups whose wording arrives beside it in `policyClausesJson`. **`[MEASURED]`** 1,615. Read by task 4.2 alone. Never stored |
+| `assessmentReportJson` | 2,200 | 4.1 | |
+| `previousClaimsJson` | 900 | 1.5 | A period's settled claims; usually empty, and empty is a result |
+| A screening envelope (`out_Findings` from 1.6, 2.1–2.5) | 1,200 each | six components | Six of them fan into one consumer, so six is the divisor. One check each; a headline, a reason, one or two quotes |
+| `eligibilityChecksJson` | 6,000 | 2.6 | The six merged, wrappers stripped |
+| An analysis envelope (`out_*ChecksJSON` from 4.1–4.4) | 8,000 each | four components | **`[MEASURED]`** Budgeted to the *column*, not to a consumer's share, because after the correction above no component receives one — each is written to its own column and read from there by the reviewer's screen. The settlement envelope measures 3,609 characters on the canonical claim with all nine of its rules reported |
+| `coverageAssignmentsJson` | 1,200 | 4.2 | One compact row per damage item |
+| `settlementJson` | 3,200 | 4.3, then 5.1, then 5.3 | Line by line with section subtotals and every cap named |
+| `decisionJson` | 2,000 | 5.1, then 5.3, then 6.2 | |
+| `overridesJson` | 1,500 | 5.2 | |
+| `eligibilityNotes` **as a component input** | 600 | 2.7 or 2.8 | The reviewer's full 4,000 characters live on the record and on both screens. A component needs to see *what was granted*, not the paragraph |
+
+**Every consumer, and what it is handed.** Scalars — ids, dates, currencies, conclusions, subject lists — total under 600 on the widest of them and are counted in.
+
+| Consumer | Payloads | Total |
+|---|---|---|
+| 1.6 Policy document reader | claimData | ~3,100 |
+| 2.1 Policy status · 2.4 Coverage period | policyData | ~1,900 |
+| 2.2 Identity · 2.3 Property address | claimData + policyData | ~4,900 |
+| 2.5 Filing deadline | claimData | ~3,100 |
+| 2.6 Screening result builder | six screening envelopes | ~7,300 |
+| 2.8 Eligibility decision record | eligibilityChecks + notes | ~6,700 |
+| 4.1 Assessor report validator | claimData + policyData + the report as an attachment | ~5,500 |
+| **4.2 Coverage analyst** | damageInventory + policyCoverage + policyClauses + causeDetermination + notes | **~7,700** |
+| **4.3 Settlement calculator** | damageInventory + policyData + assessmentReport + previousClaims | **~7,950** |
+| 4.4 Credibility analyst | claimData + assessmentReport + previousClaims | ~6,200 |
+| 5.1 Decision rules | settlement + coverageAssignments + policyData + five conclusion/subject pairs + notes | ~7,400 |
+| 5.3 Claim decision record | decision + settlement + overrides | ~6,800 |
+| 6.1 / S1.1 Decision letter author | decision + settlement + both reviewers' notes | ~6,700 |
+| 6.2 Settlement authorisation | settlement + decision | ~5,300 |
+| 6.4 / S1.3 Claim closure | decision | ~2,100 |
+
+**`[MEASURED]` on the canonical claim of §13.1**, the widest consumer actually ran at 3,388 characters of arguments against the 8,000 ceiling — the budgets above are worst-case, and a real claim leaves roughly half the allowance unused.
+
+**4.2 and 4.3 are the two that bind**, and both sit ~300 under the working ceiling and ~1,000 under the measured cap. Anything added to either has to displace something. **This table is the first thing to re-measure when the case is wired**, because the cap is a platform property rather than a documented contract and it is the one number here nobody controls.
+
+> **`[MEASURED]` — and re-measuring it is what caught the defect this table exists to prevent.** On the first live claim, task 4.2 was started with **13,490 characters**: `policyDataJson` had arrived at 6,687 against its stated 1,800, and `policyClausesJson` at 4,836 against 2,800. The task did not fail. It ran, reported success, and returned an empty coverage assignment — which reached the decision rules as *unreadable*, and turned a claim that should have settled automatically into an escalation. **A budget that lives in a producer's prompt is a request, and this one was refused silently by a component that reported success.** Three corrections follow, and all three are in this design rather than in a prompt: every policy budget is now enforced in code at task 1.7a; the two numbers measurement proved wrong are corrected above; and the two consumers that bind are each handed a payload narrowed to what their rules actually read. `4-verify/component-tests.py` asserts all of it against the payload the live agent really returned, so the ceiling is now a test rather than a paragraph.
 
 **The write is a patch, not a replace, and its three cases are not symmetric.** An omitted field keeps its content; `null` destroys it; and an empty string destroys it too, silently, while reporting success. An unset case variable resolves to an empty string, which is the worst of the three. So **every optional field is coalesced to omitted rather than to blank** at every write point in this design — no task writes a field it did not produce on this run, and no field is ever set from a variable that might still be at its default.
 
@@ -2399,24 +2534,34 @@ Created in the seat folder `ClaimCase-V2A` with `--folder-key`, over the shared 
 
 | Entity.Field | Single owning component | When it is written |
 |---|---|---|
-| ClaimCase_V2A.claimId, .caseInstanceId | The case | At case entry, before any task runs |
-| ClaimCase_V2A.status | The case | On each task that advances the lifecycle word |
-| ClaimCase_V2A.policyId | Task 1.2 | On completion of the extraction |
-| ClaimCase_V2A.claimantName, .incidentType, .propertyCountry, .incidentDate, .dateOfSubmission, .totalClaimAmount, .currency, .claimDataJson, .claimFormPdfId, .claimFormPdfName | Task 1.3 | On completion of the normaliser |
-| ClaimCase_V2A.policyDataJson, .policyPdfId, .policyPdfName | Task 1.6 | On completion of the policy read |
-| ClaimCase_V2A.eligibilityChecksJson | Task 2.6 | **Before the eligibility gate opens** (C3) |
-| ClaimCase_V2A.eligibilityDecision | Task 2.6 on the automatic path, task 2.7 on the reviewed path | At the moment screening resolves |
-| ClaimCase_V2A.eligibilityNotes, .eligibilityReviewedAt | Task 2.8 | After screening resolves, on both paths |
-| ClaimCase_V2A.assessmentReportJson, .assessmentReportPdfId, .assessmentReportPdfName | Task 4.1 | On completion of report validation |
-| ClaimCase_V2A.payoutChecksJson | Task 4.3 | On completion of the settlement |
-| ClaimCase_V2A.assessmentReportValidationJson, .coverageChecksJson, .credibilityChecksJson | Task 5.1 | With the recommendation, **before the claim-review gate opens** (C3). Task 5.1 is the deterministic component that already consumes all three envelopes, so it is where they are serialised and where their character budget is enforced |
-| ClaimCase_V2A.settlementJson | Task 4.3 first, task 5.1 on the coverage join, task 5.3 after any override | Each write carries the earlier lines through unedited |
-| ClaimCase_V2A.decisionJson | Task 5.1 for the recommendation, task 5.3 for the outcome, task 6.2 for the authorisation | The recommendation is written **before the claim-review gate opens** (C3) |
-| ClaimCase_V2A.reviewRequired | Task 5.1 | With the recommendation |
-| ClaimCase_V2A.reviewDecision | Task 5.2 | When the adjuster decides |
-| ClaimCase_V2A.reviewerNotes, .reviewedAt | Task 5.3 | After claim review resolves, on both paths |
-| ClaimCase_V2A.decisionReason | Task 5.3, then task 6.4 or S1.3 | At the decision, and again at closure |
-| ClaimCase_V2A.claimResponseJson | Task 6.1 on the approved ending, task S1.1 on the denied one | When the letter is drafted, before it is sent |
+| ClaimCase_<seat>.claimId, .caseInstanceId | The case | At case entry, before any task runs |
+| ClaimCase_<seat>.status | The case | On each task that advances the lifecycle word |
+| ClaimCase_<seat>.policyId | Task 1.2 | On completion of the extraction |
+| ClaimCase_<seat>.claimantName, .incidentType, .propertyCountry, .incidentDate, .dateOfSubmission, .totalClaimAmount, .currency, .claimDataJson, .claimFormPdfId, .claimFormPdfName | Task 1.3 | On completion of the normaliser |
+| ClaimCase_<seat>.policyDataJson, .policyPdfId, .policyPdfName | Task 1.6 | On completion of the policy read |
+| ClaimCase_<seat>.eligibilityChecksJson | Task 2.6 | **Before the eligibility gate opens** (C3) |
+| ClaimCase_<seat>.eligibilityDecision | Task 2.6 on the automatic path, task 2.7 on the reviewed path | At the moment screening resolves |
+| ClaimCase_<seat>.eligibilityNotes, .eligibilityReviewedAt | Task 2.8 | After screening resolves, on both paths |
+| ClaimCase_<seat>.assessmentReportJson, .assessmentReportPdfId, .assessmentReportPdfName | Task 4.1 | On completion of report validation |
+| ClaimCase_<seat>.payoutChecksJson | Task 4.3 | On completion of the settlement |
+| ClaimCase_<seat>.assessmentReportValidationJson | Task 4.1 | On completion of report validation |
+| ClaimCase_<seat>.coverageChecksJson | Task 4.2 | On completion of the coverage read |
+| ClaimCase_<seat>.credibilityChecksJson | Task 4.4 | On completion of the credibility read |
+| ClaimCase_<seat>.settlementJson | Task 4.3 first, task 5.1 on the coverage join, task 5.3 after any override | Each write carries the earlier lines through unedited |
+| ClaimCase_<seat>.decisionJson | Task 5.1 for the recommendation, task 5.3 for the outcome, task 6.2 for the authorisation | The recommendation is written **before the claim-review gate opens** (C3) |
+| ClaimCase_<seat>.reviewRequired | Task 5.1 | With the recommendation |
+| ClaimCase_<seat>.reviewDecision | Task 5.2 | When the adjuster decides |
+| ClaimCase_<seat>.reviewerNotes, .reviewedAt | Task 5.3 | After claim review resolves, on both paths |
+| ClaimCase_<seat>.decisionReason | Task 5.3, then task 6.4 or S1.3 | At the decision, and again at closure |
+| ClaimCase_<seat>.claimResponseJson | Task 6.1 on the approved ending, task S1.1 on the denied one | When the letter is drafted, before it is sent |
+
+> **How the write actually happens, and the one thing about it that is not obvious.** The case writes the record through `ClaimCase-<seat>-ClaimRecordWriter`, an API workflow called at nine points — once per stage boundary in the matrix above — each call passing only the columns that point owns, as a single `=js:JSON.stringify({...})` payload. The first call creates the row and returns its id into `claimRecordId`; every later call updates by that id. The writer drops any field whose value is `null` or `""` before sending, which is what makes the patch semantics safe: an unset case variable resolves to an empty string, and an empty string destroys a stored value *silently while reporting success*, so a design that passes variables straight through would have later stages quietly erasing earlier ones.
+>
+> **`[MEASURED]` The connector activity has to be the V3 one, asked for by name.** Data Fabric's Integration Service connector exposes two generations. The V2 activities — which are the only ones `uip is activities list` and the case type cache advertise, and therefore the ones any tooling reaches for by default — resolve entity names **at tenant level only**, and this claim record is folder-scoped by `CONFIG.md`. The V3 activities take `entityScope: folder` with `folderEntityName` and `folderEntityName_folderPath`, and reach it. `uip maestro case spec --object-name CreateEntityRecord_V3` builds the V3 shape even though the cache does not list it. Two spellings inside that fix are traps, because **all three mistakes return the same 404**: the query keys are lower-case even though `case spec` echoes them PascalCased, and `case spec` also drops the underscore in `folderEntityName_folderPath`. `uip is resources describe` is the authority on the spelling, not what `spec` echoed back. The update operation is `PUT` on `/v3/UpdateEntityRecord/update`, not POST.
+
+> **Every envelope column is written by the task that produced it**, and this is the correction that makes the design startable. It was previously routed through task 5.1 — which reads none of the three — and that alone put five payloads into one component's arguments against an allowance that holds two. One owner per column is also what the matrix claims everywhere else, and what C3 needs: all four analysis envelopes land before the claim-review gate opens, so the reviewer's screen is complete whether or not the recommendation reaches it.
+>
+> **The envelope is produced as a typed object and never hand-serialised** — that rule is `[MEASURED]` and it stands, so the **case** does the serialising at the binding rather than asking a component for a second, hand-built copy. The three agent-produced envelopes are written with an output-side `=js:JSON.stringify(vars.$xref(...))` expression; task 4.3 is deterministic and already emits its own budgeted string, so it keeps the plain `->`. What must never happen again is a component being handed payloads it does not read purely so that it can be the one to write them.
 
 > **The reviewer screens write nothing.** Their scopes are read-only and user-scoped on purpose: the screen reads the claim record and the case writes it. A decision belongs on the record because a case task put it there, which is what makes it auditable.
 
@@ -2538,7 +2683,7 @@ The complete claim from `PDD.md` §13.1. Every figure is real and the arithmetic
 | 6 | §5.3 step 6.2 | No settlement, payment or authorisation call exists | OS2 and N2 put paying outside this process and §9 records that Settlements receives an amount and an approver and nothing else. The task records the authorised amount and who authorised it and stops | Technology-driven |
 | 7 | §5.3 step 8.1, §15 | The Missing details lane is modelled complete and inert behind a guard that defaults false and that nothing produces | §15 says the stage must exist in the lifecycle so the later change is an addition rather than a restructure, and must not be built. A stage with no entry condition would be orphaned rather than deferred | Technology-driven |
 | 8 | §5.6, §12 V1 | The policy reader converts the policy's printed dates to ISO and carries the printed text alongside | **`[MEASURED]`** §12 says the date format varies by issuing country and says nothing more. On a live claim the policy printed `11/08/2025`, the reader refused to guess whether that was 11 August or 8 November — correctly, under the rule that forbids inventing a value — and reported the policy period **unreadable** on a claim with nothing wrong with it. All six countries in §12 V1 write day-first; the design now states that, and requires the printed text to be carried so the conversion stays auditable. A caution raised on a clean claim is exactly what SC5 counts | Technology-driven |
-| 9 | §6.4, §1.5 P5 | Every component carries an input budget as well as a payload budget | **`[MEASURED]`** The record's columns hold 10,000 characters each, and the design passes three of them into one component. The arguments a component is started with are capped, and the cap is on all of them together — a live run was refused at roughly 8,700 characters of arguments against a documented 10,000, the difference being the platform's own envelope. Payload budgets alone do not prevent this, so each producer is now told the smallest budget any of its consumers imposes. **This is the first thing to verify when the case is wired** | Technology-driven |
+| 9 | §6.4, §1.5 P5 | Every component carries an input budget as well as a payload budget, and four components were reshaped to fit theirs | **`[MEASURED]`** A component's start arguments are capped **all together** at roughly 8,700 characters against a documented 10,000, the difference being the platform's own envelope — and that is smaller than two record columns. The first version of this design budgeted producers to the column and left the consumer budget as an instruction with no numbers, which made two tasks unstartable rather than tight: **5.1** was handed seven payloads and **2.6** six. Four changes fixed it at the source. Every envelope column is now written by the task that produced it, not routed through 5.1, which reads none of them. 5.1 takes each component's `out_Conclusion` and `out_FlagSubjects` — the two values BR-40 to BR-45 are actually met by — instead of the envelopes behind them, plus the two payloads it genuinely joins. The policy is split at its producer into facts and verbatim clauses, because one policy payload measures 4,000–6,000 against a 15,000-character document and cannot share an input with anything. And both `action` gates carry identifiers while the screen reads the record, which is what the app's read-only registration is scoped for. The numbers are now in the Data Model as a payload budget and a per-consumer total, and the two binding consumers sit ~800 under the working ceiling. **Re-measure the cap on the first live run** — it is a platform property, not a documented contract | Technology-driven |
 | 10 | §6.2 Object: Claim | The claim reference is the case's own identifier rather than one assigned by Claims Intake | The claim-generation automation stamps the number this process supplies onto all three documents, so one value identifies the case, the documents and the record. Under a live Claims Intake integration the inbound reference would become the identifier's external source instead — a one-line change to the case identifier, not a restructure | Technology-driven |
 
 ---
@@ -2546,10 +2691,10 @@ The complete claim from `PDD.md` §13.1. Every figure is real and the arithmetic
 ## Next Steps
 
 1. Derive the implementation task list from this design into `2-plan/tasks.md`.
-2. Build the components this design depends on **before** the case, in this order: the claim record entity `ClaimCase_V2A` in the seat folder; the adopted IXP model deployment; the eight agents and the ten API workflows, each returning the finding envelope; then the coded action app `claim-review-v2a`.
+2. Build the components this design depends on **before** the case, in this order: the claim record entity `ClaimCase_<seat>` in the seat folder; the adopted IXP model deployment; the eight agents and the ten API workflows, each returning the finding envelope; then the coded action app `claim-review-<seat>`.
 3. Build the case plan from Section 2 and Section 4.
 4. Test per the Testing Strategy above.
-5. Package and deploy the solution: `uip solution init` → `projects add` per project → `resources refresh` → `uip maestro case pack` → `uip solution pack` → `publish` → `deploy run --name ClaimCase-V2A --parent-folder-path ClaimCase-V2A`.
+5. Package and deploy the solution: `uip solution init` → `projects add` per project → `resources refresh` → `uip maestro case pack` → `uip solution pack` → `publish` → `deploy run --name ClaimCase-<seat> --parent-folder-path ClaimCase-<seat>`.
 
 **End of Case Definition Blueprint.**
 

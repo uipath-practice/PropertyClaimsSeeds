@@ -67,7 +67,7 @@
         "properties": {
           "out_AssessmentReportJSON": {
             "type": "string",
-            "description": "The assessment as structured data, one line of compact JSON, at most 8000 characters, in the shape given in the system prompt."
+            "description": "The assessment as structured data, one line of compact JSON, at most 8000 characters, in the shape given in the system prompt. Emit STRICTLY VALID JSON - keys and string values wrapped in double quotes, exactly as JSON requires; the only prohibition is that no text VALUE may contain a double-quote character of its own. Budget 3000 characters: shorten a sentence with an ellipsis before dropping it, and never stop mid-string - a truncated payload is unreadable downstream and reads as a fact the document does not have."
           },
           "out_Findings": {
             "type": "object",
@@ -229,13 +229,18 @@
           "out_FlagSubjects": {
             "type": "string",
             "description": "The comma-separated set of distinct escalationSubject values raised by this component that are not none, or the single word none when there are none. This component may only ever raise its own subject."
+          },
+          "out_CauseDetermination": {
+            "type": "string",
+            "description": "The assessor's cause determination, as a plain sentence and nothing else. Surfaced as a scalar so that BR-15's peril comparison is answerable without handing the whole assessment to the coverage analyst. Empty string where the report does not state one. No double-quote characters."
           }
         },
         "required": [
           "out_AssessmentReportJSON",
           "out_Findings",
           "out_Conclusion",
-          "out_FlagSubjects"
+          "out_FlagSubjects",
+          "out_CauseDetermination"
         ]
       }
     }

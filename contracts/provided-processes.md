@@ -51,8 +51,8 @@ Its `out_ClaimID` is the file it wrote, which is the number you passed in. **You
 **The extracted payload is deeply nested, and a case expression resolves one level.** Every group is an array and every field is an object:
 
 ```
-ClaimClaimant[0].EmailAddress.Value            group → array, field → { Value, Confidence, OcrConfidence }
-ClaimGeneral[0].TotalClaimed.Value.Value       money nests once more: .Value.Value and .Value.Currency
+ClaimClaimant[0].EmailAddress.Value                group → array, field → { Value, Confidence, OcrConfidence }
+ClaimClaimTotals[0].TotalClaimAmount.Value.Value   money nests once more: .Value.Value and .Value.Currency
 ```
 
 So **anything the case itself has to read — above all the claimant's contact details for step 1.6 — has to be surfaced as a plain scalar by whatever step produces it.** A binding that reaches into the raw payload fails on every claim, loudly, on a required argument. Which step surfaces it is your design decision; that it must be surfaced is not.
