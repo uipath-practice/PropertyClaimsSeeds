@@ -1,6 +1,10 @@
-# Build configuration
+# Environment
 
-The values this build anchors on. Everything else you name yourself.
+Where you build, what is already there, and the names everything has to agree on. Read *What already exists* before you design anything — it is the difference between binding a deployed automation and inventing a replacement for it.
+
+## Contents
+
+[Where you are building](#where-you-are-building) · [What already exists](#what-already-exists) · [One name, everywhere](#one-name-everywhere) · [Deploying](#deploying) · [The claim entity](#the-claim-record) · [The validation app signs in through a shared registration](#the-reviewers-screen-signs-in-through-a-shared-registration) · [Model settings](#model-settings) · [Windows](#windows)
 
 ## Where you are building
 
@@ -9,280 +13,113 @@ The values this build anchors on. Everything else you name yourself.
 | Environment | `https://cloud.uipath.com` |
 | Organization | `tpenlabs` |
 | Tenant | `CodingAgentsPractice` |
-| Your folder | `ClaimCase-<seat>` — the Orchestrator folder assigned to you |
+| Your Orchestrator folder | `ClaimCase-<seat>` |
 
 ```bash
 uip login status --output json     # confirm before anything else
 ```
 
-**You share this tenant**, and not only with this workshop — other exercises publish here too. Prefix everything
-you create — solution, processes, agents, entity, app — with your seat name so twenty builds can coexist. A
-name without it is a collision waiting for the second participant to reach the same step.
+**You share this tenant, and not only with this workshop.** Prefix everything you create with your seat name, or twenty builds collide.
 
-**Your seat token is whatever follows `ClaimCase-` on your Orchestrator folder** — a number on some seats, a
-name on others (`ClaimCase-04`, `ClaimCase-John`). Nothing in this folder states it, so confirm it rather than
-assume:
+**Your seat token is whatever follows `ClaimCase-` on your folder** — a number on some seats, a name on others. Nothing here states it, so confirm rather than assume:
 
 ```bash
 uip or folders list --output json --output-filter "[?starts_with(Name,'ClaimCase')].Name"
 ```
 
-If more than one comes back, the tenant is shared and you are seeing other people's — yours is the one whose
-name you were given.
+More than one result means you are seeing other people's. Yours is the one you were given.
 
-### One name, everywhere
+## What already exists
 
-**Your seat's name is `ClaimCase-<seat>`, and it is the same string in every surface.** Not a family of similar
-names — the same one. It is what makes a folder, a package, a job and a log line attributable to you at a glance,
-and it is what lets a teardown script find everything you made.
+**Deployed in your folder before you start. Bind them; never rebuild them.** They are the integration layer — in a real insurer, fetching a policy means driving a portal; here it is a storage bucket behind the same interface. What that leaves you is the part worth practising.
 
-Written below with the seat token `Jane`; substitute your own.
+`PDD.md` §9 names six business systems. Five have an automation behind them and one does not:
+
+| `PDD.md` §9 system | What is deployed | Read at |
+|---|---|---|
+| Claims Intake | `Retrieve Property Claim` | steps 1.1, 1.2 |
+| Document Store | buckets `Claims` · `Insurance Policies Repository` · `Assessor Reports`, plus `Extract Claim Data (IXP)` and `Retrieve Inspection Report` | 1.2, 1.3, 3.1 |
+| Policy Administration | `Retrieve Policy Document` | 1.4 |
+| Claims History | `Retrieve Previous Claims` | 1.5 |
+| Correspondence | `Client Notification` | 1.6, 6.3, 7.2 |
+| **Settlements** | **nothing** | 6.2 |
+
+**That last row is the one to read twice.** Settlements is out of scope for automation (`PDD.md` OS2) and no automation stands in for it. Step 6.2 *records* the authorised amount and who approved it on the claim entity, and stops. **Do not design a settlement API, a payment call or an authorisation service** — two independent designs of this process invented one, and it resolved to nothing at build time.
+
+The same warning applies to the claim entity itself: `PDD.md` §1.5 P5 asks for a store, and it is [yours to build](#the-claim-record), not a service to call. A design that routes every write through a central record-writing component is designing a component that does not exist.
+
+**An IXP project** is also provided: `property-claims-shared-45fcad56-ixp`, published and tagged `live`. Adopt it, or train your own.
+
+**Their exact arguments, types and behaviour are [`contracts/provided-processes.md`](contracts/provided-processes.md).** Read it before binding anything.
+
+**No email connection is provisioned.** `Client Notification` logs the letter rather than sending it, on purpose. No letter ever reaches anyone.
+
+## One name, everywhere
+
+**One string, every surface — not a family of similar names.** It is what makes a folder, a package, a job and a log line attributable to you at a glance, and what lets a teardown find everything you made.
 
 | Surface | Name |
 |---|---|
 | Orchestrator folder | `ClaimCase-Jane` |
 | Local build folder | `Build/ClaimCase-Jane/` |
 | Solution, and every package it publishes | `ClaimCase-Jane` |
-| **Deployment** (`deploy run --name`) | `ClaimCase-Jane` — **exactly one, for the whole exercise** |
-| Solution folder you deploy into (`--folder-name`) | `ClaimCase-Jane-Deploy`, under your seat folder |
-| IXP project, if you build your own | title it `ClaimCase-Jane` |
-| **Data Fabric entity** | **`ClaimCase_Jane`** — underscore, not hyphen |
-| **Coded app** | **`claim-review-jane`** — lower case, not hyphen-free |
+| Deployment (`deploy run --name`) | `ClaimCase-Jane` — **exactly one, for the whole exercise** |
+| Solution folder you deploy into | `ClaimCase-Jane-Deploy`, under your seat folder |
+| IXP project, if you train your own | `ClaimCase-Jane` |
+| **Claim record** | **`ClaimCase_Jane`** — underscore, not hyphen |
+| **Validation app** | **`claim-review-jane`** — lower case |
 | Action task titles | `Eligibility review for Jane` · `Claim review for Jane` |
+| Case name | `ClaimCase-Jane` |
 
-The token is used **exactly as it appears on your folder** — `GPT01` is not `Gpt01`. **Two surfaces re-spell it
-anyway, and both fail at create time on a message about the name rather than about the seat.**
+Use the token exactly as it appears on your folder — `GPT01` is not `Gpt01`. **Two surfaces re-spell it and both fail at create time on a message about the name rather than about the seat:** the claim entity takes letters, digits and underscores only and must start with a letter; the screen is lower case. Nowhere is it `ClaimCaseJane`.
 
-- **The entity takes letters, digits and underscores only** and must start with a letter, so the hyphen that
-  works everywhere else is rejected. Underscore there, hyphen everywhere else, and nowhere at all is it
-  `ClaimCaseJane`.
-- **A coded app name is lower case.** `claim-review-jane`, not `claim-review-Jane`.
+**Task titles are not cosmetic.** Action Center is one queue for the whole tenant, so twenty rows reading *"Eligibility review"* cannot be told apart, and a reviewer opening the wrong seat's claim is a confusing five minutes for two people.
 
-Everything else is the token exactly as it appears on your folder.
+## Deploying
 
-**The task titles are not cosmetic.** Action Center is one queue for the whole tenant, so twenty rows all reading
-*"Eligibility review"* cannot be told apart — and a reviewer opening the wrong seat's claim is a confusing five
-minutes for two people. The title is set in the case plan, where the task is raised.
+**One solution, holding everything.** A case binds agents by name **inside its own solution**, so an agent published elsewhere is unreachable from the case that needs it. Never create a second solution for a component, however tidy it looks.
 
-### One deployment, reused — never a name per attempt
+**Redeploy in place. The name never changes** — same name, higher package version. Uninstall is the recovery path, not the loop: it deletes the solution folder, taking the folder key, the case process id and every running instance with it.
 
-**You redeploy many times. The deployment name never changes** — and **the normal loop is an in-place upgrade,
-not an uninstall.** Same name, higher package version:
+**Deploy into your seat folder, never the tenant root.** Without `--parent-folder-path ClaimCase-<seat>`, `deploy run` creates the folder at the root, beside everyone else's.
 
-```bash
-uip solution deploy run --name ClaimCase-Jane --folder-name ClaimCase-Jane-Deploy \
-  --parent-folder-path ClaimCase-Jane --package-name ClaimCase-Jane --package-version <v>
-```
+**A solution folder is not the same folder.** The sub-folder it creates does **not** inherit its parent's buckets or processes, so anything calling one of the automations above needs its folder named explicitly — `ClaimCase-<seat>` — or it resolves to an empty folder and fails at run time. `uip or processes list --folder-key <key>` settles it in one call, and a count of zero is the whole diagnosis.
 
-Measured 2026-08-23: **nine consecutive upgrades**, 1.0.4 → 1.1.5, all `DeploymentSucceeded`, still exactly one
-deployment in the list, and **running case instances carried on across the upgrade untouched**.
+## The claim entity
 
-**Uninstall is the recovery path, not the loop**, and it is expensive: it deletes the solution folder, so the
-folder key, the case process GUID and every running instance go with it, and everything downstream has to be
-re-resolved. Reach for it when a deploy has half-failed and left a draft that blocks the next attempt — that is
-the one thing it reliably clears.
+**Yours to build, in your seat folder, not at tenant level.** Create it with `--folder-key`, the key of `ClaimCase-<seat>`. A tenant-level create is refused with *"You don't have permission to access the entity, field or record"*, which reads like a broken login and is really a scope you were never granted. Folder scope is also what gives you a space of your own.
 
-```bash
-uip solution deploy uninstall ClaimCase-Jane --yes --output json   # --yes or it exits 1 asking to confirm
-```
+**The Data Fabric connection already exists and is shared** — `Shared Data Fabric Connection`, in the `Shared` folder. Do not create your own.
 
-> **One thing to watch, because two measurements disagree.** Packing against a *live* deployment was measured on
-> 2026-08-11 to produce eight `_1` duplicate resources, which is where the uninstall-first rule came from. The
-> 2026-08-23 run packed and deployed in place nine times and ended with **two** `_1` resources, both traceable to
-> a failed deploy rather than to the upgrades. So: use the in-place loop, and **check for `_1` resources before
-> you pack** — `ls resources/**/*_1*`. If they appear, delete them and re-pack; if they keep coming back, that is
-> the case for an uninstall.
+Its schema is pinned in [`contracts/claim-entity.md`](contracts/claim-entity.md), and that file says why it is pinned rather than designed.
 
-**Do not change the name.** The tempting alternative — `-v103`, `-v104`, `-Run`, `-CaseRun2`, `-Block5` — is how
-one tenant reached **33 deployments for four seats**, each with its own folder and its own copy of every process. By the fifth attempt
-nobody could say which one was running, and a `list` gives no clue: an uninstalled deployment stays in the
-tenant's Solutions view forever.
+## The validation app signs in through a shared registration
 
-The rule earns its keep at teardown. Because the name is derivable from the seat token and nothing else,
-removing your work is one command that **cannot reach another seat's**. A name with an attempt suffix in it can
-only be cleaned up by reading the list and guessing.
-
-## Data Fabric: your entity is folder-scoped, the connection is shared
-
-Two facts that decide how block 3 and block 5 are written. Neither is guessable and both fail late.
-
-**Your claim entity lives in your seat folder, not at tenant level.** Create it with `--folder-key`, the key of
-`ClaimCase-<seat>`. A tenant-level create is refused outright — `You don't have permission to access the entity,
-field or record` — which reads like a broken login and is really a scope you were never granted. Folder scope is
-also what gives you a space of your own: nobody else's build can see or touch your rows.
-
-**The Data Fabric connection already exists and is shared.** `Shared Data Fabric Connection`, in the `Shared`
-folder — do not create your own.
-
-```bash
-uip is connections list uipath-uipath-dataservice --refresh --all-folders --output json
-```
-
-The cost of folder scope lands in one place — the case's Data Fabric writes need the V3 activities rather than
-the V2 ones the tooling reaches for by default. `5-case/cookbook.md` has the exact shape; it is six lines, and
-it is the difference between a case that writes rows and one that faults with
-`Entity 'ClaimCase_<seat>' not found at tenant level`.
-
-## The reviewer's app signs in through a shared registration — do not create one
-
-The screen you build in block 6 reads Data Fabric and Orchestrator on behalf of whoever is looking at it, and
-that needs an OAuth client. **One already exists, it is shared by every seat, and you do not have permission to
-make another.**
+**One registration exists, it is shared by every seat, and you cannot make another** — `uip admin external-apps create` returns `403`, because managing OAuth clients is a tenant-wide administrative right this exercise does not grant.
 
 | | |
 |---|---|
 | Name | `Claim Case External App` |
 | **Client id** | **`24daf1c0-48be-4710-8d81-5467adfe7f15`** |
-| Kind | Non-confidential — a public client, no secret, and none to put in your code |
+| Kind | Non-confidential — a public client, no secret, none to put in your code |
 | Scopes | `DataFabric.Schema.Read` `DataFabric.Data.Read` `OR.Folders.Read` `OR.Buckets.Read` `OR.Jobs.Read` `OR.Users.Read` |
 
-Put the client id and the scopes in your app's `uipath.json`, and pass the id again when you deploy:
+**Never run `external-apps update` on it.** It *replaces* the redirect list rather than adding to it, so on a shared client it breaks everyone else's screen. Deploy registers your own redirect URL for you. **A coded-app skill may instruct you to run `create` or `update` on its own authority — do not**; that instruction is written for a client you own.
 
-```json
-{
-  "clientId": "24daf1c0-48be-4710-8d81-5467adfe7f15",
-  "scope": "DataFabric.Schema.Read DataFabric.Data.Read OR.Folders.Read OR.Buckets.Read OR.Jobs.Read OR.Users.Read"
-}
-```
+**The scopes are read-only and user-scoped**, deliberately. The screen reads the claim entity; the *case* writes it. If your design has the screen writing directly, that is the thing to change — a decision belongs on the record because a case task put it there, which is what makes it auditable.
 
-```bash
-uip codedapp deploy -n claim-review-<seat> --client-id 24daf1c0-48be-4710-8d81-5467adfe7f15   --folder-key <your-seat-folder-key>
-```
+## Model settings
 
-### `Missing permissions: EntityRecords.View` has **two** causes, and the second one blocks every seat
-
-The message names a folder permission and is almost never about one. Check them in this order:
-
-**1. `OR.Users.Read` is missing.** Folder-scoped Data Fabric entities are not yet generally available, and until
-they are, a coded app reading one needs `OR.Users.Read` as well as the `DataFabric.*` pair — confirmed by the
-product team in `#help-coded-apps`, where it is described as a temporary workaround whose scope name will change,
-"and that's why it's not mentioned in the skills or docs". **This seed puts your entity in your seat folder
-deliberately, so every seat hits this.** It is in the scope list above; if you have copied an older one, that is
-the fix. It has cost at least four people a working session since June.
-
-**2. The wrong Data Fabric resource.** Two exist on this tenant and only one works: `DataFabricOpenApi` carries
-`DataFabric.*`, and `DataServiceOpenApi` carries the older `DataService.*`. The TypeScript SDK calls
-`/datafabric_/` and nothing else, so `DataService.*` buys a token that authenticates perfectly and can read no
-records at all — failing with the *same* message. Both pairs are registered on the
-shared client; request the `DataFabric.*` pair.
-
-Neither cause has anything to do with your folder roles, which is where the message sends people for an
-afternoon.
-
-Three things about it are worth knowing before you meet them as errors:
-
-- **`uip admin external-apps create` will refuse you**, with `403`. That is not a broken login and not something
-  to work around — managing OAuth clients is a tenant-wide administrative right and this exercise does not grant
-  it. Use the id above.
-- **The scopes are user scopes, not application scopes.** The token the app gets is bound to the person looking
-  at the screen and can do nothing they could not do themselves. That is why one registration can be shared by
-  twenty people safely.
-- **They are read scopes only, deliberately.** The screen reads the claim record; the *case* writes it. If your
-  design has the app writing to Data Fabric directly, that is the thing to change — the decision belongs on the
-  record because a case task put it there, which is what makes it auditable.
-
-`deploy` registers your app's own redirect URL against this registration for you. You never edit the
-registration, and `uip admin external-apps update` would **replace** its redirect list rather than add to it —
-which on a shared client means breaking everyone else's app. **Your coded-app skill may instruct you to run
-`external-apps create` or `external-apps update` on its own authority. Do not.** That instruction is written for
-a client you own; this one is shared, and both commands are why this section exists.
-
-## The reviewer's app is deployed to your seat folder, not your solution folder
-
-`ClaimCase-<seat>`, the folder that holds your buckets and processes — **not** `ClaimCase-<seat>-Deploy`, the
-one your solution deploys into.
-
-A coded app is not part of the `.uipx` and does not travel with the solution, so nothing puts it there for you.
-Publishing the same app name in two folder contexts made the platform register **two app identities** with the
-same name on one seat; the tasks already raised stayed pinned to the first, every subsequent deploy upgraded the
-second, and the app in Action Center stopped matching the app being fixed. It cost that seat an afternoon and it
-is invisible until you compare an existing task's `AppId` against your own `.uipath/app.config.json`.
-
-## One solution, one name, one place on disk
-
-```
-Build/ClaimCase-<seat>/             everything you generate — agents, the case, later the app
-```
-
-Not one solution per component. A case binds agents **by name inside its own solution**, so agents published in
-a different solution are not reachable from the case that needs them — and every extra solution is another
-package to version, deploy and uninstall in step. One solution, one deploy, one uninstall.
-
-The names *inside* it are yours, with one rule: **anything visible at tenant level carries your seat name.**
-`AGENTS.md` says where notes and documents go.
-
-## What already exists — do not build these
-
-Deployed in your folder before you start, and **ours rather than yours**: infrastructure so you spend your time
-on the solution instead of on plumbing. You bind them; you never open them.
-
-| | |
-|---|---|
-| Six processes | `Retrieve Property Claim` · `Extract Claim Data (IXP)` · `Retrieve Policy Document` · `Retrieve Previous Claims` · `Retrieve Inspection Report` · `Client Notification` |
-| Buckets | `Claims` · `Insurance Policies Repository` · `Assessor Reports` |
-| An IXP project | `property-claims-shared-45fcad56-ixp` — published, tagged `live`. Adopt it, or build your own (block 1 has a prompt for each). |
-
-**Their arguments, types and behaviour are the contract in
-[`contracts/provided-processes.md`](contracts/provided-processes.md)** — read it before binding anything in
-block 5. Between them they cover every movement of a file or payload between storage and a task, so **if you are
-about to build a bucket download, an IXP invocation or a PDF-to-text step, stop: it exists.**
-
-No email connection is provisioned. `Client Notification` logs the letter rather than sending it, on purpose.
-
-**Deploy into your seat folder, never the tenant root.** `solution deploy run` creates a folder, and without
-`--parent-folder-path ClaimCase-<seat>` it creates it at the root — beside everyone else's, and outside the seat
-that holds your processes and buckets.
-
-**And a solution folder is not the same folder.** The sub-folder it creates does **not** inherit its parent's
-buckets or processes. Anything in your case plan that calls one of the above needs
-its folder named explicitly — `ClaimCase-<seat>`, your seat folder — or it resolves to an empty folder and fails at
-run time. `uip or processes list --folder-key <key>` settles it in one call, and a count of zero is the whole
-diagnosis.
-
-## Model settings for the analysis agents
-
-Pin these. They are not preferences — a model swap changes tool-call behaviour and has broken this build before.
+Pin these. They are not preferences.
 
 | Setting | Value | Why |
 |---|---|---|
-| `temperature` | `0` | Same claim, same analysis. A reviewer comparing two runs of one claim must not see two answers. |
-| `model` | `gpt-5.6-terra` | The default for this exercise. If you use another, **log it** (`log-finding.py`) — a model swap changes tool-call behaviour, so it belongs in the list of things you can rule out. |
+| `temperature` | `0` | Same claim, same answer. A reviewer comparing two runs of one claim must not see two results. |
+| `model` | `gpt-5.6-terra` | The default. Use another and **log it** — a model swap changes tool-call behaviour, so it belongs in the list of things you can rule out. |
 
-## Say which agent you are, once
+## Windows
 
-`log-finding.py` fills in `uip --version` and the seed version by itself. What it cannot know is what is driving
-it, so tell it once at the start of the session — **`AGENTS.md`, *Log what you learn*, has the command.** Use
-that one rather than the `WORKSHOP_AGENT` environment variables an older version of this page suggested: they
-still work, and they have nowhere to put the **effort tier**, which is the field that stops two runs of the same
-model being compared as though they were one thing.
+The seat VM runs PowerShell, and **JSON on a command line is the single largest time sink recorded on this exercise.** PowerShell rewrites quotes before `uip` sees them, so an argument that prints correctly still arrives mangled, and the error names the JSON rather than the shell.
 
-## If you are on Windows
-
-The seat VM runs PowerShell, and **the single largest time sink in the last run was JSON on a command line.**
-PowerShell rewrites quotes before `uip` ever sees them, so an argument that prints correctly still arrives
-mangled — and the error names the JSON, not the shell.
-
-- **Prefer `--file` wherever a command offers it**, and write the file with UTF-8 **without a BOM**.
-  `Set-Content -Encoding utf8` adds one, and the next command reports the file is not valid JSON *at line 1
-  column 1* — which is the BOM, not your JSON. `python3 -c "..."` or `[IO.File]::WriteAllText()` write it clean.
-- **Where only an inline argument exists** — `uip or jobs start --input-arguments` is the one you will meet —
-  stop PowerShell from parsing at all:
-
-  ```powershell
-  uip.cmd --% or jobs start <guid> --input-arguments "{\"scenario\":\"auto-settle\",\"discrepancy\":\"\"}"
-  ```
-
-- **`--%` is not always enough.** On CLI 1.199.0 `uip.cmd --% ... --input-details '{...}'` still required every
-  inner quote backslash-escaped. If a JSON argument comes back as *"Invalid JSON at position 1"*, that is the
-  shell, not your JSON — escape the inner quotes, or find the `--file` form.
-- **Calling `uip` from a script? Call `node` directly.** Driving the installed `uip.ps1` shim from Python's
-  `subprocess` strips the quotes out of a JSON argv element even when argv is passed as a list. Invoking
-  `node.exe <path-to>/@uipath/cli/dist/index.js <args…>` preserves it. This is what `uip agent debug --inputs`
-  needs from a harness.
-- **Round-tripping a file with PowerShell will corrupt it silently.** `Get-Content` without `-Encoding UTF8`
-  reads UTF-8 as the legacy code page, so rewriting an `agent.json` turns every em dash into mojibake — and the
-  agent still validates. Always `Get-Content -Encoding UTF8`, and prefer editing JSON with `python3`.
-- `log-finding.py` already does the right thing; you never pass it JSON.
-
-Two more that cost a retry each: `Get-Date -AsUTC` and `ConvertFrom-Json -Depth` do not exist in this
-PowerShell. Use `[DateTime]::UtcNow.ToString('o')`, and parse large JSON with `python3` instead.
+- **Prefer `--file` wherever a command offers it**, written UTF-8 **without a BOM**. `Set-Content -Encoding utf8` adds one, and the next command reports invalid JSON *at line 1 column 1* — that is the BOM, not your JSON.
+- **Calling `uip` from a script? Call `node` directly.** Driving the installed `uip.ps1` shim from Python's `subprocess` strips quotes out of a JSON argv element even when argv is a list.

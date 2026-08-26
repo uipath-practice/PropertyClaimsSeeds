@@ -1,0 +1,221 @@
+{
+  "$schema": "https://cloud.uipath.com/draft/2024-12/entry-point",
+  "$id": "entry-points.json",
+  "entryPoints": [
+    {
+      "filePath": "/content/agent.json",
+      "uniqueId": "543d06bb-6355-4608-b216-a0401a6ed9e7",
+      "type": "agent",
+      "input": {
+        "type": "object",
+        "properties": {
+          "in_ClaimID": {
+            "type": "string",
+            "description": "The claim reference."
+          },
+          "in_ClaimDataJSON": {
+            "type": "string",
+            "description": "The claim as structured data, including the claimant's description of the loss, the dates and the damage inventory."
+          },
+          "in_AssessmentReportJSON": {
+            "type": "string",
+            "description": "The assessment as structured data, including the assessor's narrative, licence, dates and estimate."
+          },
+          "in_PreviousClaimsJSON": {
+            "type": "string",
+            "description": "What earlier claims on this policy have already settled in this period. An empty list is a result; a payload you cannot read is not."
+          },
+          "in_PropertyCountry": {
+            "type": "string",
+            "description": "The country the policy was issued in. Decides which address and identity fields legitimately do not exist."
+          }
+        },
+        "required": [
+          "in_ClaimID",
+          "in_ClaimDataJSON",
+          "in_AssessmentReportJSON",
+          "in_PreviousClaimsJSON",
+          "in_PropertyCountry"
+        ]
+      },
+      "output": {
+        "type": "object",
+        "properties": {
+          "out_Findings": {
+            "type": "object",
+            "description": "The finding envelope for this component. Every check this component owns appears in findings exactly once, whatever the result. No text value may contain a double-quote character.",
+            "properties": {
+              "schema": {
+                "type": "string",
+                "description": "Always the literal claim-finding-envelope/1"
+              },
+              "component": {
+                "type": "string",
+                "description": "The component that produced this envelope"
+              },
+              "step": {
+                "type": "string",
+                "description": "The process step this component implements"
+              },
+              "claimId": {
+                "type": "string",
+                "description": "The claim reference"
+              },
+              "conclusion": {
+                "type": "string",
+                "description": "This component's one-word conclusion, from the closed list in the system prompt"
+              },
+              "confidence": {
+                "type": "string",
+                "description": "high, medium or low"
+              },
+              "findings": {
+                "type": "array",
+                "description": "One entry per check this component owns, passes included",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "ruleId": {
+                      "type": "string",
+                      "description": "The BR-nn rule this check implements"
+                    },
+                    "check": {
+                      "type": "string",
+                      "description": "The check name, exactly as written in the system prompt"
+                    },
+                    "result": {
+                      "type": "string",
+                      "description": "One of the results allowed for that check"
+                    },
+                    "flag": {
+                      "type": "boolean",
+                      "description": "Whether this counts as a flag"
+                    },
+                    "escalationSubject": {
+                      "type": "string",
+                      "description": "This component's own subject, or none"
+                    },
+                    "headline": {
+                      "type": "string",
+                      "description": "One sentence a reviewer can act on, at most 140 characters"
+                    },
+                    "reason": {
+                      "type": "string",
+                      "description": "Why this result, in the reviewer's own language"
+                    },
+                    "evidence": {
+                      "type": "array",
+                      "description": "The exact words relied on, with the document each came from",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "source": {
+                            "type": "string",
+                            "description": "claimForm, policy, assessorReport or claimHistory"
+                          },
+                          "quote": {
+                            "type": "string",
+                            "description": "The words relied on. No double-quote characters."
+                          }
+                        },
+                        "required": [
+                          "source",
+                          "quote"
+                        ]
+                      }
+                    },
+                    "cites": {
+                      "type": "array",
+                      "description": "Rule ids used as evidence and not re-raised",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": [
+                    "ruleId",
+                    "check",
+                    "result",
+                    "flag",
+                    "escalationSubject",
+                    "headline",
+                    "reason",
+                    "evidence",
+                    "cites"
+                  ]
+                }
+              },
+              "context": {
+                "type": "array",
+                "description": "Things a reader may want to know that are not findings",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "ruleId": {
+                      "type": "string"
+                    },
+                    "note": {
+                      "type": "string"
+                    },
+                    "whyNotAFinding": {
+                      "type": "string",
+                      "description": "Why it could not change what is paid, to whom, or whether the loss is covered"
+                    }
+                  },
+                  "required": [
+                    "ruleId",
+                    "note",
+                    "whyNotAFinding"
+                  ]
+                }
+              },
+              "analysis": {
+                "type": "object",
+                "properties": {
+                  "claimedToAssessedRatio": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "claimedToAssessedRatio"
+                ]
+              },
+              "unreadable": {
+                "type": "array",
+                "description": "Names of inputs that could not be read",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": [
+              "schema",
+              "component",
+              "step",
+              "claimId",
+              "conclusion",
+              "confidence",
+              "findings",
+              "context",
+              "analysis",
+              "unreadable"
+            ]
+          },
+          "out_Conclusion": {
+            "type": "string",
+            "description": "This component's one-word conclusion, from the closed list in the system prompt. It is the same word as the envelope's conclusion field."
+          },
+          "out_FlagSubjects": {
+            "type": "string",
+            "description": "The comma-separated set of distinct escalationSubject values raised by this component that are not none, or the single word none when there are none. This component may only ever raise its own subject."
+          }
+        },
+        "required": [
+          "out_Findings",
+          "out_Conclusion",
+          "out_FlagSubjects"
+        ]
+      }
+    }
+  ]
+}

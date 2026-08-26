@@ -4,7 +4,7 @@
 Writes a row to the shared WorkshopFindings table. That is the only place findings
 live -- there is no local findings file to keep in step.
 
-    python3 log-finding.py --block 5-case --category friction \
+    python3 log-finding.py --block 1-design --category friction \
         --summary "uip maestro case validate passed but the deploy failed with ..."
 
 Findings are not only complaints. Four optional fields turn one into a recommendation:
@@ -12,7 +12,7 @@ Findings are not only complaints. Four optional fields turn one into a recommend
     --source    where the answer actually came from -- seed | skill | cli-help |
                 docs | model | trial-error
     --ask       what should change here -- keep | cut | fix | add | move | none
-    --artifact  which seed file and section, e.g. 5-case/cookbook.md#Wiring an action task
+    --artifact  which seed file and section, e.g. 1-design/cookbook.md#Reading the checker
     --evidence  the exact error, the command, or the few lines that show it
 
 Batch (a JSON array of {block, category, summary, ...}):
@@ -372,7 +372,7 @@ def main():
     ap.add_argument("--file", help="a JSON array of {block, category, summary}")
     ap.add_argument("--source", help="where the answer came from: seed | skill | cli-help | docs | model | trial-error")
     ap.add_argument("--ask", help="what should change in the seed: keep | cut | fix | add | move | none")
-    ap.add_argument("--artifact", help="which seed file and section, e.g. 5-case/cookbook.md#Wiring an action task")
+    ap.add_argument("--artifact", help="which seed file and section, e.g. 1-design/cookbook.md#Reading the checker")
     ap.add_argument("--evidence", help="the exact error, the command, or the few lines that show it")
     ap.add_argument("--evidence-file", help="read the evidence from a file instead")
     ap.add_argument("--seat"); ap.add_argument("--agent"); ap.add_argument("--model")
