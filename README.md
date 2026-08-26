@@ -10,13 +10,33 @@ A property claim arrives as three documents that do not always agree with each o
 
 ## Get the seed
 
+**You have been given a seat name** — a word or a number that follows `ClaimCase-` on your Orchestrator folder. Everything you create takes it. Use it here:
+
 ```bash
-git clone <seed-repo> ClaimCase-01 && cd ClaimCase-01
+git clone https://github.com/uipath-practice/PropertyClaimsSeeds.git ClaimCase-<seat>
+cd ClaimCase-<seat>
 ```
 
-**The folder you create is your working folder**, so name it for your seat. Then open it in your editor and start your coding agent **in it** — `AGENTS.md` is picked up automatically.
+No git on the machine? The same content as a zip:
 
-Clone rather than download if you can: everything you build shows up as untracked in `git status`, and anything you changed shows up in `git diff`.
+```bash
+curl -L https://github.com/uipath-practice/PropertyClaimsSeeds/archive/refs/heads/main.zip -o seed.zip
+unzip seed.zip && mv PropertyClaimsSeeds-main ClaimCase-<seat>
+cd ClaimCase-<seat>
+```
+
+On Windows PowerShell: `Invoke-WebRequest -Uri <url> -OutFile seed.zip`, then `Expand-Archive seed.zip`.
+
+Then check you can reach the platform, and open the folder in your editor:
+
+```bash
+uip login                    # the tenant CONFIG.md names
+uip login status             # confirm the org and tenant match
+```
+
+Start your coding agent **in this folder** — `AGENTS.md` and `CLAUDE.md` are picked up automatically. Point it at [`1-design/prompt.md`](1-design/prompt.md) and work down [the sequence](#the-sequence).
+
+**Clone rather than download if you can.** Everything you build shows up as untracked in `git status` and anything you changed shows up in `git diff`, which is the cheapest way to see what you actually did. It also means `git pull` brings you any fix we ship mid-workshop.
 
 ## What you are building
 
