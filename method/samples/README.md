@@ -13,4 +13,4 @@ A complete PDD and a complete Case Management SDD for one process, written to th
 
 ---
 
-*Maintainers: the samples are not committed here. They live once, at `../../PDD.md` and `../../checkpoints/1-design/sdd.md`, and are vendored into this folder when the guide is published standalone — a second committed copy is the one that goes stale.*
+*Maintainers: the samples are not committed here. The PDD lives once at `../../PDD.md` and is vendored into this folder when the guide is published standalone; **the SDD sample is owed** — the design checkpoint was removed when it stopped matching `contracts/components.md` — a second committed copy is the one that goes stale.*

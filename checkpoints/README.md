@@ -4,7 +4,8 @@ A working version of a block's output. **Restore one and carry on** — `AGENTS.
 
 | Block | What is here |
 |---|---|
-| [`1-design/`](1-design/) | a complete `sdd.md` that passes the gate |
 | `3b-entity/` | `entity.json` — the pinned schema, ready to create |
 
-**There is no checkpoint for the analyses, deliberately.** The obvious candidates are the components from an earlier version of this exercise, and they were built to a **different architecture** — two of them do work this design puts on deterministic runners, and one does the job this design splits across three. Shipping them would hand you the exact defect `1-design/check_sdd.py` exists to catch. One built to this design is owed.
+**That is the only one, and the others were removed rather than left to mislead.** Both described an architecture `contracts/components.md` now rules out: a design with twenty-odd components where seven agents are called for, and a set of analyses split one-per-check rather than one-per-area. A checkpoint exists so a bad block does not cost you the week; one that restores you into a shape the contracts forbid costs you the week twice, and the second time with a working build you have to unpick.
+
+**A design checkpoint and a set of analyses built to `components.md` are both owed**, from the first run that produces them.

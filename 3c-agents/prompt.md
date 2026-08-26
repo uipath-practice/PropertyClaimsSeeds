@@ -1,6 +1,6 @@
 # Build — the agents
 
-Your design read `PDD.md` §5.3's decision-nature column and split these two ways: judgement work onto **Agents**, rule-expressible work onto whatever deterministic runner it chose — an **API Workflow** or an **RPA process**. Build them as designed.
+**Seven agents, one per `PDD.md` §7 section — `contracts/components.md` names them and what each owns.** Nothing else is built here: the deterministic work is already deployed as the six provided automations, or belongs in the case as a connector activity or an expression.
 
 Use the **`uipath-agents`** skill for the Agents, and the skill your design's choice implies for the rest. All of it inside your one solution — a Maestro case binds only what lives alongside it.
 
