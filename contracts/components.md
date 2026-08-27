@@ -1,6 +1,6 @@
 # What you build, and what is already there
 
-**You build seven agents. Nothing else.** Every other piece of this solution already exists, and the case plan's job is to wire them together.
+**You build seven agents and one app. Nothing else.** Every other piece of this solution already exists, and the case plan's job is to wire them together.
 
 **Pinned, and it is worth knowing why.** The design would normally choose this, and choosing it badly is expensive in a way that is invisible until late: a design that names a component per rule produces twenty projects instead of eight, each to build, publish, version, bind and debug, and no two seats end up comparable. Two builds measured on the same PDD produced nineteen components and a different nineteen. **Design the split yourself if you want the exercise, then reconcile against this before you build anything.**
 
@@ -20,7 +20,15 @@ One per `PDD.md` §7 section, which is where the split comes from — the proces
 
 **§7.9 belongs to all seven.** It says what is *not* a finding, and a component that skips it flags something on every claim.
 
+**None of the seven has tools, memory, or evaluation sets.** They are given their inputs on the task call and return a conclusion — no tool ever fires, nothing is remembered between claims, and the state store is the claim record. Evaluation sets make an agent self-test against mock inputs; this solution is tested end to end against real claims instead, at `4-verify`.
+
 **One agent per area, never one per check.** `EligibilityScreening` reports all five of its checks in one envelope; five agents reporting one check each is the same work, five times the binding, and a reviewer reading five findings where the process has one.
+
+## And one app — an Action app, not a standalone one
+
+The two human decisions are answered in a **Coded Action App**: it opens inside Action Center against a task the case raised, and a reviewer works **one claim at a time**. `CONFIG.md` pins its name. You build it at `3f-validation`, after the case runs, because it is built against payloads your own components actually produced.
+
+**It is not a dashboard.** A standalone app listing claims in flight, closed-today counts and straight-through rates is `PDD.md` §11's reporting view — a separate, later deliverable. A design that gives the reviewer's screen a claims list and a portfolio of routes has built the wrong thing.
 
 ## Everything else already exists — bind it, do not build it
 
