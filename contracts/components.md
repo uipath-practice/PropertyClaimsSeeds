@@ -34,6 +34,7 @@ The two human decisions are answered in a **Coded Action App**: it opens inside 
 
 | | |
 |---|---|
+| Contract | **`review-task.md`** — what the case hands it and what it hands back. Bound at `3d-case`, before this app exists |
 | Framework | **React + TypeScript**, with `@uipath/uipath-typescript` for platform calls |
 | Screens | **two** — one per gateway, and they differ only in what has happened by the time each opens. **No router**: a task opens one claim, and there is nowhere else to go |
 | State | **no client store.** The claim record is the single source of truth; the screen reads it and returns a decision, and the case does the writing |
