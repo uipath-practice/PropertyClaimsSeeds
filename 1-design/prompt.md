@@ -6,7 +6,7 @@ Use the **`uipath-maestro-case`** skill and design the case from it. **Design on
 
 Three things I care about:
 
-- **Write it to `method/template-sdd-case.md`.** A design in the wrong shape is not rejected — it is built thinly and passes every check. `method/sdd-guide.md` says why, if you want it.
+- **Start `sdd.md` from `method/template-sdd-case.md`** — copy the skeleton to the working root and fill it in; leave the template itself alone. A design in the wrong shape is not rejected, it is built thinly and passes every check. `method/sdd-guide.md` says why, if you want it.
 - **Take every task's type from the PDD's §5.3 decision-nature column**, not from whatever the tenant happens to hold.
 - **Build only what `contracts/components.md` lists.** How you shape the case — stages, ordering, conditions, SLAs — is yours.
 
