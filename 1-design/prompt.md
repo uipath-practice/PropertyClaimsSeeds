@@ -2,7 +2,9 @@
 
 Read `PDD.md` — a claims manager has described how property claims are handled, and that is the whole brief. Then `CONFIG.md`, *What already exists*, so you bind what is deployed instead of designing a replacement for it.
 
-Use the **`uipath-maestro-case`** skill and design the case from it. **Design only — write `sdd.md` and stop.** Nothing built, nothing deployed.
+Use the **`uipath-maestro-case`** skill and design the case from it. **Design only — write `sdd.md` and stop.** Nothing built, nothing deployed, and no build order — `2-plan` does that next, with a different skill.
+
+`sdd.md` describes what the solution **is** when it runs. It outlives the build and everything downstream binds to it.
 
 Three things I care about:
 

@@ -20,6 +20,8 @@ One per `PDD.md` §7 section, which is where the split comes from — the proces
 
 **§7.9 belongs to all seven.** It says what is *not* a finding, and a component that skips it flags something on every claim.
 
+**All seven are low-code agents — an `agent.json` built with Agent Builder**, not a coded framework. `CONFIG.md` pins the model and temperature, which are fields in that file.
+
 **None of the seven has tools, memory, or evaluation sets.** They are given their inputs on the task call and return a conclusion — no tool ever fires, nothing is remembered between claims, and the state store is the claim record. Evaluation sets make an agent self-test against mock inputs; this solution is tested end to end against real claims instead, at `4-verify`.
 
 **One agent per area, never one per check.** `EligibilityScreening` reports all five of its checks in one envelope; five agents reporting one check each is the same work, five times the binding, and a reviewer reading five findings where the process has one.
@@ -29,6 +31,12 @@ One per `PDD.md` §7 section, which is where the split comes from — the proces
 The two human decisions are answered in a **Coded Action App**: it opens inside Action Center against a task the case raised, and a reviewer works **one claim at a time**. `CONFIG.md` pins its name. You build it at `3f-validation`, after the case runs, because it is built against payloads your own components actually produced.
 
 **It is not a dashboard.** A standalone app listing claims in flight, closed-today counts and straight-through rates is `PDD.md` §11's reporting view — a separate, later deliverable. A design that gives the reviewer's screen a claims list and a portfolio of routes has built the wrong thing.
+
+| | |
+|---|---|
+| Framework | **React + TypeScript**, with `@uipath/uipath-typescript` for platform calls |
+| Screens | **two** — one per gateway, and they differ only in what has happened by the time each opens. **No router**: a task opens one claim, and there is nowhere else to go |
+| State | **no client store.** The claim record is the single source of truth; the screen reads it and returns a decision, and the case does the writing |
 
 ## Everything else already exists — bind it, do not build it
 

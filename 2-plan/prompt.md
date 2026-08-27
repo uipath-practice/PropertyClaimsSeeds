@@ -2,7 +2,7 @@
 
 You have a design. Turn it into the order things get built in.
 
-Use **`uipath-planner`** and derive the implementation task list from `sdd.md` into `tasks.md`.
+Use **`uipath-planner`** and derive the implementation task list from `sdd.md` into `tasks.md`. **A different skill from `1-design`'s, doing a different job:** the design says what the solution is, this says what gets built, in what order, by which skill, and where you stop to check. It is consumed during the build and then done with.
 
 What makes this worth its own step rather than something you improvise later:
 
