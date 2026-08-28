@@ -1,13 +1,19 @@
-# Build — extraction
+# Reuse — Claim Form IXP extraction
 
-`PDD.md` §5.6 says only one of the three documents is a form. That one is read into fields; the other two are prose and stay documents.
+The claim form (FNOL) is the one document that arrives as a **structured form**, so it is read into fields with IXP. The other two — the policy and the assessor's report — are prose and stay documents; the agents read them directly (`PDD.md` §5.6).
 
-**Two routes, and taking the second is not a penalty.** Extraction feeds everything after it, so a half-trained model is worse than a borrowed one — and both produce the same field groups, so everything downstream is identical either way.
+**The IXP project already exists.** `CONFIG.md` names the shared one, published and tagged `live`, and the provided `Extract Claim Data (IXP)` automation is already wired to it — `contracts/provided-processes.md` says what it takes and what it returns. Nothing is created in this block. **Point your design's extraction step at that automation and prove the reading before anything downstream binds to it.**
 
-**Adopt the shared project.** `CONFIG.md` names it. Point your design's extraction step at it and move on. Ten minutes.
+Three things I care about:
 
-**Or train your own.** Use the **`uipath-ixp`** skill. Import `3a-extraction/taxonomy.json` — never retype it and never accept the tool's own suggestion, because a suggested taxonomy is plausible-but-slightly-different and the difference surfaces three blocks later as a field nobody can find. Get samples by running the claim generator ten to fifteen times unaimed, for the natural spread of countries, currencies and damage-row counts. Then label, train, publish, and deploy it to your folder — **publishing is not deploying**, and a model that is published but not deployed cannot be called at run time.
+- **Run one generated claim through it and read the payload beside the form.** Every one of the six field groups present (`Claim`, `ClaimClaimant`, `ClaimProperty`, `ClaimIncident`, `ClaimDamageInventory`, `ClaimClaimTotals`), the damage rows repeating one per item — not one blob.
+- **Pin the field-key spellings from what came back, not from the labels.** `contracts/provided-processes.md` lists the keys the shared model emits; confirm them against a live result and correct `sdd.md` wherever a binding spells one differently (`TypeOfIncident`, never `TypeofIncident`). Every such binding is optional-chained, so a wrong key never throws — it yields nothing, three blocks later. Save the payload and let the checker walk every path the design reads:
 
-**Done when** a claim form you have never labelled comes back with every field group populated and the damage rows repeating correctly — one row per item, not one blob.
+  ```bash
+  python3 3a-extraction/check_extraction_keys.py <payload.json>
+  ```
+- **Write down what you used** — the project name and the model version — in `PROGRESS.md`. A later reader of your solution has to be able to tell where the extracted data came from.
 
-Take the shared project the moment yours stops being the interesting part of your day.
+**Done when** a claim form you have never seen comes back with every field group populated, the damage rows repeating correctly, and every key your design reads confirmed against a real payload. Ten minutes, and then the interesting part begins.
+
+Want the IXP craft itself — training, labelling, publishing your own IXP project? That is `3a-extraction/prompt-build.md`, a supported route with the same output shape. Take it only if you have the hour.

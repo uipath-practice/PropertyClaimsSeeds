@@ -1,36 +1,14 @@
 # Writing an SDD
 
-**Read this section before you write one.** Two different documents share the name, the build accepts either, and choosing wrong fails silently rather than loudly.
+**One author, one shape.** `uipath-planner` writes every Case Management SDD — from a PDD, from a conversation, or when `uipath-maestro-case` is asked to build with no `sdd.md` and hands the design to it — and it writes the four named sections the build reads: `## Section 1: Case Definition` … `## Section 4: Integrations`, a `##### Task N.M:` block per task, a `## Planner Handoff` header. Its `audit_sdd.py` gates that shape before `Status: ready`.
 
-## The two documents
-
-| | The planner's | The host skill's |
-|---|---|---|
-| Written by | `uipath-planner` Phase D | the host skill's own design phase, when no design file is present |
-| Shape (Case) | `## 1. Case Overview` … `## 17. Next Steps` — numbered | `## Section 1: Case Definition` … `## Section 4: Integrations` — named |
-| Per-task detail | a grid | a `##### Task N.M:` block each |
-| Handoff header | present | absent |
-| **What the build reads** | | **this one** |
-
-> **`[MEASURED]` The build never checks which one it got.** `uipath-maestro-case` Rule 2 is explicit — *"trust `sdd.md` as written; the skill does not validate or gap-fill it."* Handed a planner-shaped document it does not object. It builds, and the plan **passes validation**, with: three notification tasks whose every input is blank · two inputs marked required on the live schema appearing nowhere · two of three case-exit rules that can never fire · a task-scoped SLA silently dropped · prose where the build wanted `field -> variable`.
->
-> **So put a shape check between the design and the build.** Nothing downstream will tell you, because nothing downstream looks.
-
-**If the design and the build happen in one conversation**, the host skill designs and builds from the same in-memory model and the question does not arise. It arises the moment a document is handed across — which is every real engagement.
+> **`[MEASURED]` The build still checks nothing but the shape.** `uipath-maestro-case` Rule 2 — *"trust `sdd.md` as written; do not validate, gap-fill, or silently infer it"* — and it refuses a summary SDD. Nothing downstream compares the design with the process; `1-design/check_sdd.py` does.
 
 ## Two rules that govern the whole document
 
 **Depth.** The SDD carries every decision that is a **design choice** or a **contract between components**. It stops at anything that (a) needs a live system to determine, or (b) is internal to one component.
 
 **Content.** Architecture only. **No task list.** It ends at `## Next Steps`.
-
-## Scope shapes
-
-| Situation | Files |
-|---|---|
-| one product | `<process-kebab>-sdd.md` |
-| multi-project | `<solution>-solution-sdd.md` + one `<project>-sdd.md` each, sharing a Solution ID, and **one** tasks file for the whole solution |
-| a component — a function, a model, a custom connector | a table row and a build task. **No SDD file** |
 
 ## The scaffold — do not reorder
 
@@ -54,7 +32,7 @@
 
 `### Case Variables` — `Name | Category | Type | sourceTriggers | sourceFields | Default | Description`. Declare only arguments, trigger payloads, and state a condition reads or two-plus consumers use; bind single-use outputs directly. **Every consumed variable needs a producer** — an output row, an assignment, a Default, or a trigger.
 
-> **`Default` is always a string, for every type.** A non-string default is silently deleted on serialization, so the variable is null at runtime and its first reader fails. Write `"5"`, `"true"`, and string-encoded JSON.
+> **`Default` reaches the case plan as a string, for every type.** A non-string default is silently deleted on serialization, so the variable is null at runtime and its first reader fails. The planner-authored template writes the plain value (`false`, `random`) and the build string-encodes it; only when you hand-write the cell yourself is quoting your job.
 
 ### `## Section 2: Stages & Tasks`
 
@@ -66,7 +44,7 @@ Per stage: `**Type:** Stage` · `**Stage Kind:**` · `**Design Rationale:**` (ma
 
 **Task type — closed enum of nine:** `action` · `process` · `agent` · `rpa` · `api-workflow` · `case-management` · `execute-connector-activity` · `wait-for-connector` · `wait-for-timer`.
 
-**Typing guidance:** human required work → `action` · optional user-launched → adhoc, not required · a user-chosen exception lane → a **secondary stage**, not an adhoc task · judgement → `agent` · rule check → `rpa`/`api-workflow` · a compliance trigger — a licensed role, a regulated review — → `action`, always.
+**Typing guidance** (this exercise pins two rule-expressible steps on Agents on purpose — `contracts/components.md`)**:** human required work → `action` · optional user-launched → adhoc, not required · a user-chosen exception lane → a **secondary stage**, not an adhoc task · judgement → `agent` · rule check → `rpa`/`api-workflow` · a compliance trigger — a licensed role, a regulated review — → `action`, always.
 
 Per task, every block: `**Type:**` · `**Activation Mode:**` · `**Design Rationale:**` · `**Description:**` · entry condition · the exact marker `**Task envelope**` · then **one** type-specific block, headings copied verbatim.
 
@@ -84,7 +62,7 @@ One sub-table per family, `> None.` when empty, **exact column headers kept** �
 
 ## `## Data Model` `[JUDGEMENT]`
 
-Not in the shipped template, and the Case build records entity schemas as *"not covered"* notes rather than building them — but for anything with a first-class business record, **the entity model is architecture**: it decides what the app shows, what a validation task writes back, what extraction maps into, and what every report reads.
+Not in the planner's template (`method/sdd-addendum.md` carries it), and the Case build records entity schemas as *"not covered"* notes rather than building them — but for anything with a first-class business record, **the entity model is architecture**: it decides what the app shows, what a validation task writes back, what extraction maps into, and what every report reads.
 
 Include: the case entity with field, type, required, validation, source and **writing component** · documents with arrival, storage, processing route · additional entities with relationships and cardinality · choice sets with values in creation order · **a write-ownership matrix**.
 
@@ -102,24 +80,24 @@ Use only fully-supported types: `STRING`, `MULTILINE_TEXT`, `MULTILINE_MAX`, `DE
 
 `# | PDD section | What the design changed | Reason | Impact class`. Technology-driven changes are recorded only; business-process changes send the PDD back for re-baselining. The design stage is *allowed* to re-engineer the to-be — *"do not copy the as-is verbatim into the to-be"* — but it never silently rewrites the PDD.
 
-## Other products — section lists
-
-| Product | Sections |
-|---|---|
-| **BPMN** | Process Overview · Diagram · Pools & Lanes · Activities · Gateways & Flows · Events · Data Objects · Subprocesses · Integrated Components · Error Handling · Triggers · Project Structure · Testing · Next Steps. **The BPMN skill has no SDD contract** — it works from natural language plus its element registry, so this serves humans and task derivation |
-| **Flow** | Overview · Diagram · Nodes · Variables · Subflows · Triggers · Integrated Components · Error Handling · Project Structure · Testing · Next Steps. **Inline nodes are not components** |
-| **RPA** | Overview · Map · Detailed Steps · Business Rules · Data Definitions · Value Mappings · Exceptions · Errors · Applications · Master Architecture · **Project Structure** · Queues · Implementation Mode · Packages · Credentials · Deployment · Testing · Next Steps. **No selectors anywhere** |
-| **Agents** | Overview · Framework · Tools · Memory/RAG · Evaluation · Bindings · Errors & Escalation · Integrated Components · Project Structure · Testing · Next Steps |
-| **Coded Apps** | Overview · Type & Stack · Pages & Routes · Components · State · API Integration · User Flows · Errors · Integrated Components · Project Structure · Testing · Next Steps. **Action schema is not an SDD artifact** |
-| **API Workflows** | Overview · Input Schema · Output Schema · Execution Flow · Connectors · Errors · Performance · Security · Consumers · Project Structure · Testing · Next Steps. Field tables **and** sample JSON; **no JavaScript** |
-| **Solution root** | Overview · **Planner Handoff (position 2)** · Project Inventory · Cross-Project Data Flow · Shared Assets · Per-Project SDD Index. No task list |
-
 ## Before you flip `Status: ready`
 
 **Structure** — every template heading present with exact text · handoff header and marker complete · no task list · per-stage and per-task detail blocks present, with no summary table standing in.
 
-**Design** — every stage and task has a rationale · every decision outcome routes somewhere · every non-start entry rule names a producer · every configure/decide output lands somewhere · every consumed variable has a producer · every alternative path modelled or declined · every SLA reference resolves to a declared title · task types from the closed enum · every default a string · resources named portably · the data model present with write ownership · NFRs complete · the canonical case carries concrete PDD values · shared assets ordered before consumers · no blocking review items.
+**Design** — every stage and task has a rationale · every decision outcome routes somewhere · every non-start entry rule names a producer · every configure/decide output lands somewhere · every consumed variable has a producer · every alternative path modelled or declined · every SLA reference resolves to a declared title · the whole-claim SLA is the PDD's or the change is a Design Feedback row · every Case Entity column is in `contracts/claim-entity.md` · task types from the closed enum · every default a string · resources named portably · the data model present with write ownership · NFRs complete · the canonical case carries concrete PDD values · shared assets ordered before consumers · no blocking review items.
 
 **Boundary** — no selectors · no code beyond the binding grammar · no tenant-discovered payload schemas · no field-level HITL schema where the host defers it · no app action schema · no agent internals · no product the delivery model cannot run.
 
 > **`[MEASURED]` Add one more: does every task's type match what the PDD said about that step?** A design that takes its types from the estate rather than the requirement passes every check above. The cheapest detector is mechanical — match each task to its PDD step and compare the type against the step's stated decision nature.
+
+## Every letter names its claim
+
+Each `Client Notification` task binds `in_ClaimId` to the case's external id and puts `[<claim id>]` in the subject (`contracts/provided-processes.md`). The automation records the letter against that id; the reviewer's screen and `4-verify` read it back by the same id. A design that leaves the id out of the subject produces letters nobody can find.
+
+## Two inputs the case declares for testing, from block 1
+
+The claim generator that stands in for real sample data takes a scenario and a problem id (`contracts/provided-processes.md`, *Retrieve Property Claim*). The case declares both as **test-only inputs** — `scenario`, `discrepancy`, strings, empty in production — in its Case Inputs table from the first design, with one sentence saying why. A design that says *"the case needs no caller-supplied argument"* produces a build nobody can aim, and a build that adds them later carries two undeclared strings (measured, both).
+
+## As built — what the build owes the design
+
+The SDD outlives the build, so at hand-over it says what runs. Two rules, both measured on a build that broke them: **a condition added to the case that narrows a rule the business signed is a design change** — it goes in the task table with the expression, in *Design Feedback to PDD*, and as an *Action Required* row to be signed first, however good the number it bought; and **an *As Built* section, before Section 1, states the pins** (deployment name, package name and version, folder keys, case release key), what travels in the package versus beside it, the known limitations with the change each needs, and the paths no run has exercised. Where that section and the rest of the document differ, the section is right, and the stale statement is corrected in place with the reason rather than deleted.

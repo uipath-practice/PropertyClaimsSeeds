@@ -64,11 +64,13 @@ for node in doc['nodes']:
     for group in (node['data'].get('tasks') or []):
         for task in group:
             for out in (task['data'].get('outputs') or []):
-                # Both, not one or the other. `var` is the display name and `id` is what
-                # `=vars.X` resolves against, and they diverge whenever two tasks write the
-                # same payload -- the second gets a suffixed id and keeps the shared var.
-                # Preferring `var` reported that suffixed id as undeclared (a false alarm) and,
-                # worse, hid a systematic id-casing bug that cost a build a deploy cycle.
+                # Both, not one or the other. Which of `var` and `id` `=vars.X` resolves
+                # against at run time is stated nowhere: this script once said `id`; the
+                # skill's io-binding doc says a `->` extraction mints `id` from the schema
+                # field while `var` names the case variable (findings 3d, 2026-08-27). Builds
+                # that set the two equal for every `->` output have not been bitten. They
+                # diverge when two tasks write the same payload -- the second gets a suffixed
+                # id and keeps the shared var -- so declaring both is what avoids false alarms.
                 declared.add(out.get('var'))
                 declared.add(out.get('id'))
             declared.discard(None)
@@ -357,10 +359,50 @@ DECISION_ENTRY = ('selected-stage-completed', 'selected-stage-exited')
 diverts_to = set()
 for stage in stages:
     for cond in (stage['data'].get('exitConditions') or []):
+        # The schema and the skill put exitToStageId on the CONDITION; an earlier build
+        # put it on the RULE and this check read only that (findings 3d, 2026-08-27).
+        # Read both, so a plan authored per the schema is not reported as unreachable.
+        if cond.get('exitToStageId'):
+            diverts_to.add(cond['exitToStageId'])
         for group in cond['rules']:
             for rule in group:
                 if rule.get('exitToStageId'):
                     diverts_to.add(rule['exitToStageId'])
+
+# A skipCondition does not stop a human gate being raised: the platform instantiates the
+# Action Center task before it evaluates the skip (measured 2026-08-27, a clean claim got a
+# row). The shape that works is an inverted ENTRY condition on a non-required gate, with
+# the follower given its own way to start -- 3d-case/cookbook.md, Structure.
+for node in doc['nodes']:
+    for group in (node['data'].get('tasks') or []):
+        for task in group:
+            if task.get('type') == 'action' and (task.get('skipCondition') or (task.get('data') or {}).get('skipCondition')):
+                name = task.get('displayName') or (task.get('data') or {}).get('displayName') or task.get('id')
+                required = task.get('isRequired') or (task.get('data') or {}).get('isRequired')
+                # Advisory unless the gate is also required: a non-required gate whose entry
+                # condition carries the inverted test is the working shape, and a leftover
+                # skipCondition on it is harmless.
+                print(f"WARNING  action task {name!r} carries a skipCondition -- a skip does not stop the task being raised; "
+                      f"the working shape is an inverted entry condition on a non-required gate (`3d-case/cookbook.md`, Structure)"
+                      + ("" if not required else " -- and this gate IS required, so a clean claim will get a task"))
+                if required:
+                    problems.append(task['id'])
+
+# A stage whose exit waits for required tasks, with no task marked required, can never
+# exit -- a claim entering it is held forever. `uip maestro case validate` refuses this
+# too ("has no task(s) marked as required"); it is here so the design is caught before
+# the plan is authored around it. Found on a deliberately unreachable lane (findings 3d).
+for stage in stages:
+    waits = any(rule.get('rule') == 'required-tasks-completed'
+                for cond in (stage['data'].get('exitConditions') or [])
+                for group in cond['rules'] for rule in group)
+    if not waits:
+        continue
+    required = any(t.get('isRequired') or t.get('required') or (t.get('data') or {}).get('isRequired')
+                   for g in (stage['data'].get('tasks') or []) for t in g)
+    if not required:
+        print(f"WARNING  stage {labels.get(stage['id'], stage['id'])!r} exits on required-tasks-completed and no task in it is required -- it can never exit")
+        problems.append(stage['id'])
 
 for stage in stages:
     if stage['data'].get('stageType') != 'secondary' or stage['id'] in diverts_to:

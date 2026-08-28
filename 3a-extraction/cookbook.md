@@ -7,9 +7,10 @@
 | Everything resolves by title and then one command does not | Projects are addressed by **`Name`**, not `Title`. They differ, and the one that fails is not always the one you tested. |
 | The damage table extracts as one blob | It needs per-occurrence confirmation during labelling. One row per item is the whole point of that group — a blob passes labelling and fails every downstream check. |
 | Retraining seems stuck | It is automatic and slower than it feels. Check state rather than re-triggering; a second train on top of a running one costs the first. |
-| The model is published and calls to it fail | **Publishing is not deploying.** A published version still needs a folder deployment before anything can call it. |
+| Your own model is published and an automation cannot call it | **Publishing is not deploying.** A published version needs a folder deployment (`uip ixp deployments create`) before an automation that resolves it by folder can call it. The provided `Extract Claim Data (IXP)` process resolves nothing by folder — it pins the shared project, tag and version — so the shared project has no deployment and needs none. |
+| You trained and deployed your own model and the extraction still reads with the shared one | The provided `Extract Claim Data (IXP)` automation is **pinned** to the shared project — project id, `live` tag and version are literals in its workflow, not deploy-time bindings (only the `Claims` bucket is). Deploying your model to your folder changes nothing it reads; see `prompt-build.md`, *Open*. |
 | Labelling feels endless | You are the reviewer, not the extractor. Correct what the model got wrong and move on; re-entering values it already has right teaches it nothing. |
 
 ## Proving it is done
 
-A claim form you never labelled, back with every field group populated and damage rows repeating one per item. **Test on an unlabelled form** — a form from the training set proves only that it memorised.
+A claim form you never labelled, back with every field group populated and damage rows repeating one per item — and `python3 3a-extraction/check_extraction_keys.py <payload.json>` exiting 0, which says every `vars.claimDataJson?…` path in `sdd.md` resolves on that payload. **Test on an unlabelled form** — a form from the training set proves only that it memorised.

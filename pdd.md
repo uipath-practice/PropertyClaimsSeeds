@@ -34,6 +34,7 @@
 | Version | Date | Author | What changed |
 |---|---|---|---|
 | 1.0 | 2026-08-25 | Business Analyst, Claims Transformation | Initial baseline, signed |
+| 1.1 | 2026-08-27 | Business Analyst, Claims Transformation | Whole-claim SLA raised to 25 business days (5.5); SC3 unchanged. The automations already running stated up front (1.2, 2.2, 5.3). Re-signed |
 
 ## Sign-off
 
@@ -100,6 +101,8 @@ This document describes how a household property claim is handled from the momen
 ### 1.2 Business objective and target outcome
 
 **Outcome:** Settle straightforward household property claims without human involvement, and spend the claims team's attention on the claims that genuinely need judgement.
+
+**What already exists, and what is asked for.** The department has already automated the deterministic legwork: registering a claim and gathering its three documents, reading the claim form into structured data, retrieving the policy and the claim history, fetching the assessor's report once it is ready, and sending correspondence ([Appendix D](#d--existing-artefacts-to-reuse)). None of that is to be built again. What is asked for is the rest: **link those pieces into one end-to-end handling of each claim, from filing to decision letter**, add the judgement the process needs — screening, report validation, coverage, settlement, credibility, the recommendation, the letters — and put a human in front of the two decisions that need one.
 **Primary KPI moved:** cycle time, with manual effort second.
 **Current baseline → target:** 15 business days average from claim receipt to decision letter → 2 business days for a claim with nothing wrong, 8 business days overall.
 
@@ -171,15 +174,15 @@ These become the acceptance criteria the finished solution is measured against.
 
 | # | Activity | Note |
 |---|---|---|
-| IS1 | Registering the claim and assembling its documents | |
-| IS2 | Reading the claim form into structured claim data | |
+| IS1 | Registering the claim and assembling its documents | Automated today — [D1](#d--existing-artefacts-to-reuse) |
+| IS2 | Reading the claim form into structured claim data | Automated today — [D2](#d--existing-artefacts-to-reuse) |
 | IS3 | Screening the claim for eligibility before an inspection is paid for | |
 | IS4 | Waiting for and validating the assessor report | |
 | IS5 | Determining what the policy covers for this loss | |
 | IS6 | Computing the settlement | |
 | IS7 | Assessing the credibility of the claim as presented | |
 | IS8 | Producing a recommended outcome and putting it to a human where one is needed | |
-| IS9 | Writing and sending the decision letter | |
+| IS9 | Writing and sending the decision letter | Sending is automated today — [D3](#d--existing-artefacts-to-reuse); writing is not |
 | IS10 | Recording the outcome and the authorised amount | |
 | IS11 | Making claims in flight visible to the claims team lead | |
 
@@ -363,12 +366,12 @@ Actor is a human role, or **system**. What kind of system, and how many pieces i
 
 | Step | Action | Actor | System / data touched | Decision nature | Expected result | Remarks |
 |---|---|---|---|---|---|---|
-| 1.1 | collect the claim and open a record for it | system | Claims Intake | n/a | A claim reference exists and a record for this claim exists | The record is created here because every later step writes to it |
-| 1.2 | collect the documents filed with the claim | system | Document Store | n/a | The claim form, and any other document filed with it, are attached to the claim | Runs at the same time as 1.1 |
-| 1.3 | transform the claim form into structured claim data | system | — | n/a | Claimant, property, policy number, incident date and type, the damage inventory with per-item amounts, the total claimed, the submission date and whether temporary repairs were made are all available as data | The form has a fixed layout — see [§5.6](#56-documents-and-unstructured-input) |
-| 1.4 | collect the policy document for the policy number on the form | system | Policy Administration | n/a | The policy document for this claim is attached to the claim | Runs at the same time as 1.5 |
-| 1.5 | collect claims already settled against this policy in the current policy period | system | Claims History | n/a | The settled amounts for the period are available | **No prior claims is a result, not missing data** |
-| 1.6 | notify the claimant that the claim was received | system | Correspondence | n/a | The claimant has been told, and the record says so | Needs the claimant's contact details, which come from 1.3 |
+| 1.1 | collect the claim and open a record for it | system | Claims Intake | n/a | A claim reference exists and a record for this claim exists | The record is created here because every later step writes to it **Automated today — reuse [D1](#d--existing-artefacts-to-reuse)** |
+| 1.2 | collect the documents filed with the claim | system | Document Store | n/a | The claim form, and any other document filed with it, are attached to the claim | Runs at the same time as 1.1 **Automated today — reuse [D1](#d--existing-artefacts-to-reuse)** |
+| 1.3 | transform the claim form into structured claim data | system | — | n/a | Claimant, property, policy number, incident date and type, the damage inventory with per-item amounts, the total claimed, the submission date and whether temporary repairs were made are all available as data | The form has a fixed layout — see [§5.6](#56-documents-and-unstructured-input) **Automated today — reuse [D2](#d--existing-artefacts-to-reuse)** |
+| 1.4 | collect the policy document for the policy number on the form | system | Policy Administration | n/a | The policy document for this claim is attached to the claim | Runs at the same time as 1.5 **Automated today — reuse [D3](#d--existing-artefacts-to-reuse)** |
+| 1.5 | collect claims already settled against this policy in the current policy period | system | Claims History | n/a | The settled amounts for the period are available | **No prior claims is a result, not missing data** **Automated today — reuse [D3](#d--existing-artefacts-to-reuse)** |
+| 1.6 | notify the claimant that the claim was received | system | Correspondence | n/a | The claimant has been told, and the record says so | Needs the claimant's contact details, which come from 1.3 **Automated today — reuse [D3](#d--existing-artefacts-to-reuse)** |
 
 #### Stage 2 — Eligibility screening
 
@@ -389,7 +392,7 @@ All five checks run and all five are reported, whatever the result. A failure se
 
 | Step | Action | Actor | System / data touched | Decision nature | Expected result | Remarks |
 |---|---|---|---|---|---|---|
-| 3.1 | wait for the assessor report to become available | system | Document Store | n/a | The assessor report is attached to the claim | A report that is not ready yet is the normal state of this stage, not an error |
+| 3.1 | wait for the assessor report to become available | system | Document Store | n/a | The assessor report is attached to the claim | A report that is not ready yet is the normal state of this stage, not an error **Automated today — reuse [D3](#d--existing-artefacts-to-reuse)** |
 
 #### Stage 4 — Analysis
 
@@ -413,7 +416,7 @@ All five checks run and all five are reported, whatever the result. A failure se
 |---|---|---|---|---|---|---|
 | 6.1 | create the approval letter | system | claim record | **Judgement** — explaining the outcome in terms the claimant can act on | A letter stating what was approved, for how much, and why | The letter explains; it never re-analyses. See [§7.7](#77-correspondence) |
 | 6.2 | transfer the authorised amount to Settlements | system | claim record, Settlements | n/a | The approved amount and who approved it are recorded and handed over | Paying it is [OS2](#23-out-of-scope). Runs at the same time as 6.3 |
-| 6.3 | notify the claimant of the outcome, with the letter | system | Correspondence | n/a | The claimant has the decision and its reason | Runs at the same time as 6.2 |
+| 6.3 | notify the claimant of the outcome, with the letter | system | Correspondence | n/a | The claimant has the decision and its reason | Runs at the same time as 6.2 **Automated today — reuse [D3](#d--existing-artefacts-to-reuse)** |
 | 6.4 | archive the claim | system | claim record | n/a | The claim is closed and its outcome recorded | |
 
 #### Stage 7 — Denied
@@ -421,7 +424,7 @@ All five checks run and all five are reported, whatever the result. A failure se
 | Step | Action | Actor | System / data touched | Decision nature | Expected result | Remarks |
 |---|---|---|---|---|---|---|
 | 7.1 | create the refusal letter | system | claim record | **Judgement** — explaining a refusal in terms the claimant can act on | A letter stating the claim is refused and why | A claim refused at 2.7 has had no assessment, so its letter cites only the screening finding and the reviewer's reason |
-| 7.2 | notify the claimant of the outcome, with the letter | system | Correspondence | n/a | The claimant has the decision and its reason | Runs at the same time as 7.3 |
+| 7.2 | notify the claimant of the outcome, with the letter | system | Correspondence | n/a | The claimant has the decision and its reason | Runs at the same time as 7.3 **Automated today — reuse [D3](#d--existing-artefacts-to-reuse)** |
 | 7.3 | archive the claim as refused | system | claim record | n/a | The refusal and its reason are recorded and the claim is closed | |
 
 #### Stage 8 — Missing details
@@ -468,12 +471,14 @@ All five checks run and all five are reported, whatever the result. A failure se
 
 | Scope | Duration | At-risk threshold | At-risk action | Breach action |
 |---|---|---|---|---|
-| Whole claim, from receipt to decision letter | 8 business days | 80% | Notify Claims team lead | Notify Claims team lead and Claims Operations Manager |
+| Whole claim, from receipt to decision letter | 25 business days | 80% | Notify Claims team lead | Notify Claims team lead and Claims Operations Manager |
 | Stage 2 — Eligibility screening | 1 business day | 80% | Notify Claims team lead | Notify Claims team lead |
 | Stage 3 — Awaiting inspection | 15 business days | 80% | Notify Claims team lead | Notify Claims team lead — the delay is the assessor's, and chasing is theirs to do |
 | Stage 4 — Analysis | 1 business day | 80% | Notify Claims team lead | Notify Claims team lead |
 | Stage 5 — Claim review | 3 business days | 80% | Notify Claims team lead | Notify Claims team lead and Claims Operations Manager |
 | Stage 8 — Missing details | 20 business days | 80% | Notify Claims team lead | Notify Claims team lead |
+
+**The whole-claim SLA is a breach threshold, not the target.** The stages inside it sum to about 21 business days when every wait runs to its own limit, so a shorter figure would breach on every healthy claim and turn the in-flight view into a permanent alarm. The *target* cycle time is SC3's — 8 business days on average — and is measured, not alarmed on.
 
 **A business day is Monday to Friday, excluding public holidays in the country the policy was issued in ([§12 V1](#12-process-variants-and-regional-forks)).** Every duration in this table is business days. **[BR-05](#71-eligibility)'s filing deadline is the exception and is deliberately calendar days** — it is a term of the policy, not a service target.
 
@@ -509,7 +514,7 @@ Business intent, not a form specification. Every outcome is named.
 | # | Touchpoint | Who decides | What they need to see | What they may change | Outcomes | What each outcome causes | Delegable? | If nobody acts within the SLA |
 |---|---|---|---|---|---|---|---|---|
 | **H1** | Eligibility review — *is this claim worth investigating?* | Eligibility reviewer | All five screening checks with their results and reasons, passes included; the claim form; the policy. **Not a summary** | Nothing. They decide, they do not edit | **Proceed** · **Refuse** | Proceed → the claim is referred for inspection. Refuse → the claim goes straight to the Denied ending with no assessment and no settlement | Yes, to another Eligibility reviewer | The claim stays open and the Claims team lead is notified. It is never auto-decided |
-| **H2** | Claim review — *is this claim payable, and for how much?* | Claims adjuster | Every finding from stage 4 side by side, the recommended outcome with **every** reason and its confidence, the settlement line by line with every cap that bound it, and the three documents. **Not a summary** | Any settlement line, up or down, within [BR-61](#78-adjuster-overrides). Every change carries a reason | **Approve** · **Partial approve** · **Deny** | Approve or Partial approve → the Approved ending, at the amount as it stands after any changes. Deny → the Denied ending | Yes, to another Claims adjuster | The claim stays open and the Claims team lead is notified. It is never auto-decided |
+| **H2** | Claim review — *is this claim payable, and for how much?* | Claims adjuster | Every finding from stage 4 side by side, the recommended outcome with **every** reason and its confidence, the settlement line by line with every cap that bound it, the three documents, and every letter already sent to the claimant. **Not a summary** | Any settlement line, up or down, within [BR-61](#78-adjuster-overrides). Every change carries a reason | **Approve** · **Partial approve** · **Deny** | Approve or Partial approve → the Approved ending, at the amount as it stands after any changes. Deny → the Denied ending | Yes, to another Claims adjuster | The claim stays open and the Claims team lead is notified. It is never auto-decided |
 
 #### When a human is skipped, and why that is safe
 
@@ -754,10 +759,10 @@ Applied at step 5.1, in this order. **These produce a recommendation, not an out
 | ID | Rule | Step | Outcome |
 |---|---|---|---|
 | BR-40 | **Recommend Deny** if eligibility failed on the policy, the identity, the address, or the coverage period without justification; or nothing is covered and nothing is flagged for escalation; or the payable is zero **because every item is excluded**. A payable absorbed by the deductible is BR-26, not a denial | 5.1 | Deny |
-| BR-41 | **Recommend Escalate** if the filing was late but justified; coverage is ambiguous or disputed; the claim exceeds the independent estimate by more than 20%; credibility is high risk; the net payable exceeds 20% of the dwelling limit; or the annual aggregate bound the settlement | 5.1 | Escalate |
+| BR-41 | **Recommend Escalate** if the filing was late but justified; coverage is ambiguous or disputed; the claim exceeds the independent estimate by more than 20%; credibility risk is medium or high; the net payable exceeds 20% of the dwelling limit; or the annual aggregate bound the settlement | 5.1 | Escalate |
 | BR-42 | **Recommend Partial approve** where some items are covered and some excluded | 5.1 | Partial approve |
 | BR-43 | **Recommend Approve** otherwise | 5.1 | Approve |
-| BR-44 | **A claim settles without a human when, and only when, nothing is flagged and the net payable is within 20% of the dwelling limit.** Anything unreadable or absent counts as flagged. **This rule can only skip an approval.** A Deny recommendation always opens H2, whatever else is true — [C1](#10-compliance-and-control-requirements) has no exception | 5.1 | Skip H2 |
+| BR-44 | **A claim settles without a human when, and only when, nothing is flagged, credibility risk is low, and the net payable is within 20% of the dwelling limit.** Anything unreadable or absent counts as flagged. Credibility risk is the one soft read that routes on its own: BR-30–33 together produce one level, and medium or high sends the claim to the adjuster whatever the recommendation says — the case checks the level, not the prose. **This rule can only skip an approval.** A Deny recommendation always opens H2, whatever else is true — [C1](#10-compliance-and-control-requirements) has no exception | 5.1 | Skip H2 |
 | BR-45 | **Confidence** — no flags is high, one is medium, two or more is low | 5.1 | High / Medium / Low |
 
 **List every reason that applies, not the first one found.** Recommending approval for a claim that also meets an escalation condition is a contradiction, not a judgement call. Priority whenever two apply: **Deny, then Escalate, then Partial approve, then Approve.**
@@ -1007,6 +1012,8 @@ At most one screening-level and one review-level problem is present in any claim
 | # | Date | Change | Sections affected | Reason | Raised by | Impact class |
 |---|---|---|---|---|---|---|
 | 1 | 2026-08-25 | Initial baseline | all | — | Business Analyst | — |
+| 2 | 2026-08-27 | Whole-claim SLA 8 → 25 business days; SC3 keeps 8 as the average target | 5.5 | An SLA shorter than the stages it contains alarms on every claim — found by the design stage | Claims department manager | business-process — re-baselined as 1.1 |
+| 3 | 2026-08-27 | The automations that already exist are stated up front (1.2), against the activities they cover (2.2) and the steps they perform (5.3) | 1.2, 2.2, 5.3 | Two designs of this document rebuilt what the department already runs; Appendix D alone was read too late | Claims department manager | clarification — same baseline 1.1 |
 
 **Known and deliberately deferred:** the *Missing details* stage ([8.1](#stage-8--missing-details)) is defined and unwired. The business wants the claimant asked for a missing document and the claim to wait, but the request channel is not agreed. The stage exists in the lifecycle so the later change is an addition rather than a restructure. **Do not remove it, and do not build it.**
 

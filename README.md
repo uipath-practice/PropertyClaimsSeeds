@@ -1,8 +1,8 @@
-# Property claims — build it end to end
+# Property claims processing end to end implementation plan
 
-A property claim arrives as three documents that do not always agree with each other. Your solution reads them, works out whether the claim is payable and for how much, puts a human in front of the two decisions that need one, and tells the claimant what happened.
+A property claim arrives and needs to be analyzed. Three documents related to the claim do not always agree with each other. Your solution reads them, works out whether the claim is payable and for how much, puts a human in front of the two decisions that need one, and keeps the claimant updated on progress.
 
-**You are not here to learn insurance.** You are here to drive a coding agent through a real end-to-end build — document extraction, analyses, a case lifecycle, a human-facing screen, a deploy. The claims process is the material; the coding agent is the subject.
+**You are not here to learn insurance.** You are here to drive a coding agent through the end-to-end build — from document extraction, building analysis Agents, stitching together a Maestro Case with a Coded Action Apps for validation screen and dashboard overview. Build, Test and Deploy. 
 
 ## Contents
 
@@ -27,7 +27,7 @@ cd ClaimCase-<seat>
 
 On Windows PowerShell: `Invoke-WebRequest -Uri <url> -OutFile seed.zip`, then `Expand-Archive seed.zip`.
 
-Then check you can reach the platform, and open the folder in your editor:
+Then put your toolchain on the line this seed was tested on — the four commands are in [`CONFIG.md`](CONFIG.md), *Toolchain* — sign in, and open the folder in your editor:
 
 ```bash
 uip login                    # the tenant CONFIG.md names
@@ -51,14 +51,14 @@ Start your coding agent **in this folder** — `AGENTS.md` and `CLAUDE.md` are p
 | **1 · [Design](1-design/prompt.md)** | `sdd.md` — the architecture | a solution architect could hand it to a developer and walk away | the document — read Section 2 and see whether the stages match how a claim really moves |
 | **2 · [Plan](2-plan/prompt.md)** | `tasks.md` — what gets built in what order | the list works top to bottom with nothing blocked by something below it | the list — every generation task should be followed by something that checks it |
 | **3 · Build** — six runs, in order | | | |
-| &nbsp;&nbsp;a · [Extraction](3a-extraction/prompt.md) | a model that reads the claim form, or the shared one adopted | an unlabelled form comes back complete | the extraction result over a real form, field by field, with its confidence |
-| &nbsp;&nbsp;b · [Claim record](3b-entity/prompt.md) | the store every step writes to | a value with cents and a 9,000-character payload round-trip unchanged | the table in Data Fabric, and a row in it |
-| &nbsp;&nbsp;c · [Checks and analyses](3c-agents/prompt.md) | the components that decide things | each returns what `PDD.md` §7 says — including *nothing* on a clean claim | one agent's trace — what it was given, what it concluded, and why |
-| &nbsp;&nbsp;d · [The case](3d-case/prompt.md) | the lifecycle, authored and validated | both gates are green and the plan opens in the designer | **the case diagram** — the whole process as a picture, for the first time |
-| &nbsp;&nbsp;e · [Run it](3e-run/prompt.md) | the lifecycle, deployed and proven | a clean claim settles with no task ever raised, and the four human routes work | **a live instance, stages completing one after another** — the moment it stops being files |
-| &nbsp;&nbsp;f · [Validation app](3f-validation/prompt.md) | what a reviewer sees and decides on | both gates render in a browser and a decision writes back | the reviewer's screen in Action Center, with a real claim on it |
+| &nbsp;&nbsp;a · [Extraction](3a-extraction/prompt.md) | the shared IXP project adopted and proven on a real form — or, by [`prompt-build.md`](3a-extraction/prompt-build.md), your own IXP project trained | an unlabelled form comes back complete | the extraction result over a real form, field by field, with its confidence |
+| &nbsp;&nbsp;b · [Claim record](3b-entity/prompt.md) | the Data Fabric entity every step writes to | a value with cents and a 9,000-character payload round-trip unchanged | the table in Data Fabric, and a row in it |
+| &nbsp;&nbsp;c · [Agents](3c-agents/prompt.md) | the seven Agents that decide things | each returns what `PDD.md` §7 says — including *nothing* on a clean claim | one agent's trace — what it was given, what it concluded, and why |
+| &nbsp;&nbsp;d · [The case](3d-case/prompt.md) | the Maestro case, authored and validated | both gates are green and the plan opens in Studio Web | **the case diagram** — the whole process as a picture, for the first time |
+| &nbsp;&nbsp;e · [Run it](3e-run/prompt.md) | the case, deployed and proven | a clean claim settles with no task ever raised, and the four human routes work | **a live instance, stages completing one after another** — the moment it stops being files |
+| &nbsp;&nbsp;f · [Action App](3f-validation/prompt.md) | the Coded Action App a reviewer decides in | both gates render in a browser and a decision writes back | the reviewer's screen in Action Center, with a real claim on it |
 | **4 · [Verify](4-verify/prompt.md)** | a results table | every planted problem caught by the component that owns it, and a clean claim settled untouched | your own results table against the answer key |
-| **5 · [Ship](5-ship/prompt.md)** | a packaged solution and an operator runbook | it deploys into a folder that never held it, and a claim runs through | the solution running somewhere it has never run before |
+| **5 · [Hand over](5-ship/prompt.md)** | the deployed version pinned, and an operator runbook | the deployed version is the one you packed, and the runbook says how it moves on | the solution in Studio Web, exactly as it runs |
 | **6 · Process app** — *later* | the in-flight view `PDD.md` §11 asks for | it shows live claims, their stage and their SLA | — |
 
 **Block 3 is six separate runs, not one.** Each piece is built and proven before the next begins — that is the sequencing rule the method insists on, and it is what keeps the last day from being one enormous debugging session.
@@ -85,7 +85,7 @@ What you carry forward is nothing; what you lose by *not* clearing is real. An a
 
 | Your model's context | What to do |
 |---|---|
-| **~1M tokens** | You can run from block 1 through authoring the case without clearing. Clear before deploying and running it, and again before the app. |
+| **~1M tokens** | You can run from block 1 through authoring the case without clearing — if you do, clear before deploying and running it, and again before the app. |
 | **~250k tokens** | **Clear or compact after every block.** You will otherwise be compacting mid-block, which is the worst moment for it — halfway through something, with the reasoning that got you there being summarised away. |
 
 **Log findings as you go, not at the end** — see [`AGENTS.md`](AGENTS.md), *Log what you learn*. This is the rule clearing depends on: what survives a fresh start is what you already sent.

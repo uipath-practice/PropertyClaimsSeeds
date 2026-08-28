@@ -1,15 +1,14 @@
-# Ship — what bites
+# Hand over — what bites
 
 | Issue | Fix |
 |---|---|
-| `resources refresh` reports `Result: Success` and has done nothing | Treat *created 0, imported 0, skipped 0* **with bindings on disk** as a failure, not a no-op. It is the commonest silent step in the whole lifecycle. |
-| Publishing rejects the package | The feed refuses a duplicate name and version. Bump the version — never rename the solution. |
-| `deploy run --folder-name` puts it somewhere unexpected | It **always creates** a folder, and silently collision-renames when the name is taken. There is no way to deploy into a pre-existing folder. |
-| A component is provably in the `.zip` and provably not in the folder | `deploy run` matches an existing deployment **by deployment name**, and a name that does not match **creates a second deployment in a new folder while reporting `DeploymentSucceeded` and `SuccessfulActivate`**. Passing the *folder* name where the *deployment* name belongs does exactly this. The symptom sends you to inspect packaging; `uip solution deploy list` is what actually shows it. |
-| A redeploy leaves a second deployment behind | Same name, higher version — `CONFIG.md`, *Deploying*. Uninstall is recovery, not the loop. |
-| `upload --force` loses your version history | It wipes what the designer holds. Know that before you reach for it. |
-| The deployed solution runs and the same package fails elsewhere | Something it needs was on your seat rather than in the package. Deploy into a folder that has never held this solution and run a claim there. |
-| The app is missing after a deploy that reported success | It is not part of the solution unless it was explicitly added. `3f-validation/cookbook.md`, last row. |
+| You want to prove the package runs somewhere it has never run | Not in this workshop — a second deployment into another folder is forbidden (`CONFIG.md`, Locked 42) and an uninstall-and-redeploy loses every running instance for a proof `4-verify` already gave. Promotion is the same package in another **tenant** with its `--config-file` (*Promotion*, below); describe it in the runbook. |
+
+| The deployment key you recorded is gone | `Key` tracks the latest operation record and rotates; `InstallDeploymentKey` is the one `deploy upgrade` takes. Pin the name, the package name and version, the folder key and the case release key — none of them moved across twelve deploys. |
+| `uip solution deploy status <any id from deploy list>` → `404 PipelineDeploymentNotFound` | It wants the transient pipeline id from the `deploy run` output. After the fact, `deploy list` is the status and `uip or processes list --folder-key <deploy folder>` is the per-component confirmation. |
+| You cannot read the Coded Action App's deployed version | `uip codedapp` has no `list`/`get`/`status`, and there is no `uip or apps`. `uip or packages list --search <app>` pins what was *published*; the deployed version is taken on the deploy's own output. |
+| Promotion copies the package and the retrievals resolve to an empty folder | Each provided-automation resource carries this tenant's bucket keys and seat folder key as literals (`runtimeDependencies`, `isOverridable: true`). The per-environment `--config-file` is the remap; without it nothing is remapped. Name the three bucket keys in the runbook. |
+| An `AppV2` package version for the app sits in the tenant feed | The in-solution registration from before the app moved beside the solution. Nothing references it; deleting a published version is a tenant action for no gain — record it and leave it. |
 
 ## Promotion is pack once, deploy many
 

@@ -2,18 +2,21 @@
 
 | Issue | Fix |
 |---|---|
-| The skill builds a whole project when you only wanted a design | Say **design only** in the request. It then writes `sdd.md` and stops. |
-| Types come out matching agents already deployed on the tenant rather than the PDD | Its design phase pulls the registry **before** designing, so a tenant holding a prior build of the same process drives the choices. Name §5.3 explicitly in your request. Record what discovery found — that is a finding, not noise. |
-| `sdd.md` is accepted and the case built from it is thin — blank task inputs, exit rules that never fire, a dropped SLA | The build **never checks the shape**: *"trust `sdd.md` as written; the skill does not validate or gap-fill it."* Nothing downstream will tell you. `check_sdd.py` is the only gate that exists. |
-| Two templates both look like "the SDD template" | The numbered 17-section one is the planner's and is documentation. The four named sections are what the build reads. `method/sdd-guide.md`, first section. |
-| A stage is both `Required for Case Completion: Yes` and secondary | Not expressible. A stage every healthy claim passes through is **primary**, however much waiting it does. |
-| SLAs come out in wall-clock days when the PDD says business days | A stage SLA is a plain duration with no calendar field. State the rule in the design and attach a calendar at build time. |
-| Resource ids cannot be resolved and the design stalls | Leave them unresolved. Identity resolution belongs to the build, against your own seat. |
-| A `uip` command returns exit 0, prints *"Checking for updates…"* and no result | It consumed your command while updating itself. Run it again. |
+| The planner asks about execution mode, delivery model, agent framework, tools, memory, evaluations, app type, pages or state | Every answer is already in the prompt (*autonomous*; the login resolves the tenant) or in `contracts/components.md` (low-code Agents, no custom tools, no memory, no evaluation sets, one Coded Action App with two screens). Stated, they are not asked — two runs, zero questions. |
+| The design lands as `<process-name>-sdd.md`, or as several files | The planner names the file after the process, or splits a Solution into one SDD per project, unless told otherwise. The case build reads **`sdd.md` at the working root** — name it in the request. |
+| Types come out matching agents already deployed on the tenant rather than the PDD | The estate sweep runs before the design and a tenant holding a prior build of the same process drives the choices. Name §5.3 in the request; cite `PDD step N.N` in each task's rationale so `check_sdd.py` can verify every one. Record what discovery found — that is a finding, not noise. |
+| `AUDIT OK` and you think the design is checked | The planner's audit checks the **shape** — the headings and blocks the build reads. It passed a table split in two by a blank line and it knows nothing about the PDD. `check_sdd.py --pdd` is the check against the process. Run both. |
+| Ten *SME Review* rows, all marked default-carried | Those are decisions made for you and disclosed — read every one. A real run changed the whole-claim SLA from 8 to 25 days in one of them, correctly, because the PDD contradicted itself; another argued about a component the contract had already settled. Accept, overrule, or send the contradiction back to the PDD. |
+| `## Data Model` and the write-ownership matrix are missing | The planner's template has no data section. `method/sdd-addendum.md` has the two sections to add after Section 4 — `OWN-1` cannot run without them. |
+| The build later says *summary SDD* or refuses the file | `uipath-maestro-case` trusts `sdd.md` as written (Rule 2) and refuses a summary: what you owe it is `Status: ready` in the handoff header and `## Section 1: Case Definition` through `## Section 4: Integrations` with the task blocks. The planner's template writes exactly that. |
+| The planner's lane guide sends you to `references/case/model.md`, `variables.md`, `slas.md`… and none of them exist | The installed skill (1.201.0-preview.473) links nine files that do not ship; upstream has already folded them into one `case-design-layers-guide.md`, not yet in the preview. Do not stop to look for them — the lane guide, `assets/templates/case-sdd-template.md` and `case-sdd-examples.md` are enough, and a design driven from those three passed both gates. |
+| Resource ids cannot be resolved and the design stalls | Leave them `<UNRESOLVED>`. Identity resolution belongs to the build, against your own seat. |
 | `check_sdd.py` fires on something you believe is correct | Leave it and say so. A wrong rule is worth more to us than a file edited to pass. |
 
 ## Reading the checker
 
 `FAIL` reaches the built plan · `WARN` is worth a look and does not stop a build · `NOTE` is something it could not decide, which is never a pass.
 
-`NATURE-3` counts tasks it could not match to a PDD step by name. A high count means the type check covered little, whatever the other lines say.
+`NATURE-3` lists the tasks it could not match to a PDD step. Cite the step in each task's rationale and the list goes to zero; until then the type of those tasks was not checked, whatever the other lines say. `NATURE-1` as a **warning** on a settlement or decision agent is expected — the contract pins those two on agents although the PDD marks the work rule-expressible; the warning is there so you prove the numbers reproduce.
+
+`SLA-3` compares the **whole-claim** SLA in Case Metadata with the PDD's §5.5 row: a difference you disclosed in *Design Feedback to PDD* is a warning (the PDD is re-baselined before the build binds it), a silent one is a failure. `ENT-1` / `ENT-2` compare the Case Entity with `contracts/claim-entity.md` — a column the design adds is one `3b-entity` will never create, and the first write to it faults three blocks from here; a contract column the design drops is a screen field nobody fills.

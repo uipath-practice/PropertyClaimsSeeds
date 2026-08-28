@@ -23,10 +23,10 @@ Seven stages, three documents, one routing file. The documents are **not** inter
 | 0 | Discovery & suitability | BA | `uipath-automation-discovery` | discovery report, estate inventory | suitability ∈ proceed / proceed-with-redesign / partial / do-not-automate |
 | 1 | PDD | BA, with the business | template, or a process-capture tool | `pdd.md` + sample data + as-is/to-be maps | **business sign-off** |
 | 2 | SDD | Solution Architect | `uipath-planner`, or the host skill's own design phase | the design document | `Status: ready`, template conformance |
-| 3 | Plan | architect / lead dev | `uipath-planner` Lane A | `<name>-tasks.md` | every element has a task; leaves before consumers |
+| 3 | Plan | architect / lead dev | `uipath-planner` Lane A | `tasks.md` | every element has a task; leaves before consumers |
 | 4 | Implement | developer | one specialist per task | artifacts + a provenance sidecar | every `Validate:` passes |
 | 5 | Verify | dev / QA / architect | `uipath-test`, `uipath-review` | test results, graded review | 0 Critical, traceability complete |
-| 6 | Ship | dev / DevOps | `uipath-solution`, `uipath-platform` | packed `.uipx`, deployment, runbook | production readiness sign-off |
+| 6 | Ship | dev / DevOps | `uipath-solution`, `uipath-platform` | packed `.uipx`, deployment, runbook | production readiness sign-off — this exercise stops here at the runbook (`5-ship`) |
 
 ## Stage 0 — suitability, before anything is chosen
 
@@ -113,7 +113,7 @@ A separate, cheap, regenerable stage most people collapse into implementation an
 
 **Routing, not redescription.** The plan says which skill and in what order, and is forbidden from describing specialist-internal flow, because that drifts. **Regenerate with preservation**: when the SDD changes, re-derive and match by identity, carrying completed work forward.
 
-Quality rules: no placeholders · one action per checkbox · `Validate:` on every generation task · **a dedicated testing task per generation skill, before any deploy task** · leaves before consumers · autonomous plans carry populated stop conditions, and *"scope feels large"* is not one.
+Quality rules: `Validate:` on every generation task · a testing task per generation skill before its deploy — a static gate where the artefact cannot run undeployed (a Maestro case, a Coded Action App) · leaves before consumers · routing, not redescription. The full schema is the planner's `references/plan-and-tasks-format.md`.
 
 ## Stage 4 — implement
 
@@ -143,7 +143,6 @@ Five rules that prevent rework `[SKILL]`:
 
 `init` → `projects add` → `resources refresh` → `pack` → `publish` → `deploy run` → `activate`. **Promotion is pack once, deploy many**: one package, then per environment set the tenant, publish, and deploy with that environment's config.
 
-Traps `[SKILL]`: `resources refresh` reports `Result: Success` while doing nothing — treat *created 0, imported 0, skipped 0* with bindings on disk as failure · `deploy run --folder-name` **always creates** and silently collision-renames · the feed rejects duplicate name+version · `upload --force` wipes version history.
 
 ## The change loop
 

@@ -9,7 +9,13 @@
 | The answer key is not where you expect | It is named after the claim, not `manifest.json`, and lives beside the claim form. |
 | A gateway will not open for testing | Aim the run at it. A clean claim skips both gates by design, so the reviewer's screen you are trying to test never appears. |
 | You complete a task from the command line and the case does not move on | Hand back every identifier the task was given — anything writing task data replaces the payload rather than merging. `3f-validation/cookbook.md` has the shape. |
-| A fix works and you cannot tell whether it broke something else | Re-run the clean claim after every fix. It is the cheapest regression you have, and over-flagging is the failure that reappears. |
+| A fix works and you cannot tell whether it broke something else | Re-run the clean claims after every fix. It is the cheapest regression you have, and over-flagging is the failure that reappears. |
+| `uip tasks complete` refuses a task an Action App owns | On this line it needs `--type AppTask`; no `--help` says so. |
+| You are on your fourth prompt revision and the number has not moved | **A prompt governs what an agent reports, not what it concludes.** Where the conclusion decides whether a claim reaches a human, put the conclusion in a case condition. Measured 2026-08-27: four revisions on an over-flagging check moved nothing and one condition in the case closed it; six revisions on an under-detecting check moved nothing either. Same lever, same result, three times — stop. |
+| Closing a false escalation made a missed problem worse | The two failures mask each other: a claim escalated for the wrong reason still reached a human; close the wrong reason and the missed problem goes straight through. Measure detection and restraint on the **same** batch, never one at a time. |
+| A signal you downgraded in the case keeps escalating | Every place it is still visible to the decision layer is a place it re-derives the escalation from — the scalar, the envelope's conclusion, the failing check left in `checks[]`. Rebuild what the decision layer is handed; leave the agent's own verdict untouched on the record and on the screen. Three iterations, measured. |
+| A fix you deployed does not show on the claims you are reading | A running instance keeps the plan it started under; agent packages resolve by name at call time. Six claims started one version earlier were running the previous plan — start the batch after the deploy. |
+| You need the list of problems the generator can plant | An unknown `in_Discrepancy` **faults, and the fault lists the valid ids** — one deliberately wrong job enumerates them; an unknown `in_Scenario` silently draws a random claim. |
 
 ## Two runs are not the same as two claims
 

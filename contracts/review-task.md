@@ -2,9 +2,9 @@
 
 The shape of the two human gateways. **`3d-case` binds it and `3f-validation` renders it**, which is why it lives here rather than in either — and why it is settled from the design rather than discovered while building a screen.
 
-## Why this is fixed before the screen exists
+## Why this is fixed before the Action App exists
 
-**The case binds the app's *contract*, not its code.** An app registered with this shape and an empty page is enough for the case to wire both gateways, run a claim into them and prove the routing. The screen replaces the empty page later and the case is never touched again.
+**The case binds the app's *contract*, not its code.** An app registered with this shape and an empty page is enough for the case to wire both gateways, run a claim into them and prove the routing. The app's screens replace the empty page later and the case is never touched again.
 
 That ordering is not a convenience. **Changing this shape after the case is bound is expensive**: it is a schema change, the app has to be re-registered to refresh its contract, and re-registering **clears the task's bindings at both gateways**. Whatever you decide, decide it once.
 
@@ -12,12 +12,13 @@ That ordering is not a convenience. **Changing this shape after the case is boun
 
 | | Name | Type | Why it is where it is |
 |---|---|---|---|
-| **inOut** | `recordId` | string | The claim record's **row id**, not the claim number. The analysis columns are only readable by a by-id read, so this is the identifier the screen actually needs |
+| **inOut** | `recordId` | string | The claim record's **row id**, not the claim number. The analysis columns are only readable by a by-id read, so this is the identifier the Action App actually needs |
 | **inOut** | `claimId` | string | The claim number. Shown to the reviewer so they recognise it; **never used to fetch** |
-| **inOut** | `triggerStage` | string | Which gateway raised this. Two values, and the screen changes shape on it. **Never infer it** from which columns happen to be populated |
+| **inOut** | `triggerStage` | string | Which gateway raised this. Two values, and the Action App changes shape on it. **Never infer it** from which columns happen to be populated |
 | **output** | `reviewDecision` | string | What they chose, recorded as data as well as routed on |
 | **output** | `reviewerNotes` | string | Their reason, in their own words. Required at both gateways |
 | **output** | `reviewedAt` | string | ISO timestamp, set on submit |
+| **output** | `settlementJson` | string (JSON text) | **at the second gate**: the settlement as the adjuster confirmed it — the recommendation untouched plus one override per changed line with the original, the new value and the reason (`PDD.md` §7.8). Action Center keeps outputs on completion, so a decided task still shows the amounts |
 | **outcome** | **exactly two** | — | What the case branches on. One means carry on, one means stop |
 
 **Names match the claim record's columns** — `contracts/claim-entity.md`, *One name, three casings*. The task, the case variable and the column are the same word.
@@ -30,11 +31,13 @@ name: "Action"   →   var: "eligibilityDecision"      (source "=Action")
 
 It is **not** called `outcome`, and no `$xref` is involved. Guessing wrong is expensive in a specific way: it resolves to nothing, every claim takes the same branch, and the plan looks correct.
 
-**Everything else the screen reads from the claim record, using `recordId`.** Do not thread the claim through the task payload — that is seventeen bindings at the second gateway, each able to arrive empty silently, carrying data the record already holds. It is also how a component's input budget is blown (`claim-entity.md`, *Two budgets*).
+**Everything else the Action App reads from the claim record, using `recordId`.** Do not thread the claim through the task payload — that is seventeen bindings at the second gateway, each able to arrive empty silently, carrying data the record already holds. It is also how a component's input budget is blown (`claim-entity.md`, *Two budgets*).
 
 **There is no `json` type, so a document travels as a string.** The schema supports string / number / integer / boolean / array / object / file, and `object` is rejected unless every nested property is spelled out. Declare JSON payloads as **a string carrying JSON text** — which is also the shape the `MULTILINE_TEXT` column wants, so the case writes it with no conversion.
 
-**One thing is worth adding as an output rather than reading from the record: the settlement the adjuster confirmed.** Action Center keeps outputs on completion and drops inputs, so a *completed* task can render the approved amounts without a record read. Add it as an **output**; never move anything out of the three inOuts.
+**An output you have nothing for is omitted, never sent as `""`** — an empty string replaces the column's content on the way to the record; absence leaves it (measured 2026-08-27 through the payload on the wire).
+
+**The confirmed settlement is an output, not a record read**, because Action Center keeps outputs on completion and drops inputs — a *completed* task can still render the approved amounts. Never move anything out of the three inOuts. **The trap this sets for the screen** (measured 2026-08-27, route 4): the record's `settlementJson` column holds the **recommendation**; after an override the confirmed figures live in the task output and in `decisionJson.outcome.approvedSettlement`. A screen that renders the column after an override shows the pre-override amount.
 
 ## Two outcomes, and not three
 
@@ -55,7 +58,7 @@ Two more causes, and a build has to handle all three:
 - **Anything that writes task data replaces the payload rather than merging** — the in-app save, the draft save, and `uip tasks complete --data`. Send only the outputs and you erase the `inOuts` the platform would have kept. **Read the current payload, spread it, then write. At every call site.**
 - **Neither is retroactive.** A task decided before a fix stays broken, because its payload was written at completion and nothing rewrites it. **Test a fix against a freshly decided task, never an old one.**
 
-So the screen needs a floor: **if a decided task arrives with nothing identifying it, say so plainly and show the decision that did survive.** That is a real state the platform can hand you, not a malformed payload.
+So the Action App needs a floor: **if a decided task arrives with nothing identifying it, say so plainly and show the decision that did survive.** That is a real state the platform can hand you, not a malformed payload.
 
 ## The title is part of the contract
 

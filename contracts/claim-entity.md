@@ -4,11 +4,11 @@ The Data Fabric entity behind what `PDD.md` calls the claim record.
 
 `PDD.md` §1.5 P5 asks for *"a store for the claim entity that outlives any single step and can be read while the claim is in flight"*. This is that store, and this schema is **pinned**.
 
-**Pinned, and it is worth knowing why**, because the method would normally have you design it. Every later checkpoint — the agents, the validation app — binds to these column names, so a seat that invents its own schema can no longer take any of them. Designing a thirty-six column table teaches little; losing every downstream recovery path costs a day. Design it yourself if you want the exercise, then reconcile against this before you create anything.
+**Pinned, and it is worth knowing why**, because the method would normally have you design it. Every later block — the agents, the case, the validation app — binds to these column names, and so does everything the maintainers compare a build against. Designing a thirty-six column table teaches little; losing every downstream recovery path costs a day. Design it yourself if you want the exercise, then reconcile against this before you create anything.
 
 It is **yours to build, in your seat folder** — see [`CONFIG.md`](../CONFIG.md), *The claim entity*.
 
-## One name, three casings
+## One name, three casings — and a fourth on the way back
 
 The same fact travels three surfaces and must keep one name:
 
@@ -17,6 +17,7 @@ The same fact travels three surfaces and must keep one name:
 | what a component returns | `out_EligibilityChecksJSON` |
 | the case variable | `eligibilityChecksJson` |
 | the column here | `eligibilityChecksJson` |
+| **what a record read returns** | **`EligibilityChecksJson`** — the platform PascalCases every column on the way out (`uip df records get`, `records list`, the app's SDK read), while `entities get` still reports `eligibilityChecksJson`. Measured 2026-08-27. Write camelCase; read case-tolerantly — an app keyed on `row.claimId` gets `undefined` and renders an empty screen with no error |
 
 **Do not improve any of the three.** Bindings resolve by name at run time, so a better name packs, deploys and runs — then fails on a live claim with an error naming neither the binding nor the name.
 
@@ -72,7 +73,7 @@ Grouped by the moment they are written, because that ordering is the part that m
 
 | Column | Type | Note |
 |---|---|---|
-| `decisionJson` | `MULTILINE_TEXT` 10000 | **written twice** — the recommendation before the gate opens, the outcome after it closes |
+| `decisionJson` | `MULTILINE_TEXT` 10000 | **written twice** — the recommendation before the gate opens, the outcome after it closes; **and on the path where no gate opens the outcome is still written**, from the recommendation, so `outcome.approvedSettlement` is readable on every settled row and is `{}` on a refusal, unconditionally (measured: it was empty on exactly the straight-through claims the success criteria count) |
 | `reviewRequired` | `BOOLEAN` | |
 | `reviewDecision` | `STRING` 100 | |
 | `reviewerNotes` | `STRING` 4000 | |
@@ -84,31 +85,41 @@ Grouped by the moment they are written, because that ordering is the part that m
 
 ## Two budgets, and they are not the same number
 
-**A column holds 10,000 characters** and an over-length write **faults the whole claim** — not silently, but not recoverably either. So every producer budgets to **8,000**, which leaves room for a claim with more damage rows than usual.
+**A column holds 10,000 characters** and an over-length write is **refused at the write, with the column named** — `The provided value for field [claimDataJson] is longer than length limit 10000`, nothing written, the claim faulted at that step (measured). So every producer budgets to **8,000**, which leaves room for a claim with more damage rows than usual.
 
 **A component's inputs are capped all together, and the usable budget measures ~8,700.** So three 10,000-character columns cannot be handed to one consumer, however comfortably each fits its own column. Count what a consumer is given, not what each producer wrote.
 
 **Over the cap it degrades silently — it does not refuse to start, and nothing anywhere says the word *cap*.** Measured on one live claim with four consumers at or over it (8,695 · 8,704 · 8,969 · 13,490): every job reported `State: Successful`, the case reported `Completed`, and one of them returned an empty list. That emptiness surfaced three components later as *unreadable*, and turned a claim that should have settled into an escalation. **You cannot watch for a start failure, because there isn't one.** The only place the truth is visible is the trace's `agentRun` start arguments — sum them per consumer, and do it before you believe a green run.
 
+**A slice guard at the consumer must be at least the producer's budget, and JSON envelopes are ordered conclusion-first.** Free text survives a cut; JSON cut mid-object arrives unparseable (measured 2026-08-27: a 1,500-character budget, a 1,200-character guard, a 1,458-character payload).
+
 **A payload budget written into a producer's prompt is a request, not a contract.** One asking for 1,800 characters returned 7,262 and 6,687 on later runs of the same claim. If a downstream budget depends on it, enforce it in code after the component returns.
 
 ## The case writes this itself — you do not build a writer
 
-**Write it from the case, with `execute-connector-activity` tasks.** The reference solution populates all 39 columns from **seven** such tasks and has no writer component of any kind; `Record Eligibility Assessment` alone writes seventeen columns in one call. A separate component that exists only to write the record is a project to publish, deploy, version and bind for something the case already does.
+*From here on this file speaks to `3d-case`, which writes the entity, and to `3f-validation`, which reads it. `3b-entity` needs only the tables and the casings above.*
 
-**Read nested payloads inline rather than flattening them first.** A `=js:` expression with optional chaining reaches as far as you need:
+**Write it from the case, with `execute-connector-activity` tasks.** The v1 reference populated its 39 columns from **seven** such tasks; this schema has 36 and has no writer component of any kind; `Record Eligibility Assessment` alone writes seventeen columns in one call. A separate component that exists only to write the record is a project to publish, deploy, version and bind for something the case already does.
+
+**Two ways to read a payload, and they reach different depths.** A **bare binding path** — `=vars.claimData.claimant` — resolves **one level** and no further; `vars.claimData.claimant.email` does not (measured). A **`=js:` expression with optional chaining** is the form for anything deeper, and it must also survive the field shape the extraction really has — every field is an object `{ Value, Confidence }`, so the value is one level further down than the name suggests:
 
 ```
-claimantName    =js:(vars.claimDataJson?.ClaimClaimant?.[0]?.Name)
+claimantName    =js:(vars.claimDataJson?.ClaimClaimant?.[0]?.Name?.Value)
 claimFormPdfId  =js:(vars.claimFormPdf?.ID)
 reviewRequired  =js:(vars.isEligible === false || vars.isComplete === false)
 ```
+
+**Depth past one level is measured only for the bare path.** The `=js:` form is what the reference build will prove or refute; until then, a value the case reads in more than one place is surfaced as a plain scalar by the component that already produces it (`provided-processes.md`, *The extracted payload is deeply nested*) — cheaper than discovering at `3e-run` which reading was right.
 
 So a *normaliser* component is not needed either. What **is** worth surfacing as a plain scalar is anything read in more than one place — and the component that already produces the value is where to surface it, not a new component downstream of it.
 
 **Two things decide which activity version you need**, and getting it wrong costs a day: a **tenant-level** entity works with the default activities, a **folder-scoped** one needs the V3 form. Yours is folder-scoped (`CONFIG.md`), so see `3d-case/cookbook.md`, *Writing to a folder-scoped entity*.
 
 ## How the write actually behaves
+
+**`claimId` is unique, and the platform enforces it.** A second row for the same claim is refused — `Value uniqueness violation … Error Number: 2627`, naming neither the claim nor the case — so a case re-run for a claim that already has a row faults on its very first write. Every run is a new claim, or the old row is deleted first (`3e-run/cookbook.md`).
+
+**`DATE` accepts what the extraction emits.** `"2026-07-28T00:00:00"` goes in, `2026-07-28` comes out — bind `DateOfIncident.Value` straight through; a read-back comparison compares the date part. `DECIMAL` keeps cents, `DATETIME_WITH_TZ` keeps its offset to the millisecond, a 9,000-character `MULTILINE_TEXT` comes back byte-identical (all measured, 2026-08-27).
 
 **It is a patch, not a replace**, and the three cases are not symmetric:
 
@@ -122,6 +133,6 @@ So a *normaliser* component is not needed either. What **is** worth surfacing as
 
 ## Two traps in expressions
 
-**One level of property access is the only depth proven to resolve.** `vars.claimData.claimant` works; `vars.claimData.claimant.email` does not. Anything deeper has to be surfaced as a scalar by the step that produces it — see [`provided-processes.md`](provided-processes.md), *Extract Claim Data*.
+**A bare binding path resolves one level, and that is the only depth proven.** `vars.claimData.claimant` works; `vars.claimData.claimant.email` does not. Deeper is a `=js:` expression with optional chaining (*Two ways to read a payload*, above) or, for anything read twice, a scalar surfaced by the step that produces it — see [`provided-processes.md`](provided-processes.md), *Extract Claim Data*.
 
 **Every condition is evaluated once at case start**, before any step has run, when every variable is empty. So a condition that parses a JSON column has to survive being handed nothing: guard it (`|| '{}'`), or the whole claim faults at t=0 with an error naming a node that appears nowhere in your design.

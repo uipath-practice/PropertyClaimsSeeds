@@ -1,19 +1,20 @@
 # Verify
 
-Every piece was checked as you built it. This block asks the only question none of those could: **does the whole thing behave?**
+Every piece was checked as you built it. **Does the whole thing work as expected?**
 
-`PDD.md` §13.2 lists the problems a real claim arrives with, and §1.3 says what success means numerically. Aim a run at each problem in turn, then run clean claims, and record what happened against both.
+`PDD.md` §13.2 lists the problems a real claim arrives with, and §1.3 says what success means numerically. Run the clean claims **first** — six of them, as the baseline — then aim a run at each problem in turn, and record what happened against both. Re-run the clean batch after every fix that tightens a rule: over-flagging is the failure that reappears, and one aimed run cannot see the cost of a fix (measured — a tightening that bought no detection cost two false conflicts on clean claims, and was reverted).
 
-**Now you may read the answer key.** It sits beside the documents in the `Claims` bucket and states what was planted and what should happen — the oracle you have been forbidden until this point. `contracts/provided-processes.md` names it.
+**Now you may read the answer key.** It sits beside the documents in the `Claims` bucket and states what was planted and what should happen — the oracle you have been forbidden until this point. `contracts/provided-processes.md` names it. **Read what it plants before deciding anything is a defect**: the injectors are a short list, and a failure no injector plants is a false positive by construction (measured: a third of all claims were being escalated on a check nothing ever plants). And read it as a record of what was *injected*, not of what the arithmetic *produces* — a planted erosion whose sublimits cut the covered total below the remaining aggregate, or an inflation under the rule's threshold, reads as a miss and is the build being right.
 
-Three things to establish, and they are not equally easy:
+Four things to establish:
 
-- **Each planted problem is caught by the component that owns it, and stops the claim at the right decision point.** Not caught by something else, and not caught twice — a reviewer seeing one problem reported by three components reads three problems.
-- **A clean claim settles in full with no task ever raised** (`PDD.md` §1.3 SC1). This is the one most solutions fail, and it fails quietly: everything looks careful and nothing can ever settle by itself.
-- **What the claimant is told matches what actually happened.**
+- **Each planted problem is caught by the Agent that owns it, and stops the claim at the right Action Center task.** Not caught by something else, and not caught twice: a reviewer seeing one problem reported by three Agents reads three problems.
+- **A clean claim settles in full with no task ever raised** — not even an Action Center task whose checks are all green and whose recommendation is *approve*.
+- **What the claimant is told matches what actually happened.** The letter — recorded by `Client Notification` in the tenant-level `ClaimCorrespondence` entity, one row per letter keyed by claim id, never sent (`contracts/provided-processes.md`) — states the decision and the figures the Data Fabric record holds. Read it from the entity, not from the job log; a claim with no row there was told nothing. Read the paid figure from `decisionJson.outcome` against `status`, never from `settlementJson`: that column is what the settlement *computed*, and a refused claim carries one too (measured — 652,000 INR on a `Refused` row that paid nothing).
+- **Two clean claims that drew the same claimant profile settle to the same cent.** The *same* claim cannot run twice — the claim reference is the case's own external id, minted per instance, and a caller-supplied `claimId` is ignored — so two independent clean runs on one profile are the test, and a stronger one: the assessor's estimate is an input and differs. Two of the seven agents compute what the PDD calls rule-expressible — `contracts/components.md` says why that was accepted — and reproducibility is the price of it. Compare **every figure**, not the prose — wording varies between runs while the numbers hold (measured), so a byte comparison fails a correct build. 
 
 Then check the build against the design rather than against the process: enumerate every stage, task, rule, SLA and variable in `sdd.md` and mark each **Implemented · Missing · Mismatch · Extra**. *Extra* is the one worth looking hardest at — it is what nobody asked for, no tool reports, and every reviewer pays for later.
 
-**Expect to spend most of this block fixing rather than measuring.** A run that finds nothing has usually not proven the solution works; it has proven the run was not aimed. Fix at the source, in the block that owns it, and re-run.
+**Expect to spend most of this block fixing rather than measuring.** A run that finds nothing has usually not proven the solution works; it has proven the run was not aimed. Fix at the source, in the block that owns it, and re-run. A caseplan change reaches only instances started **after** the deploy; an agent change reaches the next call on any instance — so bump, deploy, then start the batch, never deploy into a running one and read half the change.
 
-**Done when** you can say, per problem, which component caught it and where a human saw it — and when a claim with nothing wrong has gone in and come out settled, untouched.
+**Done when** you can say, per problem, which Agent caught it and which Action Center task showed it to a human — and when a claim with nothing wrong has gone in and come out settled, untouched.
