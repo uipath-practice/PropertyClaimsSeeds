@@ -39,3 +39,13 @@ Read the instance, not the job list. Four commands answer almost everything, all
 | A polling loop overwrites a good result with a later empty one | A stage that re-enters re-runs its calls. **Guard the write**, or a ready result is replaced by the next not-ready one. |
 | A routing guard sends a claim down the wrong lane | The value it tests may not be written yet at the moment the gate evaluates. `'' !== 'Deny'` is true, and a denied claim goes down the approved path with a letter that says otherwise. **Test for the outcome you want, not against the one you don't.** |
 | A resources refresh reports `Created 0, Imported 0, Skipped 0` | The counter is unreliable in both directions. **The resources tree on disk is the truth** — check it wrote files rather than believing the number. |
+
+## Measured on the Opus03 run, 2026-08-28
+
+| Issue | Fix |
+|---|---|
+| `deploy upgrade <key>` answers `HTTP 400 … not valid` | `deploy list`'s `Key` **rotates on every version change**; `InstallDeploymentKey` does not, and `upgrade` wants the *current* `Key`. Re-read it from `deploy list` before every upgrade; `ProcessVersion` on that row is how you confirm what is installed. |
+| `deploy config link` accepts the Action App and the deploy then fails | Linking is accepted locally (`Result: Success`) and rejected by the server — **only the connection is linkable**; the app is provisioned by the deploy from `solution_folder`. `deploy config unlink … <app>` clears it. |
+| `scenario: eligibility-fail` did not open H1; `review-fail` settled itself | **A scenario does not guarantee a route** — of two `eligibility-fail` claims started together one failed screening and one did not. Pin the route with `in_Discrepancy`: pass an invalid id and the generator's fault lists the valid ones (`REVIEW_AMOUNT_INFLATION`, `REVIEW_CAUSE_MISMATCH`, …) — no answer key needed. |
+| Two claims faulted in the same two seconds, `170002 / HTTP Request Failed` | The LLM provider, not the build — the real cause is in the child job (`uip or jobs get <key>`, `Info`). `uip maestro case instance retry` recovered both in place. |
+| The app cannot parse `failedChecks` | It is an array of bare rule-id strings on some claims and of objects (`{ruleId, name}`) on others, from the same agent. Handle both. |

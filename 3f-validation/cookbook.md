@@ -30,3 +30,11 @@
 **`aria-disabled` outcome buttons fail the layout's reachability rule.** The template disables the outcome buttons until the reason is written; Playwright refuses to click them and a screen reader never hears *why*. Keep them enabled, and let a press that is not ready move focus to the reason field and announce the requirement (`role="alert" aria-live="assertive"`).
 
 **Open it in a browser, in both states, before calling it done.** Waiting and decided. A build that passes every command and has never been looked at is not finished, and the two flaws found this way on the reference build were both presentational — raw payload tokens as labels, and a completed-task edge case — which no command would have caught.
+
+## Measured on the Opus03 run, 2026-08-29
+
+| Issue | Fix |
+|---|---|
+| `uip codedapp deploy` upgraded once and now answers `400 invalid app version in request body` on every version | **Two published app models share the title `claim-review-<seat>`** — the in-solution AppV2 shell registered at 3d as the case's contract, and the standalone app. Neither carries `latestInFeed`, the CLI falls back to *highest wins*, picks the shell's deploy version and PATCHes your deployment with it. The live app is unaffected; the fix is one integer in the same PATCH, which the CLI cannot be told. Until the CLI or the contract's name changes, **ship the standalone app before the solution's redeploys push the shell's version above yours**, and treat every later change as needing a new title or a hand-made PATCH (`known-issues/cli-commands.md`). |
+| An untouched task shows "this claim has been decided" | An *unassigned* task is not a decided one. Read the task's assignment and completion state; existence of the task, or a null assignee, decides nothing. Found only on a live Action Center screen — the local stand-in cannot show it. |
+| The Action Center render itself | Your own signed-in browser, always: an automation browser does not pass the tenant's SSO. The render and one decision written back from the screen are the block's last two proofs and they are yours to make. |

@@ -117,3 +117,12 @@ Three details, each worth a deploy cycle:
 **The row id comes back on the create's response as `Id`.** Bind it once — `Id -> recordId`, which the build renders as `=response.Id` — and every later write passes it as its `recordId` query parameter. The v1 reference did exactly this; it is the single most load-bearing binding in the plan, so confirm it survives `case spec` before anything else is generated.
 
 **`uip df records insert --folder-key` writing fine proves nothing about the connector** — a different client with different scoping. The entity looks healthy right up until the case tries to write it.
+
+## Measured on a live case, 2026-08-28 (Opus03, six deploy cycles)
+
+| Issue | Fix |
+|---|---|
+| The second task of a stage starts alongside the first | **`runs-sequentially` is chain-position magic, not an ordering.** A task marked `runs-sequentially` after a task with a `current-stage-entered` entry is a parallel start. Remove `runs-sequentially` from the plan entirely and gate every later task with `selected-tasks-completed` plus an explicit `selectedTasksIds` naming the task it waits for. Both design gates pass either way — this is visible only in a run. |
+| Two `entryConditions` on one element, meant as alternatives | They are **ANDed**. Alternatives are DNF groups inside ONE condition. A clean claim can pass by accident when both happen to be true, which is how it hides. |
+| A follow-up lane re-enters a stage and the claim sits `InProgress` for ever | An entry condition cannot re-enter a stage that never left: if the origin stage is still `InProgress` when the lane fires, both stay open and nothing errors — **about one claim in four stalled silently** on a poll lane keyed on `selected-stage-exited`. Make the origin stage exit before the lane's entry, or keep the poll inside the stage (an `rpa` task re-entered on a timer — the shape two other builds proved). Unproven either way on 1.201 — measure your own before 4-verify's clean baseline. |
+| An agent task faults with an empty `end_execution` | Not a business outcome — about one run in six on Sonnet 5. `uip maestro case instance retry` recovers it in place; a fault handler that reads it as "no findings" settles a claim nobody analysed. |

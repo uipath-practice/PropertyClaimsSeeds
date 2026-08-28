@@ -125,3 +125,15 @@ Update completed with failures — Unexpected npm pack output for @uipath/skills
 
 It appears mid-command, repeatedly. The command you ran still completes and its result is valid. It is worth
 logging once, then ignoring.
+
+## `uip codedapp deploy` refuses every upgrade after the first — `400 invalid app version in request body`
+
+Measured 2026-08-29 on 1.201.0-preview.127. When a second published app model carries the same title (the case's in-solution contract shell and the standalone app both named `claim-review-<seat>`), the CLI resolves the version by *highest wins* — neither model carries `latestInFeed` — and PATCHes the standalone deployment with the shell's deploy version. `--version` cannot find the live version either. The live app keeps working; upgrading needs the right integer in the same PATCH, which no flag supplies. `3f-validation/cookbook.md` has the working order.
+
+## `uip solution deploy list` — `Key` rotates on every version change
+
+`upgrade` takes the current `Key`; `InstallDeploymentKey` stays constant and is refused (`HTTP 400 … not valid`). Re-read `Key` before each upgrade (measured 2026-08-28).
+
+## `--output-filter` is JMESPath over `Data`, not over the envelope
+
+`"Data[].{…}"` returns `Result: Success, Data: []` — indistinguishable from an empty tenant. `"[].{…}"` is the form (measured 2026-08-28 at 3b).

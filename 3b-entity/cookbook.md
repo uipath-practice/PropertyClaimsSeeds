@@ -12,4 +12,4 @@
 
 Round-trip a decimal **with cents** and a ~9,000-character payload, read both back unchanged, then delete the row. Both failure modes — a wrong decimal precision, a defaulted length limit — are **silent and neither errors on create**. Nothing else distinguishes a correct schema from a plausible one.
 
-`get` also echoes limits on columns that have none and adds six system fields you did not define — `Id`, `CreateTime`, `CreatedBy`, `UpdateTime`, `UpdatedBy`, `RecordOwner` (`list` omits the last). Neither is drift.
+`get` also echoes limits on columns that have none and adds six system fields you did not define — `Id`, `CreateTime`, `CreatedBy`, `UpdateTime`, `UpdatedBy`, `RecordOwner` — `list` and `get` return the same 23 keys (measured 2026-08-28). Neither is drift.
