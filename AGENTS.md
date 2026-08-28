@@ -100,6 +100,12 @@ Findings go to a shared table so they can be counted across everyone doing this 
 python3 log-finding.py --identify "<your agent>" "<your model>" --effort "<your effort tier>"
 ```
 
+If it answers *identity already recorded*, it was set for you before the session started — leave it.
+
+```bash
+# nothing more to run
+```
+
 Include the effort tier if your runtime has one. The same model at two tiers is two different builders, and without that word every comparison between runs is confounded. **If you are not certain which model you are, ask** — `unknown` is more useful than a plausible wrong answer.
 
 ```bash

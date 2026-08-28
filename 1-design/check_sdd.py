@@ -41,6 +41,29 @@ DETERMINISTIC_TYPES = {"rpa", "api-workflow", "execute-connector-activity"}
 PROVIDED = ["Retrieve Property Claim", "Extract Claim Data", "Retrieve Policy Document",
             "Retrieve Previous Claims", "Retrieve Inspection Report", "Client Notification"]
 
+# Their argument names, as `uip or packages entry-points` returned them on 2026-08-28 at the
+# versions then deployed (propery-insurance-claims 1.0.36 · Extract.Claim.Data._IXP_ 1.0.2 ·
+# Retrieve.Policy.Document, Retrieve.Previous.Claims, Retrieve.Inspection.Report 1.0.0 ·
+# Client.Notification 1.1.4) — for ARG-1. The contract says the platform is authoritative:
+# if entry-points disagrees with this list, the platform wins, this list is updated, and the
+# disagreement is logged. A design that binds a name outside it (Terra01 bound 11 of 16 to
+# names it recalled — `out_PolicyData` does not exist) faults on the first claim at 3e.
+PROVIDED_ARGS = {
+    "in_Scenario", "in_Discrepancy", "in_ClaimID", "out_ClaimID",            # Retrieve Property Claim
+    "out_PolicyID", "out_ClaimIXPDataJSON", "out_ClaimFormPDF",              # Extract Claim Data (IXP)
+    "in_PolicyID", "out_PolicyPDF",                                          # Retrieve Policy Document
+    "out_PreviousClaimsJSON",                                                # Retrieve Previous Claims
+    "out_ReportReady", "out_AssessmentReport",                               # Retrieve Inspection Report
+    "in_Body", "in_Subject", "in_Recepient", "in_ClaimId",                   # Client Notification
+}
+
+# Names a bare call inside an `=js:` expression may legitimately start with — for JS-1.
+# Anything else (`currencyToCountry(…)`, `nowIso()`, `finalizeDecision(…)`) is a helper the
+# design assumed exists; the expression grammar has none, and the write it feeds yields nothing.
+JS_GLOBALS = {"JSON", "Number", "String", "Boolean", "Math", "Date", "Array", "Object", "parseInt",
+              "parseFloat", "isNaN", "isFinite", "RegExp", "Set", "Map", "BigInt", "Symbol", "Error",
+              "encodeURIComponent", "decodeURIComponent", "String.raw", "Intl"}
+
 
 def gateway_outputs(sdd_path):
     """The task outputs `contracts/review-task.md` pins, read from the contract beside the SDD
@@ -259,6 +282,65 @@ def check_bindings(text, r, tasks):
         elif v not in declared:
             r.add("FAIL", "BIND-5", f"`vars.{v}` is read but never declared in Case Variables — "
                                     "the name resolves to nothing at runtime")
+
+
+def _outputs_section(body):
+    m = re.search(r'\*\*Output(?: Schema)?s?:?\*\*(.*?)(?:\n\*\*|\n#|\Z)', body, re.S)
+    return m.group(1) if m else body
+
+
+def check_platform_fidelity(text, r, tasks):
+    """What the two gates could not see on 2026-08-28: an SDD that passed both and was not
+    buildable — arguments bound to names the automations do not have, `=js:` helpers that do
+    not exist, gateways that never read the platform's `Action` output. Added after the
+    Terra01 / Opus03 comparison (lab findings 223)."""
+    # ARG-1 — every in_/out_ name in an `rpa` task block is one the six automations have.
+    for t in tasks:
+        if t.get("type") != "rpa":
+            continue
+        # only the argument column — the first cell of a table row — not prose or `=vars.out_X`
+        # references to another task's outputs inside the mapping cells
+        firsts = [re.sub(r'`', '', ln.strip().strip('|').split('|')[0]).strip()
+                  for ln in t["body"].split("\n") if ln.strip().startswith("|")]
+        names = sorted({f for f in firsts if re.fullmatch(r'(?:in|out)_[A-Za-z][A-Za-z0-9]*', f)} - PROVIDED_ARGS)
+        if names:
+            r.add("FAIL", "ARG-1", f"Task {t['num']} ({t['name'][:40]}) binds {', '.join(names)} — not an argument "
+                                   "of any provided automation at the recorded versions. Read them from "
+                                   "`uip or packages entry-points`, never from memory; if the platform "
+                                   "disagrees with this checker, the platform wins — log it")
+    # JS-1 — a bare call in an `=js:` expression is a helper nobody defined.
+    unknown = {}
+    for m in re.finditer(r'`=js:([^`\n]*)`', text):   # expressions are backticked; prose that mentions =js: is not
+        for c in re.finditer(r'(?<![\.\w$])([A-Za-z_$][A-Za-z0-9_$]*)\s*\(', m.group(1)):
+            name = c.group(1)
+            if name in JS_GLOBALS or name in ("if", "for", "while", "switch", "return", "function", "typeof"):
+                continue
+            unknown.setdefault(name, text.count("\n", 0, m.start()) + 1)
+    for name, line in sorted(unknown.items(), key=lambda kv: kv[1]):
+        r.add("FAIL", "JS-1", f"`{name}(…)` is called in an =js: expression (first at line {line}) and is not "
+                              "defined anywhere the case can see — write the logic inline or in an agent")
+    # ACT-2 — a gateway's outputs must map the platform's literal `Action` (contracts/review-task.md).
+    for t in tasks:
+        if t.get("type") == "action" and not re.search(r'\bAction\b', _outputs_section(t["body"])):
+            r.add("FAIL", "ACT-2", f"Task {t['num']} ({t['name'][:40]}) is a gateway and its outputs never map the "
+                                   "platform's `Action` output — the decision reaches no variable and every "
+                                   "claim takes the same branch while the plan looks correct")
+    # ROUTE-1 — a skip or exit condition written against the outcome not wanted passes when unset.
+    hits = []
+    for m in re.finditer(r'`=js:[^`\n]*?!==?\s*(?:true|"[A-Za-z ]+"|\'[A-Za-z ]+\')', text):
+        hits.append(text.count("\n", 0, m.start()) + 1)
+    if hits:
+        r.add("WARN", "ROUTE-1", f"{len(hits)} condition(s) are written against a value (`!== …`) at line(s) "
+                                 f"{', '.join(map(str, hits[:6]))}{'…' if len(hits) > 6 else ''} — an unset variable "
+                                 "passes such a test. Check the direction of each: opening a human gate on `!== true` "
+                                 "is safe (unset → human); skipping one on `!== \"Deny\"` is not (unset → skipped). "
+                                 "3e-run/cookbook.md, *A routing guard sends a claim down the wrong lane*")
+    # BUDGET-1 — an agent task that states no input size cannot be checked against the ~8,700 cap.
+    for t in tasks:
+        if t.get("type") == "agent" and not re.search(r'\b\d{1,3}(?:[,.]\d{3})+\b|\b\d{4,5}\b.{0,20}char|budget', t["body"], re.I):
+            r.add("WARN", "BUDGET-1", f"Task {t['num']} ({t['name'][:40]}) is an agent and states no input size — "
+                                      "the ~8,700-character cap on its summed inputs is unverified "
+                                      "(contracts/claim-entity.md, *Two budgets*)")
 
 
 def check_reachability(text, r):
@@ -638,6 +720,7 @@ def main():
     check_handoff(text, r)
     check_tasks(tasks, r)
     check_bindings(text, r, tasks)
+    check_platform_fidelity(text, r, tasks)
     check_reachability(text, r)
     check_table_integrity(text, r)
     check_write_ownership(text, r)

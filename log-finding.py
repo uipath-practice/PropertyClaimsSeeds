@@ -392,6 +392,8 @@ def main():
     ap.add_argument("--effort", help="the reasoning/effort tier you are running at, e.g. medium, high")
     ap.add_argument("--identify", nargs=2, metavar=("AGENT", "MODEL"),
                     help="record who you are, once, for every later finding")
+    ap.add_argument("--force", action="store_true",
+                    help="with --identify: overwrite an identity that is already recorded (by default it is kept)")
     ap.add_argument("--retry", "--flush", dest="retry", action="store_true",
                     help="send what failed earlier, then report what the table holds; "
                          "adds nothing new, deletes nothing")
@@ -399,6 +401,13 @@ def main():
 
     c = cache()
     if a.identify:
+        # An operator may have recorded the identity before the agent started, and an agent
+        # that does not know its own model (Codex answers "GPT-5" / "unknown") must not
+        # replace it — Terra01, 2026-08-28. Keep what is there unless --force.
+        if c.get("model") and c.get("codingAgent") and not a.force:
+            print(f"identity already recorded: seat {seat(c)} / {c['codingAgent']} / {c['model']}"
+                  f" / effort {c.get('effort', 'unknown')} — kept (use --force to replace)")
+            return 0
         c["codingAgent"], c["model"] = a.identify
         if a.seat:
             c["seat"] = a.seat
