@@ -33,13 +33,17 @@ import sys
 
 SDD = pathlib.Path(__file__).resolve().parent.parent / "sdd.md"
 
-# vars.claimDataJson?.ClaimClaimTotals?.[0]?.TotalClaimAmount?.Value?.Currency
-PATH = re.compile(r"vars\.claimDataJson((?:\?\.(?:\[\d+\]|[A-Za-z_][A-Za-z0-9_]*))+)")
+# vars.claimData?.ClaimClaimTotals?.[0]?.TotalClaimAmount?.Value?.Currency
+# The `Json` is optional: `out_ClaimIXPDataJSON` is an OBJECT, so a design that follows
+# contracts/claim-entity.md holds it in `claimData` and keeps `claimDataJson` for the
+# stringified copy that lands in the column. Both names are read here — matching only
+# `claimDataJson` reported "no paths found" on a correctly-named design (2026-08-28).
+PATH = re.compile(r"vars\.claimData(?:Json)?((?:\?\.(?:\[\d+\]|[A-Za-z_][A-Za-z0-9_]*))+)")
 STEP = re.compile(r"\?\.(\[(\d+)\]|([A-Za-z_][A-Za-z0-9_]*))")
 
 
 def steps(tail):
-    """The chain after `vars.claimDataJson`, as ints (indexes) and strs (keys)."""
+    """The chain after `vars.claimData[Json]`, as ints (indexes) and strs (keys)."""
     return [int(m.group(2)) if m.group(2) is not None else m.group(3)
             for m in STEP.finditer(tail)]
 
@@ -74,7 +78,7 @@ def main():
         return 2
     found = paths_in_sdd()
     if not found:
-        print(f"no claimDataJson paths found in {SDD} — has the design stopped reading the extraction?")
+        print(f"no vars.claimData / vars.claimDataJson paths found in {SDD} — has the design stopped reading the extraction?")
         return 1
 
     bad = 0
@@ -82,7 +86,7 @@ def main():
         payload = json.loads(pathlib.Path(arg).read_text(encoding="utf-8"))
         print(f"=== {arg} — {len(found)} distinct path(s) from sdd.md ===")
         for expr, lines in sorted(found.items()):
-            chain = steps(expr[len("vars.claimDataJson"):])
+            chain = steps(PATH.fullmatch(expr).group(1))
             value, ok = resolve(payload, chain)
             where = ",".join(str(l) for l in lines)
             if not ok:

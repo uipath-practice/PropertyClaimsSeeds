@@ -400,7 +400,7 @@ All five checks run and all five are reported, whatever the result. A failure se
 |---|---|---|---|---|---|---|
 | 4.1 | validate the assessor report and transform it into structured assessment data | system | assessor report, claim data, policy | **Judgement** — weighing what a report must contain against what an external contractor actually wrote | The report is confirmed to belong to this claim, to be complete and self-consistent; the assessment is available as structured data; the conclusion is *proceed*, *escalate* or *unusable* | Everything downstream reads the structured assessment, not the document |
 | 4.2 | decide which coverage sections respond to the loss, and mark every damage item covered or excluded | system | policy, assessment, claim data | **Judgement** — reading the policy's exclusions, named perils and conditions against the facts of the loss | Every damage item assigned to a coverage section and marked covered or excluded, each with the policy wording it was decided on | Runs at the same time as 4.3 and 4.4. Rules in [§7.3](#73-coverage) |
-| 4.3 | transform the covered items into a settlement | system | policy, assessment, claim data, prior claims | Rule-expressible — [§7.4](#74-settlement) | A settlement, line by line, with section subtotals, every cap that bound it named, and a net amount | Runs at the same time as 4.2 and 4.4 |
+| 4.3 | transform the covered items into a settlement | system | policy, assessment, claim data, prior claims | Rule-expressible — [§7.4](#74-settlement) | A settlement, line by line, with section subtotals, every cap that bound it named, and a net amount | Runs after 4.2 — it settles the items coverage found covered — and beside 4.4 |
 | 4.4 | decide how credible the claim is as presented | system | claim data, assessment, prior claims | **Judgement** — weighing the claimant's account, the documentation and the timing against the assessor's findings | Four behavioural reads, each low, medium or high risk, with what was observed | Runs at the same time as 4.2 and 4.3. Rules in [§7.5](#75-credibility) |
 
 #### Stage 5 — Claim review
@@ -439,7 +439,7 @@ All five checks run and all five are reported, whatever the result. A failure se
 
 | Structure | Present? | Where, and what exactly happens |
 |---|---|---|
-| Parallel work that forks and rejoins | **Yes** | Three places. 1.1 ∥ 1.2, then 1.4 ∥ 1.5 — all branches must finish before screening starts. 4.2 ∥ 4.3 ∥ 4.4 — all three must finish before the recommendation is made, and none reads another's output. 6.2 ∥ 6.3, and 7.2 ∥ 7.3 — both must finish before the claim closes |
+| Parallel work that forks and rejoins | **Yes** | Three places. 1.1 ∥ 1.2, then 1.4 ∥ 1.5 — all branches must finish before screening starts. 4.2 → 4.3, with 4.4 beside them — the settlement is computed over the items coverage found covered, so 4.3 reads 4.2's output; credibility reads neither. All three must finish before the recommendation is made. 6.2 ∥ 6.3, and 7.2 ∥ 7.3 — both must finish before the claim closes |
 | Wait on an external event | **Yes** | 3.1 — the assessor report is produced outside this process and arrives when it arrives, typically 5–15 days. 8.1 — a document from the claimant |
 | Wait on a clock | No | Nothing is scheduled or batched. The filing deadline is a rule applied to dates, not a wait |
 | Per-step deadline or timeout | **Yes** | Every stage has its own deadline, and the claim as a whole has one — see [§5.5](#55-lifecycle-stages-and-slas). At-risk and breach both notify; neither cancels the claim |
@@ -514,7 +514,7 @@ Business intent, not a form specification. Every outcome is named.
 | # | Touchpoint | Who decides | What they need to see | What they may change | Outcomes | What each outcome causes | Delegable? | If nobody acts within the SLA |
 |---|---|---|---|---|---|---|---|---|
 | **H1** | Eligibility review — *is this claim worth investigating?* | Eligibility reviewer | All five screening checks with their results and reasons, passes included; the claim form; the policy. **Not a summary** | Nothing. They decide, they do not edit | **Proceed** · **Refuse** | Proceed → the claim is referred for inspection. Refuse → the claim goes straight to the Denied ending with no assessment and no settlement | Yes, to another Eligibility reviewer | The claim stays open and the Claims team lead is notified. It is never auto-decided |
-| **H2** | Claim review — *is this claim payable, and for how much?* | Claims adjuster | Every finding from stage 4 side by side, the recommended outcome with **every** reason and its confidence, the settlement line by line with every cap that bound it, the three documents, and every letter already sent to the claimant. **Not a summary** | Any settlement line, up or down, within [BR-61](#78-adjuster-overrides). Every change carries a reason | **Approve** · **Partial approve** · **Deny** | Approve or Partial approve → the Approved ending, at the amount as it stands after any changes. Deny → the Denied ending | Yes, to another Claims adjuster | The claim stays open and the Claims team lead is notified. It is never auto-decided |
+| **H2** | Claim review — *is this claim payable, and for how much?* | Claims adjuster | Every finding from stage 4 side by side, the recommended outcome with **every** reason and its confidence, the settlement line by line with every cap that bound it, the three documents, and every letter already sent to the claimant. **Not a summary** | Any settlement line, up or down, within [BR-61](#78-adjuster-overrides). Every change carries a reason | **Approve** · **Deny** — an approval below the amount claimed is what the recommendation labels *Partial approve*; it is the same decision at a lower amount, not a third button | Approve → the Approved ending, at the amount as it stands after any changes. Deny → the Denied ending | Yes, to another Claims adjuster | The claim stays open and the Claims team lead is notified. It is never auto-decided |
 
 #### When a human is skipped, and why that is safe
 
@@ -665,6 +665,8 @@ Business meaning only. No storage technology, no field types, no relationships.
 | Partial approve | Approved | Settled |
 | Deny | Denied | Refused |
 | Escalate | *not an outcome* — it routes the claim to a human, who then decides one of the three above | — |
+
+*Partial approve* is a recommendation label ([§7.6](#76-the-decision-rules)), not a separate decision: at H2 the adjuster approves at an amount or denies, and the label travels with the record.
 
 ### 6.4 Retention, privacy and residency
 

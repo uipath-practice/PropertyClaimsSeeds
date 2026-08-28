@@ -118,10 +118,20 @@ def check_handoff(text, r):
                                    "recognise this as a planner SDD")
     if re.search(r'Status.{0,12}\bdraft\b', text, re.I) and not re.search(r'Status.{0,12}\bready\b', text, re.I):
         r.add("FAIL", "HANDOFF-2", "Status is `draft` — downstream skills refuse to build from a draft")
-    for m in re.finditer(r'^\|.*\|\s*(yes)\s*\|\s*$', text, re.M | re.I):
-        if "blocking" in text[max(0, m.start() - 1200):m.start()].lower().split("## ")[-1]:
-            r.add("FAIL", "HANDOFF-3", "an SME review item is still marked Blocking = yes")
-            break
+    # Anchored to the SME review table's own `Blocking` column. The earlier form failed any
+    # `| Yes |` row — every task envelope has one — whenever the word "blocking" appeared in
+    # the 1,200 characters before it, so a design could fail for prose (Opus03, 2026-08-28).
+    sme = re.search(r'^#{1,6} [^\n]*SME Review[^\n]*\n(.*?)(?=^#{1,6} |\Z)', text, re.M | re.S)
+    rows = [l for l in sme.group(1).splitlines() if l.strip().startswith("|")] if sme else []
+    if rows:
+        header = [c.strip().lower() for c in rows[0].strip().strip("|").split("|")]
+        if "blocking" in header:
+            col = header.index("blocking")
+            for row in rows[2:]:
+                cells = [c.strip().lower() for c in row.strip().strip("|").split("|")]
+                if len(cells) > col and cells[col] == "yes":
+                    r.add("FAIL", "HANDOFF-3", "an SME review item is still marked Blocking = yes")
+                    break
 
 
 def check_tasks(tasks, r):

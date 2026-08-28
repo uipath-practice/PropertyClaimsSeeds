@@ -35,7 +35,7 @@ Grouped by the moment they are written, because that ordering is the part that m
 | `caseInstanceId` | `STRING` 100 | `=js:metadata.InstanceId`. Case metadata carries exactly two usable fields, this and `ExternalId` |
 | `status` | `STRING` 100 | a lifecycle word your case sets; the dashboard filters on it |
 | `claimantName` | `STRING` 200 | |
-| `policyId` · `incidentType` · `propertyCountry` | `STRING` 100 | |
+| `policyId` · `incidentType` · `propertyCountry` | `STRING` 100 | `propertyCountry` is on no field the extractor returns (`ClaimProperty` carries street, city, state, ZIP — no country) and no document states it as a field. Derive it at intake from the claim currency — `PDD.md` §12 V1 pairs the six countries with their currencies one to one — and write it once. Both measured designs did exactly this; record it as an SME item rather than re-deriving the question. |
 | `incidentDate` · `dateOfSubmission` | `DATE` | |
 | `totalClaimAmount` | `DECIMAL`, precision 2 | |
 | `currency` | `STRING` 20 | never converted (`PDD.md` A2) |

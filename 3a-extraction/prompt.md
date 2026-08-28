@@ -6,7 +6,7 @@ The claim form (FNOL) is the one document that arrives as a **structured form**,
 
 Three things I care about:
 
-- **Run one generated claim through it and read the payload beside the form.** Every one of the six field groups present (`Claim`, `ClaimClaimant`, `ClaimProperty`, `ClaimIncident`, `ClaimDamageInventory`, `ClaimClaimTotals`), the damage rows repeating one per item — not one blob.
+- **Run two generated claims through it and read a payload beside its form.** The second claim is what proves the key set does not vary and the damage inventory repeats per row — two minutes. Every one of the six field groups present (`Claim`, `ClaimClaimant`, `ClaimProperty`, `ClaimIncident`, `ClaimDamageInventory`, `ClaimClaimTotals`), the damage rows repeating one per item — not one blob.
 - **Pin the field-key spellings from what came back, not from the labels.** `contracts/provided-processes.md` lists the keys the shared model emits; confirm them against a live result and correct `sdd.md` wherever a binding spells one differently (`TypeOfIncident`, never `TypeofIncident`). Every such binding is optional-chained, so a wrong key never throws — it yields nothing, three blocks later. Save the payload and let the checker walk every path the design reads:
 
   ```bash
@@ -14,6 +14,6 @@ Three things I care about:
   ```
 - **Write down what you used** — the project name and the model version — in `PROGRESS.md`. A later reader of your solution has to be able to tell where the extracted data came from.
 
-**Done when** a claim form you have never seen comes back with every field group populated, the damage rows repeating correctly, and every key your design reads confirmed against a real payload. Ten minutes, and then the interesting part begins.
+**Done when** two claim forms you have never seen come back with every field group populated, the damage rows repeating correctly, and every key your design reads confirmed against a real payload. Fifteen minutes, and then the interesting part begins.
 
 Want the IXP craft itself — training, labelling, publishing your own IXP project? That is `3a-extraction/prompt-build.md`, a supported route with the same output shape. Take it only if you have the hour.

@@ -48,7 +48,7 @@ Two things make that safe: the claims are synthetic and the claimants are not re
 |---|---|
 | Design · Plan | `uipath-planner` designs, then derives the tasks |
 | Build: IXP Extraction · Data Fabric Entity · Agents · Case Plan · Run · Coded Action App · Coded Process App| `uipath-ixp` · `uipath-platform` · `uipath-agents` · `uipath-maestro-case` · `uipath-solution` · `uipath-coded-apps` |
-| Verify · Hand over | `uipath-platform`, `uipath-troubleshoot` · `uipath-solution` |
+| Verify · Hand over | `uipath-platform`, `uipath-troubleshoot` · `uipath-solution`, and `uipath-planner` for the as-built `sdd.md` — the planner is the sole author of a case SDD (its Rule 13) |
 
 Three near-misses that have each cost time: **`uipath-maestro-bpmn` is not the case skill** — a case compiles to a file whose name ends `.bpmn`, which is not the same thing and is not authored by hand. **`uipath-maestro-flow` is not used here at all.** **`uipath-test` drives Test Manager**, which is not what Verify does.
 
@@ -58,7 +58,7 @@ Three near-misses that have each cost time: **`uipath-maestro-bpmn` is not the c
 
 ## Push the solution to Studio Web at the end of every block
 
-**`uip solution upload Build/ClaimCase-<seat> --force`.** Everything you build is local until you do, and a solution that has never been uploaded is invisible in Studio Web. **Do it at the end of every block, not once at the end.** It makes it possible to review the build shape and make inflight adjustments.
+**`uip solution upload Build/ClaimCase-<seat> --force`.** Everything you build is local until you do, and a solution that has never been uploaded is invisible in Studio Web. **Do it at the end of every block, not once at the end.** Until `Build/ClaimCase-<seat>` exists there is nothing to upload — blocks 1 and 2 create nothing, and 3a creates nothing on the platform. It makes it possible to review the build shape and make inflight adjustments.
 
 **`--force` is required after the first upload and it wipes Studio Web's version history** for that solution. That is the right trade here — your history is in git and in `PROGRESS.md`, and the cloud copy is a view rather than a source.
 
