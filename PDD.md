@@ -431,7 +431,7 @@ All five checks run and all five are reported, whatever the result. A failure se
 
 | Step | Action | Actor | System / data touched | Decision nature | Expected result | Remarks |
 |---|---|---|---|---|---|---|
-| 8.1 | wait for the claimant to supply a required document | system | — | n/a | The document arrives and the claim resumes screening | **This stage must exist in the lifecycle and must do nothing yet.** It is a known future requirement, deliberately unwired — see [§15](#15-change-control) |
+| 8.1 | wait for the claimant to supply a required document | system | — | n/a | The document arrives and the claim resumes screening | **This stage must exist in the lifecycle and must do nothing yet.** It is a known future requirement, deliberately unwired — see [§15](#15-change-control). *Shape that both the design template and the case validator accept, measured on three builds: one placeholder task (a timer) marked required, the stage entered on a condition nothing sets; not a taskless stage, not an optional-only stage* |
 
 ### 5.4 Control-flow structure
 

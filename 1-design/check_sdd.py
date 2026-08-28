@@ -275,7 +275,13 @@ def check_bindings(text, r, tasks):
             blk = re.search(head + r'(.*?)(?:\n\*\*|\n#|\Z)', t["body"], re.S)
             if blk:
                 produced |= set(re.findall(r'`?(\w+)`?\s*=(?!=)', blk.group(1)))
-    for v in sorted(set(re.findall(r'=vars\.(\w+)', text))):
+    # every read — `=vars.x` bindings and `vars.x` inside `=js:` expressions and conditions;
+    # a stage entry on `=js:vars.missingRequiredDocument` that nothing declares passed here
+    # until 2026-08-28 (Terra01 run 2)
+    reads = set(re.findall(r'=vars\.(\w+)', text)) | set(re.findall(r'`=js:[^`\n]*?\bvars\.(\w+)', text))
+    for m in re.finditer(r'`=js:([^`\n]*)`', text):
+        reads |= set(re.findall(r'\bvars\.(\w+)', m.group(1)))
+    for v in sorted(reads):
         if v in declared and v not in produced:
             r.add("FAIL", "BIND-4", f"`vars.{v}` is read but nothing produces it — no output row, "
                                     "no default, no trigger field")
@@ -337,10 +343,92 @@ def check_platform_fidelity(text, r, tasks):
                                  "3e-run/cookbook.md, *A routing guard sends a claim down the wrong lane*")
     # BUDGET-1 — an agent task that states no input size cannot be checked against the ~8,700 cap.
     for t in tasks:
-        if t.get("type") == "agent" and not re.search(r'\b\d{1,3}(?:[,.]\d{3})+\b|\b\d{4,5}\b.{0,20}char|budget', t["body"], re.I):
-            r.add("WARN", "BUDGET-1", f"Task {t['num']} ({t['name'][:40]}) is an agent and states no input size — "
-                                      "the ~8,700-character cap on its summed inputs is unverified "
-                                      "(contracts/claim-entity.md, *Two budgets*)")
+        if t.get("type") != "agent":
+            continue
+        # a size is a number that is not the cap itself — "at most 8,700" states nothing (Terra01 run 2)
+        sizes = [int(n.replace(",", "")) for n in re.findall(r'\b(\d{1,3}(?:,\d{3})+|\d{3,5})\b(?=.{0,24}(?:char|byte))', t["body"], re.I | re.S)]
+        sizes = [n for n in sizes if n >= 100 and n not in (8700, 10000)]
+        if not sizes:
+            r.add("WARN", "BUDGET-1", f"Task {t['num']} ({t['name'][:40]}) is an agent and states no input size of its own — "
+                                      "quoting the cap is not a budget; the ~8,700-character cap on its summed inputs is "
+                                      "unverified (contracts/claim-entity.md, *Two budgets*)")
+    # INPUT-1 — an agent, connector or rpa task needs an Inputs table with rows, not a sentence.
+    # Run 2 of Terra01 had wrong names in its tables and answered by deleting the tables.
+    for t in tasks:
+        if t.get("type") not in ("agent", "execute-connector-activity", "rpa"):
+            continue
+        m = re.search(r'\*\*Inputs?:?\*\*(.*?)(?:\n\*\*|\n#|\Z)', t["body"], re.S)
+        rows = [l for l in (m.group(1).split("\n") if m else []) if l.strip().startswith("|") and not re.match(r'^\|[-\s|:]+\|$', l.strip())]
+        if len(rows) < 2:   # header + at least one field
+            r.add("FAIL", "INPUT-1", f"Task {t['num']} ({t['name'][:40]}) is `{t['type']}` and has no Inputs table — a sentence "
+                                     "under **Inputs:** binds nothing; the build needs a row per field (name, type, binding)")
+    # HANDOFF-4 — the header may say `Template validation | passed` only if the planner's audit passes.
+    if re.search(r'Template validation\*?\*?\s*\|\s*passed', text, re.I):
+        import shutil, subprocess, os
+        audit = next((pth for pth in (os.path.expanduser("~/.agents/skills/uipath-planner/scripts/audit_sdd.py"),
+                                       os.path.expanduser("~/.uipath/.skills/skills/uipath-planner/scripts/audit_sdd.py")) if os.path.exists(pth)), None)
+        if audit and tasks and tasks[0].get("_sdd_path"):
+            res = subprocess.run([sys.executable, audit, tasks[0]["_sdd_path"]], capture_output=True, text=True)
+            if res.returncode != 0 or "AUDIT FAIL" in (res.stdout + res.stderr):
+                r.add("FAIL", "HANDOFF-4", "the Planner Handoff header says `Template validation | passed` and the planner's "
+                                           "audit_sdd.py exits non-zero — run the audit, repair, then flip the header")
+        elif not audit:
+            r.add("NOTE", "HANDOFF-4", "cannot find the planner's audit_sdd.py to confirm `Template validation | passed`")
+    # PROGRESS-1 — the record is written as you go; its absence at gate time is worth a line.
+    if tasks and tasks[0].get("_sdd_path"):
+        import pathlib as _pl
+        if not (_pl.Path(tasks[0]["_sdd_path"]).resolve().parent / "PROGRESS.md").exists():
+            r.add("NOTE", "PROGRESS-1", "no PROGRESS.md beside sdd.md — the next block starts from what is written there, "
+                                        "and a compaction takes everything that is not (AGENTS.md)")
+
+
+def _declared_vars(text):
+    out = set()
+    block = re.search(r'### Case Variables(.*?)(?=\n## |\n### |\Z)', text, re.S)
+    for line in (block.group(1).split("\n") if block else []):
+        st = line.strip()
+        if st.startswith("|") and not re.match(r'^\|[-\s|:]+\|$', st):
+            cells = [c.strip().strip("`") for c in st.strip("|").split("|")]
+            if cells and cells[0].lower() not in ("name", ""):
+                out.add(cells[0])
+    return out
+
+
+def check_design_safety(text, r, tasks):
+    """Terra01 run 3 (2026-08-28) met every rule above with real work and was still not buildable:
+    eleven `x = =js:true` outputs to undeclared variables, gateways whose entry and skip conditions
+    were both equality tests, no §7.9 in any agent block, no slice guard anywhere (lab findings 232)."""
+    declared = _declared_vars(text)
+    # BIND-7 — an `=` output row assigns a variable that Case Variables never declares.
+    seen = set()
+    for t in tasks:
+        for head in (r'\*\*Outputs:?\*\*', r'\*\*Output Schema:?\*\*', r'\*\*Actions:?\*\*'):
+            blk = re.search(head + r'(.*?)(?:\n\*\*|\n#|\Z)', t["body"], re.S)
+            if not blk:
+                continue
+            for name in re.findall(r'`?\b([A-Za-z_]\w*)`?\s*=(?!=)\s*`?=?', blk.group(1)):
+                if name in declared or name in seen or name in ("Action",) or name.lower() in ("value", "default", "type"):
+                    continue
+                seen.add(name)
+                r.add("FAIL", "BIND-7", f"Task {t['num']} ({t['name'][:40]}) assigns `{name}` in an output row and Case Variables "
+                                        "never declares it — io-binding has no companion for the `=`; the row is dropped or faults")
+    # ROUTE-2 — the same flag tested `=== true` to open a gate and `=== false` to skip it leaves the
+    # unset case to neither: the stage stalls instead of routing to the human.
+    opens = set(re.findall(r'`=js:\s*vars\.(\w+)\s*===\s*true\s*`', text))
+    skips = set(re.findall(r'`=js:\s*vars\.(\w+)\s*===\s*false\s*`', text))
+    for v in sorted(opens & skips):
+        r.add("FAIL", "ROUTE-2", f"`vars.{v}` opens on `=== true` and skips on `=== false` — a value that never lands satisfies "
+                                 "neither, and the claim stalls. One side must be the complement (`!== true` opens the human gate)")
+    # NATURE-4 — PDD §7.9 says what is not a finding; an agent that never hears it flags every claim.
+    agents = [t for t in tasks if t.get("type") == "agent"]
+    if agents and not any(re.search(r'7\.9|not a finding|BR-7[0-8]', t["body"]) for t in agents):
+        r.add("WARN", "NATURE-4", "no agent task block cites PDD §7.9 / *what is not a finding* — the clean claim will not come back "
+                                  "silent unless every analysis agent carries those rules")
+    # BUDGET-2 — JSON envelopes bound into agents, and no `.slice(` anywhere.
+    envelopes = any(re.search(r'\*\*Inputs?:?\*\*.*?\bvars\.\w*Json\b', t["body"], re.S) for t in agents)
+    if envelopes and ".slice(" not in text:
+        r.add("WARN", "BUDGET-2", "JSON envelopes are bound into agents and nothing in the design slices — an envelope over the cap "
+                                  "faults the call (a 400 at 10,000 serialised characters); guard the producer writes or the consumer inputs")
 
 
 def check_reachability(text, r):
@@ -721,6 +809,7 @@ def main():
     check_tasks(tasks, r)
     check_bindings(text, r, tasks)
     check_platform_fidelity(text, r, tasks)
+    check_design_safety(text, r, tasks)
     check_reachability(text, r)
     check_table_integrity(text, r)
     check_write_ownership(text, r)
