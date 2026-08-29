@@ -1,12 +1,28 @@
 # Hand over
 
-Everything runs, and `4-verify` proved it. **This block builds and deploys nothing more — the deployment you proved is the one you ship.** UAT and production are the same package landing in another tenant with that environment's `--config-file` (`cookbook.md`, *Promotion*); that happens in your organisation's environments, not here. This workshop was the build, and the build is done.
+Everything runs, `4-verify` proved it and the build is done.
 
-Four things close it:
+**Pin what runs:** 
+- Deployment's version (the package version you last packed and published). Record **the deployment name, package name and version, both folder keys and the case release key** in `PROGRESS.md`. Not the deployment's `Key`. 
+- The Coded Action App's deployed version. 
+- Last `uip solution upload Build/ClaimCase-<seat> --force`, so Studio Web shows exactly the solution that runs.
 
-- **Pin what runs.** `uip solution deploy list` shows the deployment's version; it must be the package version you last packed and published — record **the deployment name, package name and version, both folder keys and the case release key** in `PROGRESS.md`. Not the deployment's `Key`: it rotates with every operation (measured — the same Active deployment reported a different `Key` twelve hours later with no deploy in between). `deploy list` *is* the status read; `deploy status` wants a pipeline id that exists only in the console output of the `deploy run` that created it. The Coded Action App's deployed version cannot be read back at all — `uip codedapp` has no read verb — so pin what `uip or packages list --search claim-review-<seat>` shows was published. Then a last `uip solution upload Build/ClaimCase-<seat> --force`, so Studio Web shows exactly the solution that runs.
-- **Check what travelled.** The Maestro case and the seven Agents are inside the `.uipx`; the Coded Action App is deployed beside it into the seat folder by its own command — pin its version too. Nothing you deployed by hand while building is standing in for a project that is not in the package. A read of the package and the deployments, not a redeploy.
-- **Bring `sdd.md` to as-built, and mark the work done.** The design outlives the build and everything downstream binds to it, so where the build settled something differently — an SME row closed, a binding renamed, a stage reshaped — the SDD says what was built, with the change recorded in *Design Feedback to PDD* when it touches the process. **Look hardest at what `4-verify` fixed in the case**: a condition that narrows a rule a business user signed is a design change whether or not anyone wrote it down (measured — the fix that took false escalation from 58% to 12% was in `caseplan.json` and `PROGRESS.md` and nowhere in the design), so it goes in as a Design Feedback row *and* an Action Required row, first to be signed. Add an *As Built* section that states the pins and the known limitations with the change each needs; where it and the design differ, it is right. Every task in `tasks.md` is `[x]` or says why not; `PROGRESS.md` closes with the state of the seat.
-- **Write the runbook** — for a human operating the solution, not the agent that built it: how it is deployed and how it would be promoted, what has to exist first (the six RPA processes, the shared IXP project, the Data Fabric entity, the shared connection), what is known-broken, and what to do when a claim faults. Most of it is already in `PROGRESS.md`; this is a rewrite for a different reader.
+**Check what travelled.** 
+- The Maestro case and the seven Agents are inside the `.uipx`; 
+- The Coded Action App is deployed beside it into the seat folder. 
+- Nothing you deployed by hand while building is standing in for a project that is not in the package. 
+- A read of the package and the deployments, not a redeploy.
 
-**Done when** `sdd.md` describes what runs, every task is closed, the runbook exists, the deployed version is the one you packed, and Studio Web opens the solution that is running.
+**Bring `sdd.md` to as-built, and mark the work done.** 
+- The design outlives the build and everything downstream binds to it, so where the build settled something differently — an SME row closed, a binding renamed, a stage reshaped — the SDD says what was built, with the change recorded in *Design Feedback to PDD* when it touches the process. 
+- **Look hardest at what `4-verify` fixed in the case**: a condition that narrows a rule a business user signed is a design change whether or not anyone wrote it down, so it goes in as a Design Feedback row *and* an Action Required row, first to be signed. 
+- Add an *As Built* section that states the pins and the known limitations with the change each needs; where it and the design differ, it is right. Every task in `tasks.md` is `[x]` or says why not; `PROGRESS.md` closes with the state of the seat.
+
+**Write the runbook** for a human operating the solution, not the agent that built it: how it is deployed and how it would be promoted, what has to exist first (the six RPA processes, the shared IXP project, the Data Fabric entity, the shared connection), what is known-broken, and what to do when a claim faults. Most of it is already in `PROGRESS.md`; this is a rewrite for a different reader.
+
+**Done when** 
+- `sdd.md` describes what runs
+- every task is closed
+- the runbook exists
+- the deployed version is the one you packed
+- Studio Web opens the solution that is running.

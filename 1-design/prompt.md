@@ -21,7 +21,7 @@ Then check your own work and fix what it finds:
 python3 1-design/check_sdd.py sdd.md --pdd PDD.md
 ```
 
-The planner's own audit checks the document's shape; this one checks the design against the process — task types against the PDD, one writer per column, every read variable produced, tables that actually render.
+One command, both checks: it runs the planner's shape audit and then checks the design against the process — task types against the PDD, one writer per column, every read variable produced, real argument names, tables that render. Read its rules when a failure is unclear — each one is a shape that built and then failed.
 
 **Done when a solution architect could hand this to a developer and walk away** — every stage, task, rule and human decision described well enough to build from, with nothing left to guess. The checker exiting 0 is the floor, not the finish.
 

@@ -9,14 +9,14 @@ This is the seed for the Property Claims exercise. It describes what to build; y
 | What you produce | Where |
 |---|---|
 | Generated code: Maestro Case and Agents | `Build/ClaimCase-<seat>/`, **one solution** |
-| Coded Action App (validation) & Coded Process App (dashboard) | `Build/claim-review-<seat>/` & `Build/claim-case-<seat>/`; Each has **own publish and deploy** (`CONFIG.md`, *Deploying*) |
+| Coded Action App (validation) | `Build/claim-review-<seat>/`; **own publish and deploy** (`CONFIG.md`, *Deploying*). A Coded Process App (dashboard) is a later block, not in this seed |
 | Documents you write for a block (design, task list, notes) | the block's own folder |
 | Findings | the shared table, via `log-finding.py`. Never a local file |
 | Where the build has got to, what exists, what broke, what is next | `PROGRESS.md`, at the root of this folder. The one file that spans blocks |
 
 **Paths in this seed are relative to this folder**, always — `contracts/claim-entity.md`, never `../contracts/`. A block citing a path outside itself is telling you the knowledge is shared.
 
-**Seed filenames are fixed**, so nothing you write can collide: a block ships `prompt.md` and `cookbook.md`, sometimes a script. **Any other file in a block folder is yours.**.
+**Seed filenames are fixed**, so nothing you write can collide: a block ships `prompt.md` and `cookbook.md`, sometimes a script. **Any other file in a block folder is yours.**
 
 **A file that configures the platform rather than shipping inside the solution belongs in its block folder too**, not in `Build/`. A schema, a fixture, a test matrix: generated, machine-readable, and not part of the package. `ls Build/` should show your solution and apps source code and nothing else.
 
@@ -24,9 +24,9 @@ This is the seed for the Property Claims exercise. It describes what to build; y
 
 Orchestrator seat folder and seat is yours: your own folder, buckets, solution, claim record and copies of the documents. Nothing in it is shared, nothing is production, all of it is disposable. **Creating resources, publishing, deploying, uninstalling and starting real runs are authorised in advance**, as often as you need, as is deleting and recreating something you made.
 
-Two things make that safe: the claims are synthetic and the claimants are not real, and **no letter is ever sent** — correspondence is written and logged by exisintg process, but never delivered.
+Two things make that safe: the claims are synthetic and the claimants are not real, and **no letter is ever sent** — correspondence is written and logged by existing process, but never delivered.
 
-**Pausing for approval is not required** A block's value is in what a live run reveals, and a build that stops at the deploy gate has proven nothing. Work to the goal, then report.
+**Pausing for approval is not required.** A block's value is in what a live run reveals, and a build that stops at the deploy gate has proven nothing. Work to the goal, then report.
 
 **Your harness may not honour this, and that is worth settling before you need it.** The commands that recover a broken deployment — uninstalling/reinstalling a solution, deleting a process, cancelling a case instance — read as destructive out of context and are the ones a safety classifier is most likely to refuse. Refused mid-block, the build stops dead with the fix identified and unrunnable. Ask your operator to allow the whole loop (pack, publish, deploy, upload) before the first deploy, not only for the recovery verbs.
 
@@ -38,6 +38,8 @@ Two things make that safe: the claims are synthetic and the claimants are not re
 
 **Verify, do not assume.** Nearly every *"not found"* here is a wrong folder, a wrong tenant, a wrong scope or a stale cache rather than an absent resource. Check [`known-issues/`](known-issues/) before believing an empty `list`, and `uip login status` before believing anything is missing.
 
+**Every block folder has a `cookbook.md` — issue → fix, from people who have done it before. When something fails, read the block's cookbook before searching further.**
+
 **Check the platform's own tooling before hand-rolling.** `uip --help` and the installed skills are ahead of any document, this one included. Where they disagree with a cookbook, the tool wins — **and that disagreement is worth logging.**
 
 **Before the first block, be on the toolchain line `CONFIG.md`, *Toolchain*, names.** `uip --version` shows yours; if it differs, run the commands there. Skills follow the CLI's `major.minor` line, and this seed was tested on exactly that one — a different line means different skills and a seed written for another.
@@ -47,7 +49,7 @@ Two things make that safe: the claims are synthetic and the claimants are not re
 | Block | Skill |
 |---|---|
 | Design · Plan | `uipath-planner` designs, then derives the tasks |
-| Build: IXP Extraction · Data Fabric Entity · Agents · Case Plan · Run · Coded Action App · Coded Process App| `uipath-ixp` · `uipath-platform` · `uipath-agents` · `uipath-maestro-case` · `uipath-solution` · `uipath-coded-apps` |
+| Build: IXP Extraction · Data Fabric Entity · Agents · Case Plan · Run · Coded Action App | `uipath-ixp` · `uipath-platform` · `uipath-agents` · `uipath-maestro-case` · `uipath-solution` · `uipath-coded-apps` |
 | Verify · Hand over | `uipath-platform`, `uipath-troubleshoot` · `uipath-solution`, and `uipath-planner` for the as-built `sdd.md` — the planner is the sole author of a case SDD (its Rule 13) |
 
 Three near-misses that have each cost time: **`uipath-maestro-bpmn` is not the case skill** — a case compiles to a file whose name ends `.bpmn`, which is not the same thing and is not authored by hand. **`uipath-maestro-flow` is not used here at all.** **`uipath-test` drives Test Manager**, which is not what Verify does.
@@ -66,7 +68,7 @@ Three near-misses that have each cost time: **`uipath-maestro-bpmn` is not the c
 
 **`PROGRESS.md`, at the root of this folder, and it is the one file here you should be generous with.** Everything else in this seed is kept short deliberately. It is written for the agent running the next block, which starts with an empty context, no memory of what you did, and no way to find out except by redoing it.
 
-**Read it before you start. Add to it as you go — not before you finish.** Your context will be compacted without warning, more than once on a long block, and nothing that exists only in your context survives it. `PROGRESS.md` is your memory, not your report: append after every deploy cycle, every fixed defect and every decision — a name, a key, what you tried, what happened. If you notice a compaction has happened, re-read `PROGRESS.md` from the current block heading before doing anything else. Append, never rewrite: a fact that turned out to be wrong is corrected by a new line saying so, because the next block needs to know it was once believed.
+**A skeleton ships with the seed — one section per block and the numbers each block owes. Read it before you start; fill it as you go, not before you finish.** Your context will be compacted without warning, more than once on a long block, and nothing that exists only in your context survives it. `PROGRESS.md` is your memory, not your report: append after every deploy cycle, every fixed defect and every decision — a name, a key, what you tried, what happened. If you notice a compaction has happened, re-read `PROGRESS.md` from the current block heading before doing anything else. Append, never rewrite: a fact that turned out to be wrong is corrected by a new line saying so, because the next block needs to know it was once believed.
 
 | Put in it | Why |
 |---|---|
@@ -86,7 +88,7 @@ The same event legitimately appears in all three. They are written for different
 |---|---|---|---|
 | `PROGRESS.md` | the next block of **this** build | dies with this build | as long as it needs to be, raw output and all |
 | the **findings table** | the people who maintain this exercise | one round | one finding, one thing, dated |
-| `cookbook.md` | **every future participant** | until the platform or UiPath skills changes | **not yours to write.** It is distilled by the maintainers from findings once the same thing has been seen on more than one build |
+| `cookbook.md` | **every future participant** | until the platform or UiPath skills changes | **not yours to write.** It is maintained with the seed |
 
 So: hit a wall, and write it **everywhere it belongs** — in `PROGRESS.md` so the next block does not hit it, and as a finding so it can become a cookbook line for everyone who comes after. Neither one makes the other redundant.
 
@@ -101,10 +103,6 @@ python3 log-finding.py --identify "<your agent>" "<your model>" --effort "<your 
 ```
 
 If it answers *identity already recorded*, it was set for you before the session started — leave it.
-
-```bash
-# nothing more to run
-```
 
 Include the effort tier if your runtime has one. The same model at two tiers is two different builders, and without that word every comparison between runs is confounded. **If you are not certain which model you are, ask** — `unknown` is more useful than a plausible wrong answer.
 

@@ -49,7 +49,7 @@ PROVIDED = ["Retrieve Property Claim", "Extract Claim Data", "Retrieve Policy Do
 # disagreement is logged. A design that binds a name outside it (Terra01 bound 11 of 16 to
 # names it recalled — `out_PolicyData` does not exist) faults on the first claim at 3e.
 PROVIDED_ARGS = {
-    "in_Scenario", "in_Discrepancy", "in_ClaimID", "out_ClaimID",            # Retrieve Property Claim
+    "in_Scenario", "in_Discrepancy", "in_ClaimID", "in_ProfileId", "in_Seed", "out_ClaimID",   # Retrieve Property Claim
     "out_PolicyID", "out_ClaimIXPDataJSON", "out_ClaimFormPDF",              # Extract Claim Data (IXP)
     "in_PolicyID", "out_PolicyPDF",                                          # Retrieve Policy Document
     "out_PreviousClaimsJSON",                                                # Retrieve Previous Claims
@@ -133,6 +133,22 @@ def check_structure(text, r):
     if not re.search(r'^### (Stage|Secondary Stage)', text, re.M):
         r.add("FAIL", "SHAPE-4", "no `### Stage` blocks")
     return ts
+
+
+def check_planner_audit(sdd_path, r):
+    """Run the planner's own shape audit so the designer runs one command. SHAPE-5 carries its
+    findings; a missing audit script is a note, not a pass."""
+    import os, subprocess
+    audit = next((pth for pth in (os.path.expanduser("~/.agents/skills/uipath-planner/scripts/audit_sdd.py"),
+                                   os.path.expanduser("~/.uipath/.skills/skills/uipath-planner/scripts/audit_sdd.py")) if os.path.exists(pth)), None)
+    if not audit:
+        r.add("NOTE", "SHAPE-0", "the planner's audit_sdd.py was not found — run `uip skills install`, then the audit by hand")
+        return
+    res = subprocess.run([sys.executable, audit, sdd_path], capture_output=True, text=True)
+    out = (res.stdout + res.stderr).strip()
+    if res.returncode != 0 or "AUDIT FAIL" in out:
+        lines = [l.strip() for l in out.splitlines() if l.strip() and "AUDIT FAIL" not in l]
+        r.add("FAIL", "SHAPE-5", "the planner's audit fails: " + " · ".join(lines[:6]))
 
 
 def check_handoff(text, r):
@@ -805,6 +821,7 @@ def main():
     tasks = check_structure(text, r)
     for t in tasks:
         t["_sdd_path"] = a.sdd
+    check_planner_audit(a.sdd, r)
     check_handoff(text, r)
     check_tasks(tasks, r)
     check_bindings(text, r, tasks)

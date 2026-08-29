@@ -1,12 +1,12 @@
 # Build — your own Claim Form IXP extraction
 
-> **Draft — the reuse route (`prompt.md`) is the default.** This one is for the seat that wants the IXP craft: training an extraction model is its own skill, and it is not what the rest of the exercise is about. Extraction feeds everything after it, so a half-trained IXP project of your own is worse than the shared one — **switch to `prompt.md` the moment this stops being the interesting part of your day.** Every block after this one is identical either way, because both routes produce the same field groups under the same keys.
+> **Optional route — the reuse route (`prompt.md`) is the default.** This one is for the seat that wants the IXP craft: training an extraction model is its own skill, and it is not what the rest of the exercise is about. Extraction feeds everything after it, so a half-trained IXP project of your own is worse than the shared one — **switch to `prompt.md` the moment this stops being the interesting part of your day.** Every block after this one is identical either way, because both routes produce the same field groups under the same keys.
 
 The claim form (FNOL) is the one document that arrives as a structured form, so it is read into fields with IXP. The policy and the assessor's report are prose and stay documents; the agents read them directly (`PDD.md` §5.6).
 
 Use the **`uipath-ixp`** skill: create an IXP project for the claim form, train it, publish it, and deploy it to **your** Orchestrator folder.
 
-> **Open — how your model gets called is not settled yet.** The provided `Extract Claim Data (IXP)` automation is pinned to the shared project (project id, `live` tag and version are literal in its workflow; only the `Claims` bucket is a deploy-time binding), so deploying your model to your folder changes nothing it reads. The route that fits the contract is a copy of that automation re-pointed at your project and published in your folder under the same name — and the seed does not ship its source yet. Until it does, this route ends at a trained, published, deployed model proven on an unseen form, and the case still reads through the shared one.
+> **How your model gets called.** The provided `Extract Claim Data (IXP)` automation is pinned to the shared project (project id, `live` tag and version are literal in its workflow; only the `Claims` bucket is a deploy-time binding), so deploying your model to your folder changes nothing it reads. The route that fits the contract is a copy of that automation re-pointed at your project and published in your folder under the same name — that automation's source is not part of the exercise, so this route ends at a trained, published, deployed model proven on an unseen form, and the case still reads through the shared one.
 
 Three things I care about:
 

@@ -42,7 +42,7 @@ Seven checks, each recorded with one line of evidence in the eventual SDD. `[SKI
 
 Also capture here, because they gate every later product decision: **delivery model** (cloud / Automation Suite + version / standalone), stated product exclusions with reasons, document storage location, signing modality, robot attendance, email protocol.
 
-> **`[MEASURED]` Check 2 has a failure mode nobody documents.** An estate sweep on a tenant that already holds a solution to the same problem does not merely offer reuse — **it reshapes the design**. On one run the sweep found a prior build and the design took its task types from what was deployed rather than from the PDD, and said so outright. Forbidding *reuse* did not stop it; the estate still drove the choices. On a shared tenant this means every team after the first inherits its neighbours' architecture, and the convergence looks like agreement. Scope discovery deliberately, or run design against a clean tenant.
+> **Check 2 has a failure mode nobody documents.** An estate sweep on a tenant that already holds a solution to the same problem does not merely offer reuse — **it reshapes the design**. Given a prior build on the tenant, a design takes its task types from what is deployed rather than from the PDD, and says so outright. Forbidding *reuse* did not stop it; the estate still drove the choices. On a shared tenant this means every team after the first inherits its neighbours' architecture, and the convergence looks like agreement. Scope discovery deliberately, or run design against a clean tenant.
 
 ## Stage 1 — the PDD
 
@@ -81,7 +81,7 @@ The operative depth rule:
 
 Gating all of it, the **constraint gate**: a product unavailable on the delivery model is *blocked*, substituted, and recorded. *"User exclusions are blocks."* *"Never silently substitute."*
 
-> **`[MEASURED]` The step-verb table only works if the PDD says which steps are deterministic** — see [`pdd-guide.md`](pdd-guide.md), §5.3. Without that column the choice falls to whatever the estate sweep found deployed nearby.
+> **The step-verb table only works if the PDD says which steps are deterministic** — see [`pdd-guide.md`](pdd-guide.md), §5.3. Without that column the choice falls to whatever the estate sweep found deployed nearby.
 
 ### What the SDD does NOT decide `[SKILL]`
 
@@ -137,7 +137,7 @@ Five rules that prevent rework `[SKILL]`:
 
 `[JUDGEMENT]` Add a **spec-conformance task**, distinct from testing: enumerate every SDD element and mark it Implemented / Missing / Mismatch / **Extra**. *"Extra"* is the category the shipped tooling misses and the one that catches over-design.
 
-> **`[MEASURED]` "Extra" is not hypothetical.** Two correct-shaped designs of one PDD were compared against it: one carried the five stage SLAs the PDD gave, the other carried eight, having invented deadlines for three stages the business never put one on. Nothing in the toolchain flagged it. An invented SLA escalates to somebody who never asked to be told.
+> **"Extra" is not hypothetical.** Compare two correct-shaped designs of one PDD against it and one may carry the five stage SLAs the PDD gave while the other carries eight, having invented deadlines for three stages the business never put one on. Nothing in the toolchain flagged it. An invented SLA escalates to somebody who never asked to be told.
 
 ## Stage 6 — ship
 

@@ -2,7 +2,7 @@
 
 A property claim arrives and needs to be analyzed. Three documents related to the claim do not always agree with each other. Your solution reads them, works out whether the claim is payable and for how much, puts a human in front of the two decisions that need one, and keeps the claimant updated on progress.
 
-**You are not here to learn insurance.** You are here to drive a coding agent through the end-to-end build — from document extraction, building analysis Agents, stitching together a Maestro Case with a Coded Action Apps for validation screen and dashboard overview. Build, Test and Deploy. 
+**You are not here to learn insurance.** You are here to drive a coding agent through the end-to-end build — from document extraction, building analysis Agents, stitching together a Maestro Case with a Coded Action App for the two validation screens. Build, Test and Deploy. 
 
 ## Contents
 
@@ -36,7 +36,7 @@ uip login status             # confirm the org and tenant match
 
 Start your coding agent **in this folder** — `AGENTS.md` and `CLAUDE.md` are picked up automatically. Point it at [`1-design/prompt.md`](1-design/prompt.md) and work down [the sequence](#the-sequence).
 
-**Clone rather than download if you can.** Everything you build shows up as untracked in `git status` and anything you changed shows up in `git diff`, which is the cheapest way to see what you actually did. It also means `git pull` brings you any fix we ship mid-workshop.
+**Clone rather than download if you can.** Everything you build shows up as untracked in `git status` and anything you changed shows up in `git diff`, which is the cheapest way to see what you actually did.
 
 ## What you are building
 
@@ -51,7 +51,7 @@ Start your coding agent **in this folder** — `AGENTS.md` and `CLAUDE.md` are p
 | **1 · [Design](1-design/prompt.md)** | `sdd.md` — the architecture | a solution architect could hand it to a developer and walk away | the document — read Section 2 and see whether the stages match how a claim really moves |
 | **2 · [Plan](2-plan/prompt.md)** | `tasks.md` — what gets built in what order | the list works top to bottom with nothing blocked by something below it | the list — every generation task should be followed by something that checks it |
 | **3 · Build** — six runs, in order | | | |
-| &nbsp;&nbsp;a · [Extraction](3a-extraction/prompt.md) | the shared IXP project adopted and proven on a real form — or, by [`prompt-build.md`](3a-extraction/prompt-build.md), your own IXP project trained | an unlabelled form comes back complete | the extraction result over a real form, field by field, with its confidence |
+| &nbsp;&nbsp;a · [Extraction](3a-extraction/prompt.md) | the shared IXP project adopted and proven on a real form — or, by [`prompt-build.md`](3a-extraction/prompt-build.md), your own IXP project trained | two unlabelled forms come back complete | the extraction result over a real form, field by field, with its confidence |
 | &nbsp;&nbsp;b · [Claim record](3b-entity/prompt.md) | the Data Fabric entity every step writes to | a value with cents and a 9,000-character payload round-trip unchanged | the table in Data Fabric, and a row in it |
 | &nbsp;&nbsp;c · [Agents](3c-agents/prompt.md) | the seven Agents that decide things | each returns what `PDD.md` §7 says — including *nothing* on a clean claim | one agent's trace — what it was given, what it concluded, and why |
 | &nbsp;&nbsp;d · [The case](3d-case/prompt.md) | the Maestro case, authored and validated | both gates are green and the plan opens in Studio Web | **the case diagram** — the whole process as a picture, for the first time |
@@ -85,7 +85,7 @@ What you carry forward is nothing; what you lose by *not* clearing is real. An a
 
 | Your model's context | What to do |
 |---|---|
-| **~1M tokens** | You can run from block 1 through authoring the case without clearing — if you do, clear before deploying and running it, and again before the app. |
+| **~1M tokens** | Blocks 1 and 2 fit one session; clear from 3a on, and again before deploying and before the app. |
 | **~250k tokens** | **Clear or compact after every block.** You will otherwise be compacting mid-block, which is the worst moment for it — halfway through something, with the reasoning that got you there being summarised away. |
 
 **Log findings as you go, not at the end** — see [`AGENTS.md`](AGENTS.md), *Log what you learn*. This is the rule clearing depends on: what survives a fresh start is what you already sent.

@@ -35,9 +35,9 @@ It is **not** called `outcome`, and no `$xref` is involved. Guessing wrong is ex
 
 **There is no `json` type, so a document travels as a string.** The schema supports string / number / integer / boolean / array / object / file, and `object` is rejected unless every nested property is spelled out. Declare JSON payloads as **a string carrying JSON text** — which is also the shape the `MULTILINE_TEXT` column wants, so the case writes it with no conversion.
 
-**An output you have nothing for is omitted, never sent as `""`** — an empty string replaces the column's content on the way to the record; absence leaves it (measured 2026-08-27 through the payload on the wire).
+**An output you have nothing for is omitted, never sent as `""`** — an empty string replaces the column's content on the way to the record; absence leaves it.
 
-**The confirmed settlement is an output, not a record read**, because Action Center keeps outputs on completion and drops inputs — a *completed* task can still render the approved amounts. Never move anything out of the three inOuts. **The trap this sets for the screen** (measured 2026-08-27, route 4): the record's `settlementJson` column holds the **recommendation**; after an override the confirmed figures live in the task output and in `decisionJson.outcome.approvedSettlement`. A screen that renders the column after an override shows the pre-override amount.
+**The confirmed settlement is an output, not a record read**, because Action Center keeps outputs on completion and drops inputs — a *completed* task can still render the approved amounts. Never move anything out of the three inOuts. **The trap this sets for the screen**: the record's `settlementJson` column holds the **recommendation**; after an override the confirmed figures live in the task output and in `decisionJson.outcome.approvedSettlement`. A screen that renders the column after an override shows the pre-override amount.
 
 ## Two outcomes, and not three
 
@@ -70,6 +70,6 @@ The title is set where the task is raised, in the case.
 
 The names above are what the **app** sends. A task completed from the command line comes back **PascalCased** — you send `reviewerNotes`, `uip tasks get` echoes `ReviewerNotes`. The outcome is unaffected, so routing is identical.
 
-**Map the names in this contract, and never re-point a mapping at what the CLI printed.** Two seats did exactly that on one round — one on a confident answer from the platform's own documentation tool — and produced a case that passes its own CLI tests and breaks the first time a human uses the screen. If your notes arrive empty, the fix is upstream of the mapping, not in it.
+**Map the names in this contract, and never re-point a mapping at what the CLI printed.** A mapping re-pointed at what the CLI printed passes its own CLI tests and breaks the first time a human uses the screen. If your notes arrive empty, the fix is upstream of the mapping, not in it.
 
 The same caution applies to the app: **do not capture a fixture from `uip tasks get`**, which PascalCases the whole payload for display. Read the three inOut identifiers through one case-tolerant lookup at the edge and write back the camelCase above — then a task answered from the CLI still opens, and one raised by the case still works.

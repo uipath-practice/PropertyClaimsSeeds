@@ -17,7 +17,7 @@ The same fact travels three surfaces and must keep one name:
 | what a component returns | `out_EligibilityChecksJSON` |
 | the case variable | `eligibilityChecksJson` |
 | the column here | `eligibilityChecksJson` |
-| **what a record read returns** | **`EligibilityChecksJson`** — the platform PascalCases every column on the way out (`uip df records get`, `records list`, the app's SDK read), while `entities get` still reports `eligibilityChecksJson`. Measured 2026-08-27. Write camelCase; read case-tolerantly — an app keyed on `row.claimId` gets `undefined` and renders an empty screen with no error |
+| **what a record read returns** | **`EligibilityChecksJson`** — the platform PascalCases every column on the way out (`uip df records get`, `records list`, the app's SDK read), while `entities get` still reports `eligibilityChecksJson`. . Write camelCase; read case-tolerantly — an app keyed on `row.claimId` gets `undefined` and renders an empty screen with no error |
 
 **Do not improve any of the three.** Bindings resolve by name at run time, so a better name packs, deploys and runs — then fails on a live claim with an error naming neither the binding nor the name.
 
@@ -35,7 +35,7 @@ Grouped by the moment they are written, because that ordering is the part that m
 | `caseInstanceId` | `STRING` 100 | `=js:metadata.InstanceId`. Case metadata carries exactly two usable fields, this and `ExternalId` |
 | `status` | `STRING` 100 | a lifecycle word your case sets; the dashboard filters on it |
 | `claimantName` | `STRING` 200 | |
-| `policyId` · `incidentType` · `propertyCountry` | `STRING` 100 | `propertyCountry` is on no field the extractor returns (`ClaimProperty` carries street, city, state, ZIP — no country) and no document states it as a field. Derive it at intake from the claim currency — `PDD.md` §12 V1 pairs the six countries with their currencies one to one — and write it once. Both measured designs did exactly this; record it as an SME item rather than re-deriving the question. |
+| `policyId` · `incidentType` · `propertyCountry` | `STRING` 100 | `propertyCountry` is on no field the extractor returns (`ClaimProperty` carries street, city, state, ZIP — no country) and no document states it as a field. Derive it at intake from the claim currency — `PDD.md` §12 V1 pairs the six countries with their currencies one to one — and write it once. Record it as an SME item rather than re-deriving the question. |
 | `incidentDate` · `dateOfSubmission` | `DATE` | |
 | `totalClaimAmount` | `DECIMAL`, precision 2 | |
 | `currency` | `STRING` 20 | never converted (`PDD.md` A2) |
@@ -73,7 +73,7 @@ Grouped by the moment they are written, because that ordering is the part that m
 
 | Column | Type | Note |
 |---|---|---|
-| `decisionJson` | `MULTILINE_TEXT` 10000 | **written twice** — the recommendation before the gate opens, the outcome after it closes; **and on the path where no gate opens the outcome is still written**, from the recommendation, so `outcome.approvedSettlement` is readable on every settled row and is `{}` on a refusal, unconditionally (measured: it was empty on exactly the straight-through claims the success criteria count) |
+| `decisionJson` | `MULTILINE_TEXT` 10000 | **written twice** — the recommendation before the gate opens, the outcome after it closes; **and on the path where no gate opens the outcome is still written**, from the recommendation, so `outcome.approvedSettlement` is readable on every settled row and is `{}` on a refusal, unconditionally |
 | `reviewRequired` | `BOOLEAN` | |
 | `reviewDecision` | `STRING` 100 | |
 | `reviewerNotes` | `STRING` 4000 | |
@@ -85,13 +85,13 @@ Grouped by the moment they are written, because that ordering is the part that m
 
 ## Two budgets, and they are not the same number
 
-**A column holds 10,000 characters** and an over-length write is **refused at the write, with the column named** — `The provided value for field [claimDataJson] is longer than length limit 10000`, nothing written, the claim faulted at that step (measured). So every producer budgets to **8,000**, which leaves room for a claim with more damage rows than usual.
+**A column holds 10,000 characters** and an over-length write is **refused at the write, with the column named** — `The provided value for field [claimDataJson] is longer than length limit 10000`, nothing written, the claim faulted at that step. So every producer budgets to **8,000**, which leaves room for a claim with more damage rows than usual.
 
 **A component's inputs are capped all together, and the usable budget measures ~8,700.** So three 10,000-character columns cannot be handed to one consumer, however comfortably each fits its own column. Count what a consumer is given, not what each producer wrote.
 
-**Over the cap the platform refuses the call — `400 The field InputArguments must be a string or array type with a maximum length of '10000'` — and the usable figure is ~8,700 because the serialised arguments carry escaping** (measured 2026-08-28 on 1.201, Opus03 at 3c: one agent budgeted 2,200 returned 5,281 and the next consumer was refused). On 1.199 the same overrun degraded silently — the job reported `Successful` and returned an empty field — so a build that meets neither symptom has not proven it fits: count, slice, and read the record.
+**Over the cap the platform refuses the call — `400 The field InputArguments must be a string or array type with a maximum length of '10000'` — and the usable figure is ~8,700 because the serialised arguments carry escaping** (one agent budgeted at 2,200 returned 5,281 and the next consumer was refused). An earlier CLI line let the same overrun degrade silently — the job reported `Successful` and returned an empty field — so a build that meets neither symptom has not proven it fits: count, slice, and read the record.
 
-**A slice guard at the consumer must be at least the producer's budget, and JSON envelopes are ordered conclusion-first.** Free text survives a cut; JSON cut mid-object arrives unparseable (measured 2026-08-27: a 1,500-character budget, a 1,200-character guard, a 1,458-character payload).
+**A slice guard at the consumer must be at least the producer's budget, and JSON envelopes are ordered conclusion-first.** Free text survives a cut; JSON cut mid-object arrives unparseable.
 
 **A payload budget written into a producer's prompt is a request, not a contract.** One asking for 1,800 characters returned 7,262 and 6,687 on later runs of the same claim. If a downstream budget depends on it, enforce it in code after the component returns.
 
@@ -101,7 +101,7 @@ Grouped by the moment they are written, because that ordering is the part that m
 
 **Write it from the case, with `execute-connector-activity` tasks.** The v1 reference populated its 39 columns from **seven** such tasks; this schema has 36 and has no writer component of any kind; `Record Eligibility Assessment` alone writes seventeen columns in one call. A separate component that exists only to write the record is a project to publish, deploy, version and bind for something the case already does.
 
-**Two ways to read a payload, and they reach different depths.** A **bare binding path** — `=vars.claimData.claimant` — resolves **one level** and no further; `vars.claimData.claimant.email` does not (measured). A **`=js:` expression with optional chaining** is the form for anything deeper, and it must also survive the field shape the extraction really has — every field is an object `{ Value, Confidence }`, so the value is one level further down than the name suggests:
+**Two ways to read a payload, and they reach different depths.** A **bare binding path** — `=vars.claimData.claimant` — resolves **one level** and no further; `vars.claimData.claimant.email` does not. A **`=js:` expression with optional chaining** is the form for anything deeper, and it must also survive the field shape the extraction really has — every field is an object `{ Value, Confidence }`, so the value is one level further down than the name suggests:
 
 ```
 claimantName    =js:(vars.claimDataJson?.ClaimClaimant?.[0]?.Name?.Value)
@@ -109,7 +109,7 @@ claimFormPdfId  =js:(vars.claimFormPdf?.ID)
 reviewRequired  =js:(vars.isEligible === false || vars.isComplete === false)
 ```
 
-**Depth past one level is measured only for the bare path.** The `=js:` form is what the reference build will prove or refute; until then, a value the case reads in more than one place is surfaced as a plain scalar by the component that already produces it (`provided-processes.md`, *The extracted payload is deeply nested*) — cheaper than discovering at `3e-run` which reading was right.
+**Depth past one level is a bare-path limit only** — `=js:` with optional chaining reads any depth. Still, a value the case reads in more than one place is surfaced as a plain scalar by the component that already produces it (`provided-processes.md`, *The extracted payload is deeply nested*) — cheaper than discovering at `3e-run` which reading was right.
 
 So a *normaliser* component is not needed either. What **is** worth surfacing as a plain scalar is anything read in more than one place — and the component that already produces the value is where to surface it, not a new component downstream of it.
 
@@ -119,7 +119,7 @@ So a *normaliser* component is not needed either. What **is** worth surfacing as
 
 **`claimId` is unique, and the platform enforces it.** A second row for the same claim is refused — `Value uniqueness violation … Error Number: 2627`, naming neither the claim nor the case — so a case re-run for a claim that already has a row faults on its very first write. Every run is a new claim, or the old row is deleted first (`3e-run/cookbook.md`).
 
-**`DATE` accepts what the extraction emits.** `"2026-07-28T00:00:00"` goes in, `2026-07-28` comes out — bind `DateOfIncident.Value` straight through; a read-back comparison compares the date part. `DECIMAL` keeps cents, `DATETIME_WITH_TZ` keeps its offset to the millisecond, a 9,000-character `MULTILINE_TEXT` comes back byte-identical (all measured, 2026-08-27).
+**`DATE` accepts what the extraction emits.** `"2026-07-28T00:00:00"` goes in, `2026-07-28` comes out — bind `DateOfIncident.Value` straight through; a read-back comparison compares the date part. `DECIMAL` keeps cents, `DATETIME_WITH_TZ` keeps its offset to the millisecond, a 9,000-character `MULTILINE_TEXT` comes back byte-identical.
 
 **It is a patch, not a replace**, and the three cases are not symmetric:
 

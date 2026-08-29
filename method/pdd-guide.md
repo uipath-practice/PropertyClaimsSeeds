@@ -59,7 +59,7 @@ Process full name (**verbatim** if the business has a canonical one) · function
 - **Expected result** — what is true after success. It becomes a test assertion.
 - **Remarks** — lift buried business rules out into §7 rather than leaving them here.
 
-> **`[MEASURED]` Decision nature is what lets a PDD drive an architecture instead of merely describing a process.** Given a step table carrying it, two independent designs on different models each chose agents against deterministic runners **by citing the column, step by step**, and each rejected five or six plausible alternative architectures against a named section. Given a PDD without it, the same choice falls to whatever the estate sweep happened to find deployed nearby.
+> **Decision nature is what lets a PDD drive an architecture instead of merely describing a process.** Given a step table carrying it, a design chooses agents against deterministic runners **by citing the column, step by step**, and rejects the plausible alternative architectures against a named section. Given a PDD without it, the same choice falls to whatever the estate sweep happened to find deployed nearby.
 >
 > It costs one column and it is the highest-leverage thing in the document.
 

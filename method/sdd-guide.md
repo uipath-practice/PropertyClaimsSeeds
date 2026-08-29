@@ -2,7 +2,7 @@
 
 **One author, one shape.** `uipath-planner` writes every Case Management SDD — from a PDD, from a conversation, or when `uipath-maestro-case` is asked to build with no `sdd.md` and hands the design to it — and it writes the four named sections the build reads: `## Section 1: Case Definition` … `## Section 4: Integrations`, a `##### Task N.M:` block per task, a `## Planner Handoff` header. Its `audit_sdd.py` gates that shape before `Status: ready`.
 
-> **`[MEASURED]` The build still checks nothing but the shape.** `uipath-maestro-case` Rule 2 — *"trust `sdd.md` as written; do not validate, gap-fill, or silently infer it"* — and it refuses a summary SDD. Nothing downstream compares the design with the process; `1-design/check_sdd.py` does.
+> **The build still checks nothing but the shape.** `uipath-maestro-case` Rule 2 — *"trust `sdd.md` as written; do not validate, gap-fill, or silently infer it"* — and it refuses a summary SDD. Nothing downstream compares the design with the process; `1-design/check_sdd.py` does.
 
 ## Two rules that govern the whole document
 
@@ -88,16 +88,16 @@ Use only fully-supported types: `STRING`, `MULTILINE_TEXT`, `MULTILINE_MAX`, `DE
 
 **Boundary** — no selectors · no code beyond the binding grammar · no tenant-discovered payload schemas · no field-level HITL schema where the host defers it · no app action schema · no agent internals · no product the delivery model cannot run.
 
-> **`[MEASURED]` Add one more: does every task's type match what the PDD said about that step?** A design that takes its types from the estate rather than the requirement passes every check above. The cheapest detector is mechanical — match each task to its PDD step and compare the type against the step's stated decision nature.
+> **Add one more: does every task's type match what the PDD said about that step?** A design that takes its types from the estate rather than the requirement passes every check above. The cheapest detector is mechanical — match each task to its PDD step and compare the type against the step's stated decision nature.
 
 ## Every letter names its claim
 
 Each `Client Notification` task binds `in_ClaimId` to the case's external id and puts `[<claim id>]` in the subject (`contracts/provided-processes.md`). The automation records the letter against that id; the reviewer's screen and `4-verify` read it back by the same id. A design that leaves the id out of the subject produces letters nobody can find.
 
-## Two inputs the case declares for testing, from block 1
+## Test-only inputs the case declares, from block 1
 
-The claim generator that stands in for real sample data takes a scenario and a problem id (`contracts/provided-processes.md`, *Retrieve Property Claim*). The case declares both as **test-only inputs** — `scenario`, `discrepancy`, strings, empty in production — in its Case Inputs table from the first design, with one sentence saying why. A design that says *"the case needs no caller-supplied argument"* produces a build nobody can aim, and a build that adds them later carries two undeclared strings (measured, both).
+The claim generator that stands in for real sample data takes a scenario, a problem id, a claimant profile and a seed (`contracts/provided-processes.md`, *Retrieve Property Claim*). The case declares all four as **test-only inputs** — `scenario`, `discrepancy`, `profileId`, `seed`; strings, empty in production — in its Case Inputs table from the first design, with one sentence saying why, and passes them through to the generator unchanged. A design that says *"the case needs no caller-supplied argument"* produces a build nobody can aim, and a build that adds them later carries two undeclared strings .
 
 ## As built — what the build owes the design
 
-The SDD outlives the build, so at hand-over it says what runs. Two rules, both measured on a build that broke them: **a condition added to the case that narrows a rule the business signed is a design change** — it goes in the task table with the expression, in *Design Feedback to PDD*, and as an *Action Required* row to be signed first, however good the number it bought; and **an *As Built* section, before Section 1, states the pins** (deployment name, package name and version, folder keys, case release key), what travels in the package versus beside it, the known limitations with the change each needs, and the paths no run has exercised. Where that section and the rest of the document differ, the section is right, and the stale statement is corrected in place with the reason rather than deleted.
+The SDD outlives the build, so at hand-over it says what runs. Two rules, measured on builds that broke them: **a condition added to the case that narrows a rule the business signed is a design change** — it goes in the task table with the expression, in *Design Feedback to PDD*, and as an *Action Required* row to be signed first, however good the number it bought; and **an *As Built* section, before Section 1, states the pins** (deployment name, package name and version, folder keys, case release key), what travels in the package versus beside it, the known limitations with the change each needs, and the paths no run has exercised. Where that section and the rest of the document differ, the section is right, and the stale statement is corrected in place with the reason rather than deleted.

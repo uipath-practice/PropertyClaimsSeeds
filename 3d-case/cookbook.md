@@ -2,10 +2,6 @@
 
 **Run `check_caseplan.py` before you run the case.** Everything below that it can detect, it detects.
 
-## Bindings that resolve to nothing
-
-Four shapes pass every gate and bind to nothing at run time.
-
 | Issue | Fix |
 |---|---|
 | An optional value arrives as `""` and destroys what an earlier stage wrote | **An empty string is not an empty value.** An unset case variable resolves to `""`, and a write of `""` erases. Coalesce to omitted. |
@@ -14,7 +10,7 @@ Four shapes pass every gate and bind to nothing at run time.
 | An output binds by a name you chose | **Outputs keep their `out_` prefix.** The name is the component's, not yours. |
 | A connector input is ignored | Connector inputs use `target` + `body`, **never `value`**. |
 | A human gate's answer never arrives | The outcome binds as a task output literally named **`Action`**, capital A. Not `outcome`, and no cross-reference. |
-| An Orchestrator automation will not resolve | Its task type is **`rpa`**, not `process` — measured on 1.199 and again on 1.201: `process` resolves against `processOrchestration-index.json`, which is empty on this tenant; `rpa` resolves against `process-index.json`, where all six provided automations live. The planner types them `process`; correct the SDD (`check_sdd.py` warns, `TYPE-4`). |
+| An Orchestrator automation will not resolve | Its task type is **`rpa`**, not `process`: `process` resolves against `processOrchestration-index.json`, which is empty on this tenant; `rpa` resolves against `process-index.json`, where all six provided automations live. The planner types them `process`; correct the SDD (`check_sdd.py` warns, `TYPE-4`). |
 | Writes to your record fail with *entity not found at tenant level* | A folder-scoped record needs the **V3** connector activities, not the V2 ones the tooling reaches for by default — *Writing to a folder-scoped entity*, below. **Do not conclude the entity is unreachable**: three different mistakes give that same 404. |
 
 ## The whole claim faults at case start, before anything runs
@@ -29,11 +25,11 @@ Guard every parse (`|| '{}'`) and every property read (`?.`). This is the single
 |---|---|
 | Three tasks that should run together run one after another | **Parallelism is expressed by grouping, not by ordering.** Sequencing them does not make them concurrent. |
 | A skipped human gate leaves the claim waiting forever | **Whatever runs after a gate needs its own way to start.** A gate that never opens starts nothing. |
-| A clean claim stops anyway, or a flagged one sails through | **A `skipCondition` does not stop a human gate being raised** — measured 2026-08-27: the platform instantiated the Action Center task before evaluating the skip, so a clean claim got a row. The shape that works: the gate task is **`Required: No`**, its **entry condition** carries the inverted test — `=js:String(vars.allChecksPassed).toLowerCase() !== "true"` — and the task after the gate gets a **second entry condition**, `selected-tasks-completed` on the gate's predecessor gated on `=== "true"`, so the clean path has its own way to start. Two reasons for the `String(...)` form: a boolean case variable arrives at a condition as the string `'true'`, so a bare `=== true` is false even when the value is genuinely true (measured); and unset, empty and false must all **open** the gate — `PDD.md` §5.7 fails towards the human. Both gate booleans carry `Default: false`. |
-| A file an `rpa` task returned never reaches its case variable — the consumer receives a JSON *schema* instead | An `rpa` task's file output needs **two output entries** for the same output name: the one `tasks describe` gives you (`type: file`, `target: =orchestrator.JobAttachments`) **and** an ordinary extraction (`type: jsonSchema`, `id`/`var`/`value` = the case variable, `target: =<var>`, no `body`). One alone leaves the variable unset, and an unset file variable reads back as its declared schema, PascalCased, which fails the consumer's input validation on a missing `ID`. `validate` accepts every wrong variant. Measured over four deploy cycles, 2026-08-27. |
+| A clean claim stops anyway, or a flagged one sails through | **A `skipCondition` does not stop a human gate being raised**: the platform instantiated the Action Center task before evaluating the skip, so a clean claim got a row. The shape that works: the gate task is **`Required: No`**, its **entry condition** carries the inverted test — `=js:String(vars.allChecksPassed).toLowerCase() !== "true"` — and the task after the gate gets a **second entry condition**, `selected-tasks-completed` on the gate's predecessor gated on `=== "true"`, so the clean path has its own way to start. Two reasons for the `String(...)` form: a boolean case variable arrives at a condition as the string `'true'`, so a bare `=== true` is false even when the value is genuinely true; and unset, empty and false must all **open** the gate — `PDD.md` §5.7 fails towards the human. Both gate booleans carry `Default: false`. |
+| A file an `rpa` task returned never reaches its case variable — the consumer receives a JSON *schema* instead | An `rpa` task's file output needs **two output entries** for the same output name: the one `tasks describe` gives you (`type: file`, `target: =orchestrator.JobAttachments`) **and** an ordinary extraction (`type: jsonSchema`, `id`/`var`/`value` = the case variable, `target: =<var>`, no `body`). One alone leaves the variable unset, and an unset file variable reads back as its declared schema, PascalCased, which fails the consumer's input validation on a missing `ID`. `validate` accepts every wrong variant. |
 | The first gate faults *No app: claim-review-<seat> found in folder:* with an empty folder name | The app's `folderPath` binding must be explicit — the seat folder where the standalone app is deployed (`CONFIG.md`, *Deploying*). The seven Agents resolve with an empty default; an app does not. Change only the caseplan binding's default — not the case project's `bindings_v2.json`, which forks a second app resource and refuses the next deploy with `4010`. |
-| `validate` says *Variable 'vars.scenario' does not exist* for an input you declared | A case **input** is not shaped like a case output. Inputs take the `inputOutputs` shape — `{id, name, type, custom: true, elementId: 'root', default}` with `id` equal to the name — not the `{id, name, type, var}` shape of `variables.outputs`. Declare `scenario` and `discrepancy` as inputs, or every run draws a random claim and no run can be aimed. |
-| `decisionReason` says *Approve — decided by a claims adjuster* on a refused claim | The expression fell through the override's `outcomeLabel` to the agent's `recommendedOutcome` and never consulted the human. Prefer `outcomeLabel`, else the human's `reviewDecision` when one exists, else the recommendation — the audit line's one load-bearing word is the human's. Measured on three of four human-decided claims. |
+| `validate` says *Variable 'vars.scenario' does not exist* for an input you declared | A case **input** is not shaped like a case output. Inputs take the `inputOutputs` shape — `{id, name, type, custom: true, elementId: 'root', default}` with `id` equal to the name — not the `{id, name, type, var}` shape of `variables.outputs`. Declare `scenario`, `discrepancy`, `profileId` and `seed` as inputs, or every run draws a random claim and no run can be aimed or repeated. |
+| `decisionReason` says *Approve — decided by a claims adjuster* on a refused claim | The expression fell through the override's `outcomeLabel` to the agent's `recommendedOutcome` and never consulted the human. Prefer `outcomeLabel`, else the human's `reviewDecision` when one exists, else the recommendation — the audit line's one load-bearing word is the human's. |
 | A stage is entered twice | Two entry conditions that can both be true at once is a double execution waiting to happen. Mutually exclusive is fine. |
 | The case never completes | A stage exits on a condition, and a condition nothing can satisfy is a dead case. Every exit needs something that can make it true. |
 | The Action App says *not available yet* while the case runs perfectly | The app renders what has been **written** to the Data Fabric record. A write that feeds a human step must sit **before** it. |
@@ -61,15 +57,15 @@ Deploy a solution packed without it and the job faults at run time with *"entry 
 
 > **This contradicts the `uipath-maestro-case` skill, which says to emit `layout: {}` and never a position** on the grounds that the canvas auto-arranges. **Follow this page.** The skill's rule is about not wasting tokens on fields the frontend strips; ours is about a designer that will not open. A crash outranks a token count, and you will find out which is right the moment you try to look at your plan.
 
-**Placing them is not decoration.** Edges are gone, so position is the only thing left that shows a reader how the claim moves — and the case diagram is the first picture anyone sees of the whole process, including people who will never read the plan. This is the picture (operator's call, 2026-08-27, after seeing a live claim in the designer):
+**Placing them is not decoration.** Edges are gone, so position is the only thing left that shows a reader how the claim moves — and the case diagram is the first picture anyone sees of the whole process, including people who will never read the plan. This is the picture:
 
 ```
     ┌────────┐   ┌───────────┐   ┌──────────┐   ┌──────────┐   ┌──────────┐
  ●─▶│ Intake │──▶│ Screening │──▶│ Analysis │──▶│  Review  │──▶│ Approved │
     └────────┘   └───────────┘   └──────────┘   └──────────┘   └──────────┘
-         │             │                                        ┌──────────┐
-         ▼             ▼                                        │  Denied  │
-    ┌───────────┐ ┌───────────┐                                 └──────────┘
+         │             │                                       ┌──────────┐
+         ▼             ▼                                       │  Denied  │
+    ┌───────────┐ ┌───────────┐                                └──────────┘
     │  Missing  │ │ Awaiting  │
     │  details  │ │inspection │
     └───────────┘ └───────────┘
@@ -118,11 +114,12 @@ Three details, each worth a deploy cycle:
 
 **`uip df records insert --folder-key` writing fine proves nothing about the connector** — a different client with different scoping. The entity looks healthy right up until the case tries to write it.
 
-## Measured on a live case, 2026-08-28 (Opus03, six deploy cycles)
+## What only a run shows
 
 | Issue | Fix |
 |---|---|
-| The second task of a stage starts alongside the first | **`runs-sequentially` is chain-position magic, not an ordering.** A task marked `runs-sequentially` after a task with a `current-stage-entered` entry is a parallel start. Remove `runs-sequentially` from the plan entirely and gate every later task with `selected-tasks-completed` plus an explicit `selectedTasksIds` naming the task it waits for. Both design gates pass either way — this is visible only in a run. |
+| The second task of a stage starts alongside the first | **`runs-sequentially` is chain-position magic, not an ordering.** A task marked `runs-sequentially` after a task with a `current-stage-entered` entry is a parallel start. Remove `runs-sequentially` from the plan entirely and gate every later task with `selected-tasks-completed` plus an explicit `selectedTasksIds` naming the task it waits for. Both design gates pass either way. |
 | Two `entryConditions` on one element, meant as alternatives | They are **ANDed**. Alternatives are DNF groups inside ONE condition. A clean claim can pass by accident when both happen to be true, which is how it hides. |
-| A follow-up lane re-enters a stage and the claim sits `InProgress` for ever | An entry condition cannot re-enter a stage that never left: if the origin stage is still `InProgress` when the lane fires, both stay open and nothing errors — **about one claim in four stalled silently** on a poll lane keyed on `selected-stage-exited`. Make the origin stage exit before the lane's entry, or keep the poll inside the stage (an `rpa` task re-entered on a timer — the shape two other builds proved). Unproven either way on 1.201 — measure your own before 4-verify's clean baseline. |
-| An agent task faults with an empty `end_execution` | Not a business outcome — about one run in six on Sonnet 5. `uip maestro case instance retry` recovers it in place; a fault handler that reads it as "no findings" settles a claim nobody analysed. |
+| A follow-up lane re-enters a stage and the claim sits `InProgress` for ever | An entry condition cannot re-enter a stage that never left: if the origin stage is still `InProgress` when the lane fires, both stay open and nothing errors — a poll lane keyed on `selected-stage-exited` stalls a share of claims silently. Make the origin stage exit before the lane's entry, or keep the poll inside the stage (an `rpa` task re-entered on a timer). Prove whichever you choose on several clean claims before `4-verify`. |
+| An agent task faults with an empty `end_execution` | Not a business outcome. `uip maestro case instance retry` recovers it in place; a fault handler that reads it as "no findings" settles a claim nobody analysed. |
+| `uip solution resources refresh` wrote an `app` entry under `resources/solution_folder/` | Delete it before you pack, every time. The app is external — bound by name and the seat folder's path, never provisioned by the solution. A provisioned copy shares the standalone app's model; once that app is upgraded, every solution redeploy fails `FailedInstall` on it and the only way through is unpacking the zip by hand. |

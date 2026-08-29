@@ -31,7 +31,6 @@ Claims are tagged so you can tell what is checkable from what is judgement:
 |---|---|
 | `[SKILL]` | encoded in the shipped `UiPath/skills` repository — what the agent will actually do. Verify with `uip skills install` and read it |
 | `[UIPATH]` | UiPath public documentation or product statement |
-| `[MEASURED]` | observed on a real build, with what it cost |
 | `[JUDGEMENT]` | a recommendation, not doctrine |
 
 **Where a guide and an installed skill disagree, the skill wins** — and the disagreement is worth logging. Several claims here started as documentation and turned out to describe a version that had already moved.
