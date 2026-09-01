@@ -42,7 +42,7 @@ PROVIDED = ["Retrieve Property Claim", "Extract Claim Data", "Retrieve Policy Do
             "Retrieve Previous Claims", "Retrieve Inspection Report", "Client Notification"]
 
 # Their argument names, as `uip or packages entry-points` returned them on 2026-08-28 at the
-# versions then deployed (propery-insurance-claims 1.0.36 · Extract.Claim.Data._IXP_ 1.0.2 ·
+# versions then deployed (propery-insurance-claims 1.0.38 · Extract.Claim.Data._IXP_ 1.0.2 ·
 # Retrieve.Policy.Document, Retrieve.Previous.Claims, Retrieve.Inspection.Report 1.0.0 ·
 # Client.Notification 1.1.4) — for ARG-1. The contract says the platform is authoritative:
 # if entry-points disagrees with this list, the platform wins, this list is updated, and the

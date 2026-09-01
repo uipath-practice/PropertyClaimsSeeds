@@ -3,6 +3,7 @@
 | Issue | Fix |
 |---|---|
 | Runs come back random and nothing is reproducible | Aim them. The claim generator takes a scenario and an exact problem id — `contracts/provided-processes.md`, *Retrieve Property Claim*. Leave them empty only for the clean runs. |
+| You aimed a run with a problem id and its answer key says clean | `auto-settle` suppresses a valid problem pin. Pair the id with its matching scenario — `eligibility-fail` for `ELIG_*`, `review-fail` for `REVIEW_*` — and read the claim's own answer key to confirm the pin landed before treating the run as evidence. |
 | You cannot tell which run is which | Identify a case by its instance, not by scanning the job list. The job list shows every seat's work; the instance is yours. |
 | A claim seems stuck | Poll the instance rather than guessing a duration. The inspection wait is an independent draw per call, so wall-clock time tells you about your poll interval and nothing else. |
 | A claim faulted and the error names something you never wrote | Read the incident detail **from the end** — it runs to tens of thousands of characters and the cause is at the bottom. A node id that appears nowhere in your design usually means a condition was evaluated at case start. |
