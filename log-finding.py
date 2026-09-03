@@ -30,12 +30,13 @@ seat. Run it at the end of every block. **It exits non-zero while anything is st
 unsent** -- so does a failed log -- because the one thing this script must never do
 is report a finding as recorded when it is not.
 """
-import argparse, json, os, pathlib, platform, re, shutil, subprocess, sys
+import argparse, hashlib, json, os, pathlib, platform, re, shutil, subprocess, sys, time
 
 HERE = pathlib.Path(__file__).resolve().parent
 STATE = HERE / ".workshop"
 CACHE = STATE / "cache.json"
 SPOOL = STATE / "spool.jsonl"
+DUP_WINDOW = 900                # seconds within which an identical row is refused
 ENTITY = "WorkshopFindings"
 
 
@@ -340,6 +341,8 @@ def drain(eid):
         return 0, []
     c = cache()
     sent, failed = insert(eid, rows, c.get("entityFields"), c.get("entityLimits"))
+    if sent:
+        record_sent(sent)
     if failed:
         # Only what failed goes back -- re-spooling the whole claim would send the
         # rows that did land a second time, and a duplicate is as bad as a loss in
@@ -357,6 +360,41 @@ def waiting():
         return sum(1 for l in SPOOL.read_text(encoding="utf-8").splitlines() if l.strip())
     except Exception:
         return 0
+
+
+def row_hash(r):
+    key = "|".join(str(r.get(k) or "") for k in ("block", "category", "summary"))
+    return hashlib.sha1(key.encode("utf-8")).hexdigest()
+
+
+def sent_ledger():
+    """What was sent recently, as hash -> epoch. Entries expire after a day.
+
+    The path is derived from STATE at call time, not at import, so anything
+    that repoints STATE (the tests do) carries the ledger with it.
+    """
+    try:
+        led = json.loads((STATE / "sent.json").read_text(encoding="utf-8"))
+    except Exception:
+        led = {}
+    now = time.time()
+    return {h: t for h, t in led.items() if now - t < 86400}
+
+
+def record_sent(rows):
+    """Remember what landed, so an identical row minutes later is refused.
+
+    Identical rows have arrived in sub-second bursts -- on some runs half a
+    seat's rows were exact copies -- in a table whose purpose is counting how
+    often a *distinct* friction recurs. A duplicate here is not more evidence,
+    it is a miscount.
+    """
+    led = sent_ledger()
+    now = time.time()
+    for r in rows:
+        led[row_hash(r)] = now
+    STATE.mkdir(exist_ok=True)
+    (STATE / "sent.json").write_text(json.dumps(led), encoding="utf-8")
 
 
 def table_count(eid, s):
@@ -397,6 +435,9 @@ def main():
     ap.add_argument("--retry", "--flush", dest="retry", action="store_true",
                     help="send what failed earlier, then report what the table holds; "
                          "adds nothing new, deletes nothing")
+    ap.add_argument("--allow-duplicate", action="store_true",
+                    help="send a row even though an identical block+category+summary "
+                         "was sent within the last few minutes")
     a = ap.parse_args()
 
     c = cache()
@@ -467,9 +508,29 @@ def main():
              **{k: i[k] for k in optional if i.get(k) is not None}}
             for i in items]
 
+    if not a.allow_duplicate:
+        led, seen, fresh, dupes = sent_ledger(), set(), [], 0
+        now = time.time()
+        for r in rows:
+            h = row_hash(r)
+            if h in seen or now - led.get(h, 0) < DUP_WINDOW:
+                dupes += 1
+                continue
+            seen.add(h)
+            fresh.append(r)
+        if dupes:
+            print(f"skipped {dupes} duplicate finding(s) -- an identical block+category+summary "
+                  f"was sent within the last {DUP_WINDOW // 60} minutes "
+                  f"(--allow-duplicate sends anyway)")
+        rows = fresh
+        if not rows:
+            return 0
+
     if eid:
         drained, _ = drain(eid)
         sent, failed = insert(eid, rows, c.get("entityFields"), c.get("entityLimits"))
+        if sent:
+            record_sent(sent)
         if not failed:
             extra = f" (plus {drained} recovered from the spool)" if drained else ""
             print(f"logged {len(sent)} finding(s) to {ENTITY}{extra}")

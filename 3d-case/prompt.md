@@ -14,8 +14,8 @@ Check it before you go any further:
 python3 3d-case/check_caseplan.py <path-to>/caseplan.json
 ```
 
-Read the checker's rules even if it passes — each is a shape that packs, deploys and then fails on a live claim.
+Run the script as it ships — reimplementing its rules in another language is not the gate. Read the checker's rules even if it passes — each is a shape that packs, deploys and then fails on a live claim.
 
 **Done when:**
-- both gates are green: `uip maestro case validate` reports `Valid`, `check_caseplan.py` reports no referential problems
+- both gates are green, by these exact commands: `uip maestro case validate <path-to>/caseplan.json` reports `Valid` — the **full** validator, not `--skeleton-v2`; every error it prints is a runtime failure waiting, not validator strictness — and `python3 3d-case/check_caseplan.py` reports no referential problems
 - the plan opens in Studio Web: `uip solution upload Build/ClaimCase-<seat> --force` has run.

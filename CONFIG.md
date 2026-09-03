@@ -134,5 +134,5 @@ Its schema is pinned in [`contracts/claim-entity.md`](contracts/claim-entity.md)
 
 The seat VM runs PowerShell, and **JSON on a command line is the single largest time sink recorded on this exercise.** PowerShell rewrites quotes before `uip` sees them, so an argument that prints correctly still arrives mangled, and the error names the JSON rather than the shell.
 
-- **Prefer `--file` wherever a command offers it**, written UTF-8 **without a BOM**. `Set-Content -Encoding utf8` adds one, and the next command reports invalid JSON *at line 1 column 1* — that is the BOM, not your JSON.
+- **Prefer `--file` wherever a command offers it**, written UTF-8 **without a BOM**. `Set-Content -Encoding utf8` and `Out-File -Encoding utf8` both add one, and the next command reports invalid JSON *at line 1 column 1* — that is the BOM, not your JSON. It also breaks `uip df entities create --file` and `json.load()`. The reliable writer on Windows is Python: `open(path, "w", encoding="utf-8")` + `json.dump` (`utf8NoBOM` is not available on every PowerShell).
 - **Calling `uip` from a script? Call `node` directly.** Driving the installed `uip.ps1` shim from Python's `subprocess` strips quotes out of a JSON argv element even when argv is a list.

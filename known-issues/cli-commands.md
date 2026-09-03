@@ -133,3 +133,11 @@ When a second published app model carries the same title (the case's in-solution
 ## `--output-filter` is JMESPath over `Data`, not over the envelope
 
 `"Data[].{…}"` returns `Result: Success, Data: []` — indistinguishable from an empty tenant. `"[].{…}"` is the form.
+
+## `uip solution publish` rejects the case — `No entry points defined` (error 1205)
+
+`entry-points.json`'s `uniqueId` must equal the compiled BPMN's `uipath:entryPointId` (in `caseplan.json.bpmn`), not an arbitrary string. Re-read it from the BPMN after every `case pack`.
+
+## Data Fabric V3 connector tasks — `entityName` is a path parameter and nothing fills it for you
+
+`case spec --type activity` output groups a write task's inputs into `pathParameters` / `queryParameters` / `body` and leaves `pathParameters` empty; the activity metadata does **not** auto-resolve it. Left empty, every record write fails at runtime — and the full `uip maestro case validate` names it exactly: `Path parameter "entityName" is required … but has no value`. Set it to the entity's name on every Create/Update task.
