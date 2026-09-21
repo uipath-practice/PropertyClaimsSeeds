@@ -35,6 +35,7 @@
 |---|---|---|---|
 | 1.0 | 2026-08-25 | Business Analyst, Claims Transformation | Initial baseline, signed |
 | 1.1 | 2026-08-27 | Business Analyst, Claims Transformation | Whole-claim SLA raised to 25 business days (5.5); SC3 unchanged. The automations already running stated up front (1.2, 2.2, 5.3). Re-signed |
+| 1.2 | 2026-09-21 | Business Analyst, Claims Transformation | BR-40: *without justification* defined — a reason recorded on the claim, not a reviewer's decision to proceed (7.6). No other rule changed. Re-signed |
 
 ## Sign-off
 
@@ -760,7 +761,7 @@ Applied at step 5.1, in this order. **These produce a recommendation, not an out
 
 | ID | Rule | Step | Outcome |
 |---|---|---|---|
-| BR-40 | **Recommend Deny** if eligibility failed on the policy, the identity, the address, or the coverage period without justification; or nothing is covered and nothing is flagged for escalation; or the payable is zero **because every item is excluded**. A payable absorbed by the deductible is BR-26, not a denial | 5.1 | Deny |
+| BR-40 | **Recommend Deny** if eligibility failed on the policy, the identity, the address, or the coverage period without justification — *justification* meaning a reason recorded on the claim itself, never the reviewer's decision to proceed: a reviewer who proceeds past a failed check sends it on to the decision rules with the failure intact (§5.7); or nothing is covered and nothing is flagged for escalation; or the payable is zero **because every item is excluded**. A payable absorbed by the deductible is BR-26, not a denial | 5.1 | Deny |
 | BR-41 | **Recommend Escalate** if the filing was late but justified; coverage is ambiguous or disputed; the claim exceeds the independent estimate by more than 20%; credibility risk is medium or high; the net payable exceeds 20% of the dwelling limit; or the annual aggregate bound the settlement | 5.1 | Escalate |
 | BR-42 | **Recommend Partial approve** where some items are covered and some excluded | 5.1 | Partial approve |
 | BR-43 | **Recommend Approve** otherwise | 5.1 | Approve |

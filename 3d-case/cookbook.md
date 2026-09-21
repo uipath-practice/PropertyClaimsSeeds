@@ -11,6 +11,11 @@
 | A connector input is ignored | Connector inputs use `target` + `body`, **never `value`**. |
 | A human gate's answer never arrives | The outcome binds as a task output literally named **`Action`**, capital A. Not `outcome`, and no cross-reference. |
 | An Orchestrator automation will not resolve | Its task type is **`rpa`**, not `process`: `process` resolves against `processOrchestration-index.json`, which is empty on this tenant; `rpa` resolves against `process-index.json`, where all six provided automations live. The planner types them `process`; correct the SDD (`check_sdd.py` warns, `TYPE-4`). |
+| `validate` is `Valid` and the case skill will not close the build | `uip maestro case validate <plan> --strict --sdd sdd.md` is the skill's closing gate on this line: it compares the plan to the SDD and refuses a plain `Valid`. It also demands an `operation` entry and a PascalCase `UiPathActivityTypeId` in every connector task's context, which the skill's own reference forbids and `case spec` never emits — **carry both**; the runtime accepts them. |
+| `validate` errors *Rule name '…' is not unique* | Condition display names are one pool across the whole case — stage entry, stage exit, task entry, case exit. Rename, never delete: a missing entry condition is only a warning and a silently unreachable stage. |
+| The strict SDD audit wants `source "=Id"` where the build renders `=response.Id` | Write the SDD's output row as `response.Id -> recordId` — the connector-response form — so the audit and the build agree. |
+| `codedapp deploy` printed no id, and `app.config.json` lost its `deploymentId` after a republish | The action-app id the case binds lives in the case registry: `uip maestro case registry pull -f`, then `uip maestro case tasks describe --type action --id <id>` — which also proves the registered contract. Do not read the id back from `app.config.json`. |
+| `uip solution publish` rejects the case — *No entry points defined* (1205) — after every `case pack` | The compiler writes an all-zero GUID as the BPMN's `entryPointId` unless the trigger node carries one. **Put the id on the trigger node in `caseplan.json`** so it matches `entry-points.json` on every pack, rather than re-reading it after each. |
 | Writes to your record fail with *entity not found at tenant level* | A folder-scoped record needs the **V3** connector activities, not the V2 ones the tooling reaches for by default — *Writing to a folder-scoped entity*, below. **Do not conclude the entity is unreachable**: three different mistakes give that same 404. |
 
 ## The whole claim faults at case start, before anything runs
@@ -32,6 +37,7 @@ Guard every parse (`|| '{}'`) and every property read (`?.`). This is the single
 | `decisionReason` says *Approve — decided by a claims adjuster* on a refused claim | The expression fell through the override's `outcomeLabel` to the agent's `recommendedOutcome` and never consulted the human. Prefer `outcomeLabel`, else the human's `reviewDecision` when one exists, else the recommendation — the audit line's one load-bearing word is the human's. |
 | A stage is entered twice | Two entry conditions that can both be true at once is a double execution waiting to happen. Mutually exclusive is fine. |
 | The case never completes | A stage exits on a condition, and a condition nothing can satisfy is a dead case. Every exit needs something that can make it true. |
+| Which exit rule ends the case | One completing exit: `required-stages-completed` with *Marks Case Complete: Yes*, every stage on the happy path *Required for Case Completion: Yes*; each refusal lane a non-completing exit, `selected-stage-completed` on that lane with *No*. The planner's audit refuses any other pairing, and the pattern completes Settled and Refused claims alike. |
 | The Action App says *not available yet* while the case runs perfectly | The app renders what has been **written** to the Data Fabric record. A write that feeds a human step must sit **before** it. |
 | The Data Fabric record is written five times in one stage | Budget **one write per stage**, two where a stage has a human gate. Two adjacent writes are one write. |
 
@@ -91,6 +97,7 @@ Your claim entity lives in your seat folder (`CONFIG.md`) and **the Data Fabric 
 | used the **V2** activity | `not found at tenant level` |
 | used V3 with **PascalCase** query keys | `404 Entity … does not exist` |
 | used V3 with `folderEntityNameFolderPath` (the underscore lost) | `404 Entity … does not exist` |
+| used V3 with a companion parameter the connector no longer knows — `_folderPath` after it became `_folderKey` | `not found at tenant level`, on every claim, with nothing in your build changed |
 | used V3 correctly | the row |
 
 **Do not hand-author these — generate them**, asking for the V3 objects by name. The type cache advertises only V2 and `spec` builds them anyway:
@@ -100,15 +107,16 @@ uip maestro case spec --type activity --activity-type-id <id> \
   --connection-id <your-connection> --object-name CreateEntityRecord_V3 \
   --input-details '{"queryParameters":{"entityScope":"folder",
                     "folderEntityName":"ClaimCase_<seat>",
+                    "folderEntityName_folderKey":"<your seat folder key>",
                     "folderEntityName_folderPath":"ClaimCase-<seat>"}}'
 ```
 
 Three details, each worth a deploy cycle:
 
-- **The query keys are lower-case, with an underscore in `folderEntityName_folderPath`** — and `case spec` prints them PascalCased with the underscore dropped (`known-issues/cli-commands.md`). Take every spelling from `uip is resources describe uipath-uipath-dataservice CreateEntityRecord_V3 --operation Create`, never from `spec`.
+- **The query keys are lower-case, with an underscore in the folder companion** — and `case spec` prints them PascalCased with the underscore dropped (`known-issues/cli-commands.md`). **These V3 objects are `PREVIEW`, and the companion's name has already moved once**: `folderEntityName_folderPath` (the folder's path) became `folderEntityName_folderKey` (the folder's GUID), and a name the connector no longer knows is *ignored*, not refused — the write loses its folder and fails as *not found at tenant level*. Take every spelling from `uip is resources describe uipath-uipath-dataservice CreateEntityRecord_V3 --operation Create` **on the day you build**, never from `spec`, and **send both names**: the spare costs nothing and survives the next rename.
 - **There is no `entityName` path parameter** — every parameter is a query parameter and `pathParameters` stays empty. Connector inputs use `target` + `body`, never `value`; get that wrong and the query parameters are never dispatched, and it reports as a *missing path variable* naming its own URL template.
 
-**The update operation is `Replace`, not `Update`** — the name everyone types first. `uip is resources describe uipath-uipath-dataservice UpdateEntityRecord_V3 --operation Update` answers *Operation 'Update' not found. Available: Replace* (`PUT /v3/UpdateEntityRecord/update`; required `entityScope` and `recordId`, both query parameters, plus the same `folderEntityName` / `folderEntityName_folderPath` pair as the create). The name notwithstanding, the write is still the patch `contracts/claim-entity.md` describes — omitted fields survive, `null` and `""` destroy.
+**The update operation is `Replace`, not `Update`** — the name everyone types first. `uip is resources describe uipath-uipath-dataservice UpdateEntityRecord_V3 --operation Update` answers *Operation 'Update' not found. Available: Replace* (`PUT /v3/UpdateEntityRecord/update`; required `entityScope` and `recordId`, both query parameters, plus the same `folderEntityName` companion pair as the create). The name notwithstanding, the write is still the patch `contracts/claim-entity.md` describes — omitted fields survive, `null` and `""` destroy.
 
 **The row id comes back on the create's response as `Id`.** Bind it once — `Id -> recordId`, which the build renders as `=response.Id` — and every later write passes it as its `recordId` query parameter. The v1 reference did exactly this; it is the single most load-bearing binding in the plan, so confirm it survives `case spec` before anything else is generated.
 

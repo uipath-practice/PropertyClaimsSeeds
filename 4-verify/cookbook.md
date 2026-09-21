@@ -17,6 +17,9 @@
 | A signal you downgraded in the case keeps escalating | Every place it is still visible to the decision layer is a place it re-derives the escalation from — the scalar, the envelope's conclusion, the failing check left in `checks[]`. Rebuild what the decision layer is handed; leave the agent's own verdict untouched on the record and on the screen. |
 | A fix you deployed does not show on the claims you are reading | A running instance keeps the plan it started under; agent packages resolve by name at call time. Six claims started one version earlier were running the previous plan — start the batch after the deploy. |
 | You need the list of problems the generator can plant | An unknown `in_Discrepancy` **faults, and the fault lists the valid ids** — one deliberately wrong job enumerates them; an unknown `in_Scenario` silently draws a random claim. |
+| You want the exact same documents again, to test a fix | **The answer key records the seed the generator actually drew — on every claim, including one started with seed 0.** The same `profileId`, the same `discrepancy` and that recorded seed regenerate the claim byte for byte: a controlled before-and-after for every fix. |
+| `uip tasks list` cannot tell you which claim a task belongs to | The list carries no `Data`; only `uip tasks get <id>` returns `recordId` / `claimId` / `triggerStage`. A watcher hydrates every pending task one call at a time. `uip maestro case instance get` puts the claim reference at the top level as `ExternalId`, not under metadata. |
+| A run ledger your scripts share is torn | Several concurrent claims write it at once. Lock it (`flock`), or write one file per claim and merge. |
 
 ## Two runs are not the same as two claims
 

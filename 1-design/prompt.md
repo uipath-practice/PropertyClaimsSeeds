@@ -5,7 +5,7 @@ Read:
 - `CONFIG.md` - describes environment and settings.
 - `contracts/` - some technical specs and description of automation blocks that already exist (use what is deployed instead of designing a replacement for it).
 
-Use the **`uipath-planner`** skill and design the solution from the PDD. Run **autonomous** — do not pause for confirmation. **Design only: write the design to `sdd.md` at this folder's root and stop** — with `Tasks file: tasks.md` in its handoff header, which is where `2-plan` writes. No task list, nothing built, nothing deployed — `2-plan` derives the tasks next.
+Use the **`uipath-planner`** skill and design the solution from the PDD. Run **autonomous** — do not pause for confirmation. **Design only: write the design to `sdd.md` at the seed's root, beside `PDD.md`, and stop** — with `Tasks file: tasks.md` in its handoff header, which is where `2-plan` writes. No task list, nothing built, nothing deployed — `2-plan` derives the tasks next.
 
 `sdd.md` describes what the solution **is** when it runs. It outlives the build and everything downstream binds to it.
 

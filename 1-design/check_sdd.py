@@ -139,7 +139,9 @@ def check_planner_audit(sdd_path, r):
     """Run the planner's own shape audit so the designer runs one command. SHAPE-5 carries its
     findings; a missing audit script is a note, not a pass."""
     import os, subprocess
-    audit = next((pth for pth in (os.path.expanduser("~/.agents/skills/uipath-planner/scripts/audit_sdd.py"),
+    audit = next((pth for pth in (os.path.expanduser("~/.agents/skills/uipath-planner/scripts/case/audit_sdd.py"),
+                                   os.path.expanduser("~/.uipath/.skills/skills/uipath-planner/scripts/case/audit_sdd.py"),
+                                   os.path.expanduser("~/.agents/skills/uipath-planner/scripts/audit_sdd.py"),
                                    os.path.expanduser("~/.uipath/.skills/skills/uipath-planner/scripts/audit_sdd.py")) if os.path.exists(pth)), None)
     if not audit:
         r.add("NOTE", "SHAPE-0", "the planner's audit_sdd.py was not found — run `uip skills install`, then the audit by hand")
@@ -381,7 +383,9 @@ def check_platform_fidelity(text, r, tasks):
     # HANDOFF-4 — the header may say `Template validation | passed` only if the planner's audit passes.
     if re.search(r'Template validation\*?\*?\s*\|\s*passed', text, re.I):
         import shutil, subprocess, os
-        audit = next((pth for pth in (os.path.expanduser("~/.agents/skills/uipath-planner/scripts/audit_sdd.py"),
+        audit = next((pth for pth in (os.path.expanduser("~/.agents/skills/uipath-planner/scripts/case/audit_sdd.py"),
+                                   os.path.expanduser("~/.uipath/.skills/skills/uipath-planner/scripts/case/audit_sdd.py"),
+                                   os.path.expanduser("~/.agents/skills/uipath-planner/scripts/audit_sdd.py"),
                                        os.path.expanduser("~/.uipath/.skills/skills/uipath-planner/scripts/audit_sdd.py")) if os.path.exists(pth)), None)
         if audit and tasks and tasks[0].get("_sdd_path"):
             res = subprocess.run([sys.executable, audit, tasks[0]["_sdd_path"]], capture_output=True, text=True)
@@ -750,8 +754,10 @@ def check_nature(text, pdd, r, tasks):
     for t in tasks:
         if "type" not in t:
             continue
-        # 1. an explicit citation in the task block — `PDD step 4.3`, `PDD §5.3 steps 1.1 and 1.2`
-        refs = re.findall(r'PDD (?:§5\.3 )?steps? ((?:\d+\.\d+)(?:(?:,| and) \d+\.\d+)*)', t["body"])
+        # 1. an explicit citation in the task block — `PDD step 4.3`, `PDD §5.3 steps 1.1 and 1.2`; the file-name
+        #    spellings agents reach for (`PDD.md step 4.3`, `` `PDD.md` step 4.3 ``) count too — a citation the rule
+        #    cannot read falls back to word overlap and the task's type goes unchecked while NATURE-3 looks nearly clean
+        refs = re.findall(r'`?PDD(?:\.md)?`? (?:§5\.3 )?steps? ((?:\d+\.\d+)(?:(?:,| and) \d+\.\d+)*)', t["body"])
         ids = re.findall(r'\d+\.\d+', " ".join(refs))
         matched = [by_id[i] for i in ids if i in by_id]
         # 2. otherwise word overlap of the task name plus its rationale against the step's action,

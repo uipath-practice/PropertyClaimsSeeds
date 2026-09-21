@@ -9,7 +9,7 @@ This is the seed for the Property Claims exercise. It describes what to build; y
 | What you produce | Where |
 |---|---|
 | Generated code: Maestro Case and Agents | `Build/ClaimCase-<seat>/`, **one solution** |
-| Coded Action App (validation) | `Build/claim-review-<seat>/`; **own publish and deploy** (`CONFIG.md`, *Deploying*). A Coded Process App (dashboard) is a later block, not in this seed |
+| Coded Action App (validation) · Coded Web App (the process app, block 6) | `Build/claim-review-<seat>/` · `Build/property-claims-<seat>/`; each with its **own publish and deploy** (`CONFIG.md`, *Deploying*) |
 | Documents you write for a block (design, task list, notes) | the block's own folder |
 | Findings | the shared table, via `log-finding.py`. Never a local file |
 | Where the build has got to, what exists, what broke, what is next | `PROGRESS.md`, at the root of this folder. The one file that spans blocks |
@@ -51,6 +51,7 @@ Two things make that safe: the claims are synthetic and the claimants are not re
 | Design · Plan | `uipath-planner` designs, then derives the tasks |
 | Build: IXP Extraction · Data Fabric Entity · Agents · Case Plan · Run · Coded Action App | `uipath-ixp` · `uipath-platform` · `uipath-agents` · `uipath-maestro-case` · `uipath-solution` · `uipath-coded-apps` |
 | Verify · Hand over | `uipath-platform`, `uipath-troubleshoot` · `uipath-solution`, and `uipath-planner` for the as-built `sdd.md` — the planner is the sole author of a case SDD (its Rule 13) |
+| Process app | `uipath-coded-apps` — its **web-app** path: not the action-app path, and not its dashboard generator, which is wired to Insights rather than to your claim record |
 
 Three near-misses that have each cost time: **`uipath-maestro-bpmn` is not the case skill** — a case compiles to a file whose name ends `.bpmn`, which is not the same thing and is not authored by hand. **`uipath-maestro-flow` is not used here at all.** **`uipath-test` drives Test Manager**, which is not what Verify does.
 
@@ -62,7 +63,7 @@ Three near-misses that have each cost time: **`uipath-maestro-bpmn` is not the c
 
 **`uip solution upload Build/ClaimCase-<seat> --force`.** Everything you build is local until you do, and a solution that has never been uploaded is invisible in Studio Web. **Do it at the end of every block, not once at the end.** Until `Build/ClaimCase-<seat>` exists there is nothing to upload — blocks 1 and 2 create nothing, and 3a creates nothing on the platform. It makes it possible to review the build shape and make inflight adjustments.
 
-**`--force` is required after the first upload and it wipes Studio Web's version history** for that solution. That is the right trade here — your history is in git and in `PROGRESS.md`, and the cloud copy is a view rather than a source.
+**The first upload imports; every later one overwrites in place** and the response says which — `Action: Imported` or `Action: Overwritten`; read that line rather than trusting the exit code. `--force` only asserts that the solution already exists on the cloud side; it is harmless on a re-upload, and the seed's commands keep it so one line works from the first block to the last. Studio Web's copy is a view rather than a source — your history is in git and in `PROGRESS.md`.
 
 ## Keep a running record of where the build is
 
@@ -137,6 +138,8 @@ The table's job is to make the next version of this seed better, and better is a
 ### Before you finish a block
 
 **The block record goes in `PROGRESS.md` — the narrative, for the next block. The numbers go in one finding, `--category block-summary`:** wall-clock, deploy cycles, claims run, retries, wrong first diagnoses, questions you answered alone, and the three most expensive minutes and what caused them. One finding per block, before `--retry`. Nobody reads your terminal; this table and `PROGRESS.md` are all that reaches us.
+
+**Set the `Status:` line of every `tasks.md` task you finished, in this block, with its evidence line** — the block that does the work closes its row; a later block cannot tell done from undone by reading `PROGRESS.md`, and a row ticked weeks later does not mean what a contemporaneous one means.
 
 Re-read what you were handed and log the two-sided answer, one finding per file: **up to three sections you never needed, and up to three you would have failed without.** One line each, naming the section. Both halves or neither — a list of what to cut with nothing to keep is an opinion; the two together are a measurement.
 

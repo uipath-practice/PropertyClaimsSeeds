@@ -34,7 +34,7 @@ One per `PDD.md` §7 section, which is where the split comes from — the proces
 
 The two human decisions are answered in a **Coded Action App**: it opens inside Action Center against a task the case raised, and a reviewer works **one claim at a time**. `CONFIG.md` pins its name. It is created at `3d` **beside the solution** with its contract and an empty page, published and deployed by its own command into the seat folder (`CONFIG.md`, *Deploying*), and its screens are built at `3f` — against payloads your own Agents actually produced — and redeployed alone.
 
-**It is not a dashboard.** A standalone app listing claims in flight, closed-today counts and straight-through rates is `PDD.md` §11's reporting view — a separate, later deliverable. A design that gives the reviewer's screen a claims list and a portfolio of routes has built the wrong thing.
+**It is not a dashboard.** A standalone app listing claims in flight, closed-today counts and straight-through rates is `PDD.md` §11's reporting view — **block 6's standalone Coded Web App (`6-process-app/`)**, built after the hand-over from what every other block produced, and outside this design. A design that gives the reviewer's screen a claims list and a portfolio of routes has built the wrong thing.
 
 | | |
 |---|---|

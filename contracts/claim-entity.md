@@ -23,6 +23,8 @@ The same fact travels three surfaces and must keep one name:
 
 A payload carried between steps and never stored still has a name, and it is not yours to choose either: take it from the argument that produces it, read with `uip or packages entry-points`, never recalled from a plausible convention.
 
+The entity's `displayName` is its `Name`, and no column carries a display name of its own — a label that differs from the name is one more casing nobody asked for, and CSV import matches on labels.
+
 ## The columns
 
 Grouped by the moment they are written, because that ordering is the part that matters — **a column a human must see has to be written before their step opens** (`PDD.md` C3).
@@ -31,7 +33,7 @@ Grouped by the moment they are written, because that ordering is the part that m
 
 | Column | Type | Source |
 |---|---|---|
-| `claimId` | `STRING` 100, **required, unique** | the case's external id. A business key, not the primary key — the platform keeps its own `Id` |
+| `claimId` | `STRING` 100, **required, unique** | the case's external id. A business key, not the primary key — the platform keeps its own `Id`. **Set `isUnique` in the create** — it cannot be added to a column that exists, and the only repair is dropping the column; what the platform does with a duplicate at run time is below, *The case writes this itself* |
 | `caseInstanceId` | `STRING` 100 | `=js:metadata.InstanceId`. Case metadata carries exactly two usable fields, this and `ExternalId` |
 | `status` | `STRING` 100 | a lifecycle word your case sets; the dashboard filters on it |
 | `claimantName` | `STRING` 200 | |
@@ -73,7 +75,7 @@ Grouped by the moment they are written, because that ordering is the part that m
 
 | Column | Type | Note |
 |---|---|---|
-| `decisionJson` | `MULTILINE_TEXT` 10000 | **written twice** — the recommendation before the gate opens, the outcome after it closes; **and on the path where no gate opens the outcome is still written**, from the recommendation, so `outcome.approvedSettlement` is readable on every settled row and is `{}` on a refusal, unconditionally |
+| `decisionJson` | `MULTILINE_TEXT` 10000 | **written twice, and its shape changes with it** — the recommendation envelope alone before the gate opens, `{recommendation, outcome}` after it closes (a reader keys on `reviewRequired` and `reviewDecision`, never on which keys happen to exist); **and on the path where no gate opens the outcome is still written**, from the recommendation, so `outcome.approvedSettlement` is readable on every settled row and is `{}` on a refusal, unconditionally |
 | `reviewRequired` | `BOOLEAN` | |
 | `reviewDecision` | `STRING` 100 | |
 | `reviewerNotes` | `STRING` 4000 | |
@@ -91,7 +93,7 @@ Grouped by the moment they are written, because that ordering is the part that m
 
 **Over the cap the platform refuses the call — `400 The field InputArguments must be a string or array type with a maximum length of '10000'` — and the usable figure is ~8,700 because the serialised arguments carry escaping** (one agent budgeted at 2,200 returned 5,281 and the next consumer was refused). An earlier CLI line let the same overrun degrade silently — the job reported `Successful` and returned an empty field — so a build that meets neither symptom has not proven it fits: count, slice, and read the record.
 
-**A slice guard at the consumer must be at least the producer's budget, and JSON envelopes are ordered conclusion-first.** Free text survives a cut; JSON cut mid-object arrives unparseable.
+**A slice guard at the consumer must be at least the producer's budget, and every envelope's verdict is also a scalar output the case binds.** Free text survives a cut; JSON cut mid-object arrives unparseable — and the scalar is what keeps a truncated envelope from costing a routing term. How an Agent orders the keys inside its own envelope is `3c-agents/cookbook.md`'s (constraining values first, derived after).
 
 **A payload budget written into a producer's prompt is a request, not a contract.** One asking for 1,800 characters returned 7,262 and 6,687 on later runs of the same claim. If a downstream budget depends on it, enforce it in code after the component returns.
 
@@ -113,7 +115,7 @@ reviewRequired  =js:(vars.isEligible === false || vars.isComplete === false)
 
 So a *normaliser* component is not needed either. What **is** worth surfacing as a plain scalar is anything read in more than one place — and the component that already produces the value is where to surface it, not a new component downstream of it.
 
-**Two things decide which activity version you need**, and getting it wrong costs a day: a **tenant-level** entity works with the default activities, a **folder-scoped** one needs the V3 form. Yours is folder-scoped (`CONFIG.md`), so see `3d-case/cookbook.md`, *Writing to a folder-scoped entity*.
+**Two things decide which activity version you need**, and getting it wrong costs a day: a **tenant-level** entity works with the default activities, a **folder-scoped** one needs the V3 form. Yours is folder-scoped (`CONFIG.md`), so see `3d-case/cookbook.md`, *Writing to a folder-scoped entity* — and read the V3 form's parameter names from `uip is resources describe` on the day you build; they are `PREVIEW` and have moved once.
 
 ## How the write actually behaves
 

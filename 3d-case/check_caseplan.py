@@ -271,7 +271,11 @@ for node in doc['nodes']:
                 for out in (task['data'].get('outputs') or []):
                     if out.get('custom') or (out.get('name') or '').endswith('Error'):
                         continue
-                    produced.add(out.get('id') or out.get('var'))
+                    # `var` is the case variable a write body reads; under the build's reassign shape
+                    # `id` is the camelCased output name (outEligibilityChecksJSON) and `var` the
+                    # variable (eligibilityChecksJson) -- keying on id warned on every reassigned
+                    # output although each payload was written.
+                    produced.add(out.get('var') or out.get('id'))
             elif kind == 'execute-connector-activity':
                 for inp in (task['data'].get('inputs') or []):
                     if inp.get('target') == 'body' or inp.get('name') == 'body':

@@ -59,13 +59,13 @@ Start your coding agent **in this folder** — `AGENTS.md` and `CLAUDE.md` are p
 | &nbsp;&nbsp;f · [Action App](3f-validation/prompt.md) | the Coded Action App a reviewer decides in | both gates render in a browser and a decision writes back | the reviewer's screen in Action Center, with a real claim on it |
 | **4 · [Verify](4-verify/prompt.md)** | a results table | every planted problem caught by the component that owns it, and a clean claim settled untouched | your own results table against the answer key |
 | **5 · [Hand over](5-ship/prompt.md)** | the deployed version pinned, and an operator runbook | the deployed version is the one you packed, and the runbook says how it moves on | the solution in Studio Web, exactly as it runs |
-| **6 · Process app** — *later* | the in-flight view `PDD.md` §11 asks for | it shows live claims, their stage and their SLA | — |
+| **6 · [Process app](6-process-app/prompt.md)** | the standalone Coded Web App `PDD.md` §11 asks for — the portfolio, the searchable claims list, one claim in full | the dashboard's counts reconcile with the record, a search finds a claim three ways, and a review completed inside the app completes the Action Center task | **the portfolio** — every claim you ran, where it is and how long it has been there, on one screen |
 
 **Block 3 is six separate runs, not one.** Each piece is built and proven before the next begins — that is the sequencing rule the method insists on, and it is what keeps the last day from being one enormous debugging session.
 
 **Authoring the case and running it are two blocks on purpose.** They fail in completely different ways: a plan that will not validate is a design problem, and a plan that validates and then misbehaves is a binding problem. Kept together, the second gets debugged through repeated deploys of the first. **Take the look at the diagram before you deploy** — it is the cheapest review you will ever do on this build, and the stage order being wrong is obvious in a picture and invisible in JSON.
 
-**Block 6 comes after everything else and is not written yet.** `PDD.md` §11 asks for a real-time view of claims in flight, and §4.4 says why: the only thing doing that job today is a shared spreadsheet that gets overwritten daily. It is a genuine requirement rather than a bonus, and it is the one part of the process nothing else in this build addresses.
+**Block 6 comes after the hand-over.** `PDD.md` §11 asks for a real-time view of claims in flight, and §4.4 says why: the only thing doing that job today is a shared spreadsheet that gets overwritten daily. It is a genuine requirement rather than a bonus, it is the one part of the process nothing else in this build addresses, and it is built last because it reads what every other block produced.
 
 ## How a block works
 

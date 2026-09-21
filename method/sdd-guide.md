@@ -32,7 +32,9 @@
 
 `### Case Variables` — `Name | Category | Type | sourceTriggers | sourceFields | Default | Description`. Declare only arguments, trigger payloads, and state a condition reads or two-plus consumers use; bind single-use outputs directly. **Every consumed variable needs a producer** — an output row, an assignment, a Default, or a trigger.
 
-> **`Default` reaches the case plan as a string, for every type.** A non-string default is silently deleted on serialization, so the variable is null at runtime and its first reader fails. The planner-authored template writes the plain value (`false`, `random`) and the build string-encodes it; only when you hand-write the cell yourself is quoting your job.
+> **`Default` is a string, for every type — write it quoted: `"false"`, `"5"`, `"random"`.** The template says so and the build string-encodes it; a bare `false` or `5` is silently deleted on serialization, the variable is null at runtime and its first reader fails.
+
+> **Logical OR has no safe spelling inside a table cell.** A literal `||` splits the row; escaped as `\|\|` it reaches the build as `\|\|`, which is not JavaScript. Write `!(A && B)`, coalesce a missing value with `??`, or test an empty variable with a ternary.
 
 ### `## Section 2: Stages & Tasks`
 

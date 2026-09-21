@@ -63,9 +63,9 @@ The dotted `PackageId` is the positional; the GUID from `uip or processes list -
 
 `uip solution deploy uninstall <name> --yes` answers `FailedUninstall · Validation failed.` and stops; the Orchestrator Solutions UI shows the same failure **with its cause** — *Jobs are not in final state yet* — which the CLI never prints. The job is in the solution's folder: `uip or jobs list --folder-key <solution folder key> --state Running` (also `Pending`, `Suspended`, `Stopping`), then `uip or jobs stop <job-key> --strategy Kill` (no folder flag), then uninstall again — 24 seconds, `SuccessfulUninstall`, and the name is free. **Do not take the case instances' word for it**: the blocking job belonged to an instance that had read `Completed` for ten hours while its job read `Running` (`lab/findings.md` 186); `instance list` said everything was terminal and it was the jobs that uninstall validates. On the failed record meanwhile, `deploy activate` returns `4007`, `deploy run` on the name `4004 … was not installed successfully` and `deploy upgrade` on the `InstallDeploymentKey` `4005 Another upgrade has already started` — none of them names a job. **The one record the CLI cannot remove** is a `deploy run` that never installed (`Operation: Install / OperationStatus: Failed`, no folder): `uninstall` refuses it and `deploy` has no `delete`; only the Solutions UI deletes it. While a record holds the pinned name, `CONFIG.md`, *Deploying*, says what name to use.
 
-## `uip codedapp deploy` prints an app URL that 404s — the live slug carries `-hitl`
+## `uip codedapp deploy` prints an app URL that 404s — or, for an Action app, no URL at all
 
-The URL in the deploy output is `https://<org>.uipath.host/<name>`; the app is served at `https://<org>.uipath.host/<name>-hitl`, the routing name it was registered under the first time, kept for the life of the registration however `-n` is spelled afterwards. The plain URL answers *check the app name in the URL*. The true slug is in the served page's `uipath:app-base` meta tag and in the redirect URI deploy appends to the client. .
+The app is served at the routing name it was registered under the **first** time, kept for the life of the registration however `-n` is spelled afterwards — sometimes the plain name, sometimes a suffixed one. Read the truth from the served page's `<meta name="uipath:app-base">` or from the redirect entry `deploy` appended to the shared client (`uip admin external-apps get <client id>`). An Action app's deploy prints *This action app should be run inside Action Center* and no URL.
 
 ## `uip codedapp deploy --client-id` answers `400 Failed to update external client redirect URI` — the list is full
 
@@ -136,8 +136,20 @@ When a second published app model carries the same title (the case's in-solution
 
 ## `uip solution publish` rejects the case — `No entry points defined` (error 1205)
 
-`entry-points.json`'s `uniqueId` must equal the compiled BPMN's `uipath:entryPointId` (in `caseplan.json.bpmn`), not an arbitrary string. Re-read it from the BPMN after every `case pack`.
+`entry-points.json`'s `uniqueId` must equal the compiled BPMN's `uipath:entryPointId` (in `caseplan.json.bpmn`), not an arbitrary string. The compiler stubs its GUID generator to `00000000-0000-0000-0000-000000000000` and writes that unless the trigger node in `caseplan.json` carries an id — so **put the id on the trigger node**, and the two match on every `case pack` without re-reading.
 
-## Data Fabric V3 connector tasks — `entityName` is a path parameter and nothing fills it for you
+## The full validator fails every Data Fabric write task with `Path parameter "entityName" is required by endpoint "/v2/{entityName}/…"`
 
-`case spec --type activity` output groups a write task's inputs into `pathParameters` / `queryParameters` / `body` and leaves `pathParameters` empty; the activity metadata does **not** auto-resolve it. Left empty, every record write fails at runtime — and the full `uip maestro case validate` names it exactly: `Path parameter "entityName" is required … but has no value`. Set it to the entity's name on every Create/Update task.
+The task is on the **V2** activity — the one whose endpoint carries the entity name in its path — and `case spec --type activity` leaves `pathParameters` empty because the activity metadata does **not** auto-resolve it; left alone, every record write fails at run time too. **Do not fill it by hand — regenerate the task on the V3 activity** from `uip is resources describe uipath-uipath-dataservice CreateEntityRecord_V3 --operation Create` spellings (`3d-case/cookbook.md`, *Writing to a folder-scoped entity*): there every parameter is a query parameter — `entityScope`, `folderEntityName`, `folderEntityName_folderPath` — `pathParameters` stays empty by design, and a plan built that way passes the full and the strict validator with no `entityName` anywhere. A V2 task would fail on the folder-scoped entity at run time in any case.
+
+## `uip or bucket-files download` takes the path as a positional, not `--path`
+
+`uip or bucket-files download <bucket key> <path> --destination <dir>`. Passed as `--path`, it fails with a generic envelope whose only signal is `Retry: RetryWillNotFix` — it never says the option is unknown. Bucket paths are stored with a leading slash (`/HO-27088985.pdf`); the read accepts both spellings.
+
+## `uip codedapp pack` has `--author` and `--output-dir`, not `-a` / `-o`
+
+`-a` is refused as an unknown option, and `--output` is the output *format* (`table|json|yaml|plain`), not a directory. Follow `--help`, not the skill's option table, and note that a failed `pack` leaves `publish` with no `.nupkg` to find.
+
+## The Data Fabric V3 connector objects are `PREVIEW`, and a query parameter's name moved under deployed cases
+
+`uip is resources describe uipath-uipath-dataservice CreateEntityRecord_V3 --operation Create` (and `UpdateEntityRecord_V3 --operation Replace`) is the only arbiter of the parameter names. The folder-scope companion has already been renamed once — `folderEntityName_folderPath` (a folder path) to `folderEntityName_folderKey` (a folder GUID, `objectName: folders`, lookup `Key`) — and **the connector ignores a query parameter it does not know rather than refusing it**, so a write that still carries the old name silently loses its folder and fails with `[102003] Entity '…' not found at tenant level`, on every claim, with nothing in the build changed. Send both names; re-read `describe` before every build and after any overnight fault.

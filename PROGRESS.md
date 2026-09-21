@@ -34,3 +34,5 @@ Append-only. A fact that turns out to be wrong is corrected by a new line saying
 ## Block 4 · Verify
 
 ## Block 5 · Hand over
+
+## Block 6 · Process app

@@ -19,7 +19,7 @@ That ordering is not a convenience. **Changing this shape after the case is boun
 | **output** | `reviewerNotes` | string | Their reason, in their own words. Required at both gateways |
 | **output** | `reviewedAt` | string | ISO timestamp, set on submit |
 | **output** | `settlementJson` | string (JSON text) | **at the second gate**: the settlement as the adjuster confirmed it — the recommendation untouched plus one override per changed line with the original, the new value and the reason (`PDD.md` §7.8). Action Center keeps outputs on completion, so a decided task still shows the amounts |
-| **outcome** | **exactly two** | — | What the case branches on. One means carry on, one means stop |
+| **outcome** | **exactly two per gateway — four declared on the app** | — | What the case branches on. One means carry on, one means stop. One app serves both gateways, so it declares both pairs — *Proceed* · *Refuse* for eligibility review, *Approve* · *Deny* for claim review — and each gate shows and routes on its own two |
 
 **Names match the claim record's columns** — `contracts/claim-entity.md`, *One name, three casings*. The task, the case variable and the column are the same word.
 
@@ -41,7 +41,7 @@ It is **not** called `outcome`, and no `$xref` is involved. Guessing wrong is ex
 
 ## Two outcomes, and not three
 
-**Exactly two at each gateway.** Carry on, or stop. Two gateways × two answers is **four routes**, and four is what `3e-run` proves and `4-verify` tests. A third outcome anywhere multiplies the matrix every later block carries, for a distinction that is not a route.
+**Exactly two at each gateway** — and, because one app serves both, four declared on the app. Carry on, or stop. Two gateways × two answers is **four routes**, and four is what `3e-run` proves and `4-verify` tests. A third outcome anywhere multiplies the matrix every later block carries, for a distinction that is not a route.
 
 The tempting third is *partial approval*, and it is genuinely part of this process — but it is **a recommendation and a number, never a branch**. `PDD.md` §7.6 is explicit that the decision rules produce a recommendation, not an outcome, and the partiality lives in the amounts, on the record, in the letter. **Route on what the process does next, not on what the answer was about.**
 

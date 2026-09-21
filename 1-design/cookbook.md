@@ -9,15 +9,16 @@
 | Ten *SME Review* rows, all marked default-carried | Those are decisions made for you and disclosed — read every one. Accept, overrule, or send the contradiction back to the PDD. |
 | `## Data Model` and the write-ownership matrix are missing | The planner's template has no data section. `method/sdd-addendum.md` has the two sections to add after Section 4 — `OWN-1` cannot run without them. |
 | The build later says *summary SDD* or refuses the file | `uipath-maestro-case` trusts `sdd.md` as written (Rule 2) and refuses a summary: what you owe it is `Status: ready` in the handoff header and `## Section 1: Case Definition` through `## Section 4: Integrations` with the task blocks. The planner's template writes exactly that. |
-| The planner's lane guide sends you to `references/case/model.md`, `variables.md`, `slas.md`… and none of them exist | The lane guide links files under `references/case/` that do not ship. Do not stop to look for them — the lane guide, `assets/templates/case-sdd-template.md` and `case-sdd-examples.md` are enough. |
 | Resource ids cannot be resolved and the design stalls | Leave them `<UNRESOLVED>`. Identity resolution belongs to the build, against your own seat. |
+| Two conditions carry the same display name — *Stage started* on six tasks, a stage's entry named like its producer's exit | Condition names are **one flat pool across the whole case** — stage entry, stage exit, task entry and case exit — and the validator refuses a duplicate as a hard error at `3d`. Name each one for what it tests, uniquely. |
+| A lane is entered on `selected-stage-exited` from a stage that also marks itself complete | The origin completes, so the *exited* event never fires and `3d-case/check_caseplan.py` reports the lane **unreachable**. Route a lane on the origin's **completion** with a guard, and give the next primary stage the exact inverse guard, so the two paths are mutually exclusive. |
 | `check_sdd.py` fires on something you believe is correct | Leave it and say so. A wrong rule is worth more to us than a file edited to pass. |
 
 ## Reading the checker
 
 `FAIL` reaches the built plan · `WARN` is worth a look and does not stop a build · `NOTE` is something it could not decide, which is never a pass.
 
-`NATURE-3` lists the tasks it could not match to a PDD step. Cite the step in each task's rationale and the list goes to zero; until then the type of those tasks was not checked, whatever the other lines say. `NATURE-1` as a **warning** on a settlement or decision agent is expected — the contract pins those two on agents although the PDD marks the work rule-expressible; the warning is there so you prove the numbers reproduce.
+`NATURE-3` lists the tasks it could not match to a PDD step. Cite the step in each task's rationale and the list goes to zero; until then the type of those tasks was not checked, whatever the other lines say. `NATURE-1` as a **warning** is expected **four times** on a correct design — on the screening agent for PDD steps 2.1 and 2.4, on the settlement agent (4.3) and on the decision agent (5.1) — because the contract pins those agents although the PDD marks the work rule-expressible; the warning is there so you prove the numbers reproduce.
 
 Three rules shape how the document is *written*, not only what it says, and nothing else describes them: `HANDOFF-3` (no SME review item left `Blocking = yes` — it reads that table's own column), `ACT-1` (how a gateway's task block has to name its Action output), `OWN-1` (the write-ownership matrix and the entity table name the same writers). Read those three in `check_sdd.py` before writing; the rest you meet by reading its output.
 
