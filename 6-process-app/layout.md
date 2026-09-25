@@ -44,10 +44,10 @@ The dashboard and the claims list are the minimum. The claim screen reuses what 
 | From | Gives | Needs |
 |---|---|---|
 | the case instance's stages (`CaseInstances.getStages`) | each stage's status and SLA state for one claim — the honest stage strip and the per-stage ageing §11 RP1 asks for | the Maestro scopes on the shared registration |
-| the case process's instance counts | running / completed / faulted for the whole portfolio, pre-aggregated | the same |
+| the case process's instance counts | running / completed / faulted for the whole portfolio, pre-aggregated | the Insights scopes (`uipath-coded-apps` `references/oauth-scopes.md`), which the shared registration does **not** carry — compute these from the record |
 | the pending Action Center tasks in your seat folder | *awaiting a human* (§11 RP2): which gate, since when, for which claim — after hydrating each task for its `claimId` | task read |
 
-Everything the mocks show can be computed from the record alone; the case adds stage-level SLA and the pre-aggregated counts. If a scope is not granted, compute from the record and say on the screen what the case would have added.
+Everything the mocks show can be computed from the record alone; the case adds each stage's status through `getStages` (`PIMS`). Pre-aggregated counts and SLA roll-ups need Insights scopes the registration does not grant — compute them from the record and say on the screen what the case would have added.
 
 ## What §11 asks for, and where each lives
 
@@ -67,4 +67,4 @@ Two rules come with it: find the task by its hydrated `claimId` and complete onl
 
 ## What is yours
 
-Which cards and charts, the layout and navigation, polling or refresh, and how the claim screen shares code with the Action App at `Build/claim-review-<seat>/` — copy, a local package, a rewrite, or an alias into its source so there is one claim view and two deployables (the cookbook has the one trap). What is not yours: the three screens, the record as the single source of the claim, the currency rule, the vocabulary coming from your own case, and a decision going through the task.
+Which cards and charts, the layout and navigation, polling or refresh, and how the claim screen shares code with the Action App at `Build/claim-review-<seat>/` — copy, a local package, a rewrite, or an alias into its source so there is one claim view and two deployables (the cookbook has the alias trap). What is not yours: the three screens, the record as the single source of the claim, the currency rule, the vocabulary coming from your own case, and a decision going through the task.

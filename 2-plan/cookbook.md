@@ -2,8 +2,5 @@
 
 | Issue | Fix |
 |---|---|
-| The skill wants to emit live task-tracking calls and your runtime has no such tool | Expected in any runtime, the six harness tools the skill declares (`TaskCreate`, `TaskUpdate`, `TaskList`…) may simply not exist. It degrades cleanly: **`tasks.md` is the artifact**, the live calls never were; keep its `Status:` boxes current by editing the file. Record that it happened. |
-| Task derivation refuses to start | It reads `Status: ready` from the design's handoff header and refuses a `draft`. Check the header before assuming the file is wrong. |
-| Design and planning are asked for in one go and only the design appears | The design write is a deliberate turn boundary. Ask again to continue. |
-| Tasks describe *how* a specialist works, not just which one | Cut it. Routing only — specialist-internal detail drifts, and then two documents disagree about the same thing. |
-| The planner's task format rejects `uipath-troubleshoot` or `uipath-planner` as a task's skill | Its closed list of skill names has neither. `AGENTS.md`'s block table is the routing that holds here — Verify to `uipath-platform` and `uipath-troubleshoot`, Hand over to `uipath-solution` and `uipath-planner` — so keep the names and log the disagreement. |
+| The skill wants live `TaskCreate` / `TaskUpdate` / `TaskList` calls and your runtime has none | Expected — **`tasks.md` is the artifact**; keep its `Status:` lines current by editing the file. Log it once. |
+| The planner's task format rejects `uipath-troubleshoot` or `uipath-planner` as a task's skill | Its closed list has neither. Follow `AGENTS.md`'s block table — Verify to `uipath-platform` and `uipath-troubleshoot`, Hand over to `uipath-solution` and `uipath-planner` — and log the disagreement. |

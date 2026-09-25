@@ -20,9 +20,8 @@ Two families of check, both paid for in real failures:
    None of these is a `vars.` problem, so the original check passed every time. All three
    are one question: does every id a node references still resolve?
 
-`uip maestro case validate` refuses a Studio-Web-authored plan entirely — it expects schema
-version 27.0.0 where the designer writes 30.0.0 — so this script is the only structural gate
-that runs at all. Run it after every edit and before every pack.
+`uip maestro case validate` checks the schema, not whether every id a node references still
+resolves; this script does. Run it after every edit and before every pack.
 
     python3 check_caseplan.py "<path to caseplan.json>"
 """
@@ -46,8 +45,7 @@ problems = []
 def stage_refs(rule):
     """Stage ids a rule names — under BOTH spellings, which are a schema generation apart.
 
-    Schema 23.0.0 (what `uip maestro case` generates, and what you are building) writes
-    `selectedStageId`, a single string. Schema 30.0.0 (what Studio Web writes) writes
+    Older schema generations write `selectedStageId`, a single string; current ones write
     `selectedStageIds`, a list. This script read only the plural for its first weeks, so on
     every CLI-authored plan the reference and reachability checks below matched nothing and
     reported a clean run without examining anything. Measured 2026-08-23 on two independent

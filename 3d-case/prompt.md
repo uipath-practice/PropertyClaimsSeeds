@@ -18,4 +18,4 @@ Run the script as it ships — reimplementing its rules in another language is n
 
 **Done when:**
 - both gates are green, by these exact commands: `uip maestro case validate <path-to>/caseplan.json` reports `Valid` and `uip maestro case validate <path-to>/caseplan.json --strict --sdd sdd.md` reports `Valid` on the strict profile — the **full** validator, not `--skeleton-v2`; every error either prints is a runtime failure waiting, not validator strictness — and `python3 3d-case/check_caseplan.py` reports no referential problems
-- the plan opens in Studio Web: `uip solution upload Build/ClaimCase-<seat> --force` has run.
+- the plan opens in Studio Web: `uip solution upload Build/ClaimCase-<seat>` has run.

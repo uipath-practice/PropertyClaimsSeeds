@@ -2,7 +2,7 @@
 
 Case Plan is checked, but not tested yet on real claims. Compile, Pack, Publish and Deploy with the **`uipath-solution`** skill. Run it to find out what the plan actually does. It is normal for it to take several deploy cycles, each one should end with a named defect and fix.
 
-Aim each run with the case's own `scenario` / `discrepancy` inputs (and `profileId` to repeat a claimant) — they flow to the generator (`contracts/provided-processes.md`, *Retrieve Property Claim*); a scenario alone does not guarantee a route, a pinned `discrepancy` does (`cookbook.md`).
+Aim each run with the case's own `scenario` / `discrepancy` inputs (and `profileId` to repeat a claimant) — they flow to the generator (`contracts/provided-processes.md`, *Retrieve Property Claim*); a scenario alone does not guarantee a route — pin a `discrepancy` with it, preferably an unambiguous breach (`cookbook.md`).
 
 Complete the Action Center tasks from the command line (`uip tasks complete`) — the Coded Action App has no screens yet, only the empty-page registration the case binds. A route that misbehaves now is a case defect; the point is to find case-plan issues before the app is live.
 

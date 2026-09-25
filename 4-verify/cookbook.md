@@ -2,33 +2,22 @@
 
 | Issue | Fix |
 |---|---|
-| Runs come back random and nothing is reproducible | Aim them. The claim generator takes a scenario and an exact problem id — `contracts/provided-processes.md`, *Retrieve Property Claim*. Leave them empty only for the clean runs. |
-| You aimed a run with a problem id and its answer key says clean | `auto-settle` suppresses a valid problem pin. Pair the id with its matching scenario — `eligibility-fail` for `ELIG_*`, `review-fail` for `REVIEW_*` — and read the claim's own answer key to confirm the pin landed before treating the run as evidence. |
-| You cannot tell which run is which | Identify a case by its instance, not by scanning the job list. The job list shows every seat's work; the instance is yours. |
-| A claim seems stuck | Poll the instance rather than guessing a duration. The inspection wait is an independent draw per call, so wall-clock time tells you about your poll interval and nothing else. |
-| A claim faulted and the error names something you never wrote | Read the incident detail **from the end** — it runs to tens of thousands of characters and the cause is at the bottom. A node id that appears nowhere in your design usually means a condition was evaluated at case start. |
-| The answer key is not where you expect | It is named after the claim, not `manifest.json`, and lives beside the claim form. |
-| A gateway will not open for testing | Aim the run at it. A clean claim skips both gates by design, so the reviewer's screen you are trying to test never appears. |
-| You complete a task from the command line and the case does not move on | Hand back every identifier the task was given — anything writing task data replaces the payload rather than merging. `3f-validation/cookbook.md` has the shape. |
-| A fix works and you cannot tell whether it broke something else | Re-run the clean claims after every fix. It is the cheapest regression you have, and over-flagging is the failure that reappears. |
-| `uip tasks complete` refuses a task an Action App owns | On this line it needs `--type AppTask`; no `--help` says so. |
-| You are on your fourth prompt revision and the number has not moved | **A prompt governs what an agent reports, not what it concludes.** Where the conclusion decides whether a claim reaches a human, put the conclusion in a case condition. Four revisions on an over-flagging check moved nothing and one condition in the case closed it; six revisions on an under-detecting check moved nothing either. Same lever, same result, three times — stop. |
-| Closing a false escalation made a missed problem worse | The two failures mask each other: a claim escalated for the wrong reason still reached a human; close the wrong reason and the missed problem goes straight through. Measure detection and restraint on the **same** batch, never one at a time. |
-| A signal you downgraded in the case keeps escalating | Every place it is still visible to the decision layer is a place it re-derives the escalation from — the scalar, the envelope's conclusion, the failing check left in `checks[]`. Rebuild what the decision layer is handed; leave the agent's own verdict untouched on the record and on the screen. |
-| A fix you deployed does not show on the claims you are reading | A running instance keeps the plan it started under; agent packages resolve by name at call time. Six claims started one version earlier were running the previous plan — start the batch after the deploy. |
-| You need the list of problems the generator can plant | An unknown `in_Discrepancy` **faults, and the fault lists the valid ids** — one deliberately wrong job enumerates them; an unknown `in_Scenario` silently draws a random claim. |
-| You want the exact same documents again, to test a fix | **The answer key records the seed the generator actually drew — on every claim, including one started with seed 0.** The same `profileId`, the same `discrepancy` and that recorded seed regenerate the claim byte for byte: a controlled before-and-after for every fix. |
-| `uip tasks list` cannot tell you which claim a task belongs to | The list carries no `Data`; only `uip tasks get <id>` returns `recordId` / `claimId` / `triggerStage`. A watcher hydrates every pending task one call at a time. `uip maestro case instance get` puts the claim reference at the top level as `ExternalId`, not under metadata. |
-| A run ledger your scripts share is torn | Several concurrent claims write it at once. Lock it (`flock`), or write one file per claim and merge. |
+| An aimed run's answer key says nothing was planted | `auto-settle` silently drops a valid problem id, and an empty or unknown scenario draws a random claim. Pair the id with its scenario — `eligibility-fail` for `ELIG_*`, `review-fail` for `REVIEW_*`; a clean run is `auto-settle` with an empty id. Read the key's `AppliedDiscrepancies` before counting the run. |
+| You have revised a prompt twice and the number has not moved | **A prompt governs what an agent reports, not what it concludes.** Where the conclusion decides whether a claim reaches a human, put it in a case condition and stop revising. |
+| Closing a false escalation made a missed problem worse | The two failures mask each other: a claim escalated for the wrong reason still reached a human, and closing that reason sends the missed problem straight through. Measure detection and restraint on the **same** batch, never one at a time. |
+| A signal you downgraded in the case keeps escalating | The decision layer re-derives it from every place it is still visible — the scalar, the envelope's conclusion, the failing check left in `checks[]`. Rebuild what the decision layer is handed; leave the agent's own verdict untouched on the record and on the screen. |
+
+## Make each of the three cycles count
+
+- **Fix everything one batch shows before you redeploy** — one redeploy per batch, never one per failure.
+- **Prove an Agent fix before you spend a batch on it:** `uip agent debug` on the failing claim's recorded inputs takes minutes; a batch takes a quarter of an hour.
+- **Regenerate each failing claim from the seed its answer key records** for the before-and-after, and give the rest of the batch fresh seeds, or you are tuning to the claims you have already seen.
+- **Two prompt revisions that did not move a result are the signal to move the conclusion into the case** — the table above.
 
 ## Two runs are not the same as two claims
 
-**The same claim cannot run twice** — the claim reference is the case's own external id, minted per instance, and a caller-supplied id is ignored. Two independent clean runs on one claimant profile are the reproducibility test, and a stronger one than a replay: the assessor's estimate is an input and differs between them. Pin the profile with the case's `profileId` input (twelve to choose from); add the same `seed` and the documents are identical too, so a figure that still differs is the Agent's, not the claim's. Two of the seven Agents compute what the PDD calls rule-expressible (`contracts/components.md` says why), and reproducibility is the price of that. Compare **every figure**, never the prose — wording varies between runs while the numbers hold, so a byte comparison fails a correct build.
+**The same claim cannot run twice**: the case mints its claim reference per instance and ignores a caller-supplied id. So the reproducibility test is two clean runs of one `profileId`; add the same `seed` and the documents are identical too, and a figure that still differs is the Agent's. Compare every figure, never the prose — the wording varies while the numbers hold. The pair also catches what no aimed run can: a settlement that differs between two identical claims has broken its own arithmetic.
 
-**A failure no injector plants is a false positive by construction.** The injectors are a short list (the row above tells you how to get it); a check that fires on something nothing ever plants is your agent inventing a problem, and it costs a human review on every clean claim.
+## A failure no injector plants is a false positive by construction
 
-**A pinned run proves detection. A clean run proves restraint.** Solutions are good at the first and bad at the second, so budget the clean runs first rather than last — they are the ones that send you back to fixing the agents.
-
-## Keep the log as you go
-
-What you aimed at, what happened, what you changed. It is the results table this block owes, and reconstructing it afterwards from memory produces something nobody can act on. 
+The injectors are a short list — an unknown `in_Discrepancy` faults and names them all (`contracts/provided-processes.md`). A check that fires on something nothing plants is your agent inventing a problem, and it costs a human review on every clean claim.

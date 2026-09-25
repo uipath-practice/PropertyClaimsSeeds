@@ -1,18 +1,11 @@
 # Known issues
 
-Upstream defects you will actually meet, described by **behaviour** — what you will see, and what to do instead. Read this before you debug anything, and before you believe a `list` that comes back empty.
+Upstream defects you will meet, by **behaviour** — what you see and what to do instead. Read this before you debug anything, and before you believe an empty `list`: [`cli-commands.md`](cli-commands.md).
 
-No bug numbers are used as instructions. An entry keyed to a defect id becomes a lie the day the defect closes, and you would have no way to tell.
+**A command exits 0, prints *"Checking for updates…"* and returns nothing** — the CLI updated itself and consumed the command. Run it again. **Exit 0 is not proof a command ran — check for the result you asked for.**
 
-| File | Covers |
-|---|---|
-| [`cli-commands.md`](cli-commands.md) | commands that fail while the thing they describe is fine — folder keys, output filters, name matching |
-| [`connections-list.md`](connections-list.md) | connection discovery returning a shape its siblings do not |
+**On macOS the shell is zsh, which does not split an unquoted variable into words**: `for s in $SPECS` runs once with the whole string, and `cmd $ARGS` passes one argument. A pinned run that silently drops its `in_Discrepancy` comes back as a random claim — the answer key shows it. Use arrays, or `${=VAR}`.
 
-**Two that cut across everything**, and both cost a diagnostic detour if taken at face value:
+**On Windows**, JSON on a command line arrives mangled — [`../CONFIG.md`](../CONFIG.md), *Windows*.
 
-**A command exits 0, prints *"Checking for updates…"* and returns no result.** The CLI updated itself and consumed your command in the process. Run it again; the second call works. **Exit code 0 is not proof a command ran — check for the result you asked for.**
-
-**On Windows, JSON on a command line arrives mangled.** PowerShell rewrites quotes before the CLI sees them, so an argument that prints correctly is not the argument that was received, and the error names the JSON rather than the shell. Prefer `--file` wherever a command offers it, written UTF-8 **without a BOM**. Details in [`../CONFIG.md`](../CONFIG.md), *Windows*.
-
-**Something here wrong, or fixed upstream?** Log it. An entry that has quietly become false is worse than a missing one.
+**An entry here wrong, or fixed upstream?** Log it.

@@ -1,8 +1,6 @@
 # How to work in this folder
 
-This is the seed for the Property Claims exercise. It describes what to build; you write everything that does the building.
-
-**Read `README.md` for the steps and `PDD.md` for the process.** Neither is repeated here — this file is only about how to work.
+This is the seed for the Property Claims exercise. **`README.md` has the steps, `PDD.md` the process**; this file is how to work.
 
 ## Where your work goes
 
@@ -10,41 +8,34 @@ This is the seed for the Property Claims exercise. It describes what to build; y
 |---|---|
 | Generated code: Maestro Case and Agents | `Build/ClaimCase-<seat>/`, **one solution** |
 | Coded Action App (validation) · Coded Web App (the process app, block 6) | `Build/claim-review-<seat>/` · `Build/property-claims-<seat>/`; each with its **own publish and deploy** (`CONFIG.md`, *Deploying*) |
-| Documents you write for a block (design, task list, notes) | the block's own folder |
+| `sdd.md` · `tasks.md` | this folder's root |
+| Any other document a block writes — notes, schemas, fixtures, test matrices | the block's own folder |
 | Findings | the shared table, via `log-finding.py`. Never a local file |
-| Where the build has got to, what exists, what broke, what is next | `PROGRESS.md`, at the root of this folder. The one file that spans blocks |
+| Where the build has got to, what exists, what broke, what is next | `PROGRESS.md`, at this folder's root — the one file that spans blocks |
 
-**Paths in this seed are relative to this folder**, always — `contracts/claim-entity.md`, never `../contracts/`. A block citing a path outside itself is telling you the knowledge is shared.
-
-**Seed filenames are fixed**, so nothing you write can collide: a block ships `prompt.md` and `cookbook.md`, sometimes a script. **Any other file in a block folder is yours.**
-
-**A file that configures the platform rather than shipping inside the solution belongs in its block folder too**, not in `Build/`. A schema, a fixture, a test matrix: generated, machine-readable, and not part of the package. `ls Build/` should show your solution and apps source code and nothing else.
+Paths in this seed are relative to this folder. A block ships `prompt.md`, `cookbook.md` and sometimes a script; **any other file in a block folder is yours.** `Build/` holds only solution and app sources.
 
 ## You have standing approval to build, deploy and run
 
-Orchestrator seat folder and seat is yours: your own folder, buckets, solution, claim record and copies of the documents. Nothing in it is shared, nothing is production, all of it is disposable. **Creating resources, publishing, deploying, uninstalling and starting real runs are authorised in advance**, as often as you need, as is deleting and recreating something you made.
+Your seat — folder, buckets, solution, claim record — is yours and disposable; the claims are synthetic and no letter is ever delivered. **Creating, publishing, deploying, uninstalling, deleting what you made and starting real runs are authorised in advance**, as often as you need. Do not pause for approval — a build that stops at the deploy gate proves nothing.
 
-Two things make that safe: the claims are synthetic and the claimants are not real, and **no letter is ever sent** — correspondence is written and logged by existing process, but never delivered.
+**This approval answers your skills' confirmation gates, by name:** creating `ClaimCase_<seat>` with the schema in `contracts/claim-entity.md`, altering that schema, and writing, updating and deleting its records (Data Fabric Rules 0 and 14); uploading, packing, publishing, deploying and debugging `ClaimCase-<seat>`, its agents, its case and your two apps (agents Rule 6, case Rule 12). Do not stop to ask.
 
-**Pausing for approval is not required.** A block's value is in what a live run reveals, and a build that stops at the deploy gate has proven nothing. Work to the goal, then report.
+**Your harness may refuse what this grants.** Recovery verbs — uninstall, delete a process, cancel an instance — read as destructive and are the likeliest to be refused mid-block. Ask your operator to allow the whole loop — pack, publish, deploy, upload — before the first deploy.
 
-**Your harness may not honour this, and that is worth settling before you need it.** The commands that recover a broken deployment — uninstalling/reinstalling a solution, deleting a process, cancelling a case instance — read as destructive out of context and are the ones a safety classifier is most likely to refuse. Refused mid-block, the build stops dead with the fix identified and unrunnable. Ask your operator to allow the whole loop (pack, publish, deploy, upload) before the first deploy, not only for the recovery verbs.
-
-**Three things are still worth a pause**, all outside your seat: touching another seat's folder or solution, changing anything at tenant level, and deleting a shared resource. If something you are about to run names a resource without your seat name in it, stop and ask.
+**Three things are still worth a pause**, all outside your seat: touching another seat's folder or solution, changing anything at tenant level, and deleting a shared resource. If a command names a resource without your seat name in it, stop and ask.
 
 ## Rules that hold everywhere
 
-**Names come from the contracts. Do not invent them and do not improve them.** A better name breaks a binding three blocks later, at run time, silently. [`CONFIG.md`](CONFIG.md) and [`contracts/claim-entity.md`](contracts/claim-entity.md) have the rules.
+**Names come from the contracts. Do not invent them and do not improve them** — a better name breaks a binding three blocks later, silently. [`CONFIG.md`](CONFIG.md) and [`contracts/claim-entity.md`](contracts/claim-entity.md) have them.
 
-**Verify, do not assume.** Nearly every *"not found"* here is a wrong folder, a wrong tenant, a wrong scope or a stale cache rather than an absent resource. Check [`known-issues/`](known-issues/) before believing an empty `list`, and `uip login status` before believing anything is missing.
+**Verify, do not assume.** Nearly every *not found* is a wrong folder, tenant, scope or stale cache — check [`known-issues/`](known-issues/) and `uip login status` before believing an empty list.
 
-**Every block folder has a `cookbook.md` — issue → fix, from people who have done it before. When something fails, read the block's cookbook before searching further.**
+**When something fails, read the block's `cookbook.md` before searching further** — issue → fix, from the builds before yours.
 
-**Check the platform's own tooling before hand-rolling.** `uip --help` and the installed skills are ahead of any document, this one included. Where they disagree with a cookbook, the tool wins — **and that disagreement is worth logging.**
+**`uip --help` and the installed skills are ahead of any document here.** Where they disagree with a cookbook, the tool wins — and log the disagreement.
 
-**Before the first block, be on the toolchain line `CONFIG.md`, *Toolchain*, names.** `uip --version` shows yours; if it differs, run the commands there. Skills follow the CLI's `major.minor` line, and this seed was tested on exactly that one — a different line means different skills and a seed written for another.
-
-**Load the right skill for the block, and only that one.** Several have names close enough that an agent follows instructions for a different product:
+**Load the right skill for the block, and only that one:**
 
 | Block | Skill |
 |---|---|
@@ -53,103 +44,71 @@ Two things make that safe: the claims are synthetic and the claimants are not re
 | Verify · Hand over | `uipath-platform`, `uipath-troubleshoot` · `uipath-solution`, and `uipath-planner` for the as-built `sdd.md` — the planner is the sole author of a case SDD (its Rule 13) |
 | Process app | `uipath-coded-apps` — its **web-app** path: not the action-app path, and not its dashboard generator, which is wired to Insights rather than to your claim record |
 
-Three near-misses that have each cost time: **`uipath-maestro-bpmn` is not the case skill** — a case compiles to a file whose name ends `.bpmn`, which is not the same thing and is not authored by hand. **`uipath-maestro-flow` is not used here at all.** **`uipath-test` drives Test Manager**, which is not what Verify does.
+Three near-misses that have each cost time: **`uipath-maestro-bpmn` is not the case skill** — a case compiles to a file whose name ends `.bpmn`, which is not authored by hand. **`uipath-maestro-flow` is not used here at all.** **`uipath-test` drives Test Manager**, which is not what Verify does.
 
-**Fix what earlier blocks got wrong.** Each block inherits work made with less information than you have now, and correcting it is part of your block rather than a detour from it. Fix it at the source, say so in your notes, and log it — a defect one block leaves for another is usually a gap in what the seed told that block. Where you cannot fix it here, **write down the specific change required anyway**: an unfixed defect that is named is a task, and one that is silent is a landmine. The bar is *wrong*, not *not how I would have written it*.
+**Fix what earlier blocks got wrong**, at the source, and log it. Where you cannot, write the specific change required into `PROGRESS.md` — a named defect is a task, a silent one a landmine. The bar is *wrong*, not *not how I would have written it*.
 
-**Do not read the answer key.** One of the files in the `Claims` bucket states the problems planted and the outcome expected — an analysis that consults it is brilliant and worthless. It is the test oracle and it is yours in Verify only. [`contracts/provided-processes.md`](contracts/provided-processes.md), *Where the files live*, names it so you can avoid it.
+**Do not read the answer key.** One file in the `Claims` bucket states the planted problems and the expected outcome; it is the test oracle, and yours in Verify only. [`contracts/provided-processes.md`](contracts/provided-processes.md), *Where the files live*, names it so you can avoid it.
 
 ## Push the solution to Studio Web at the end of every block
 
-**`uip solution upload Build/ClaimCase-<seat> --force`.** Everything you build is local until you do, and a solution that has never been uploaded is invisible in Studio Web. **Do it at the end of every block, not once at the end.** Until `Build/ClaimCase-<seat>` exists there is nothing to upload — blocks 1 and 2 create nothing, and 3a creates nothing on the platform. It makes it possible to review the build shape and make inflight adjustments.
-
-**The first upload imports; every later one overwrites in place** and the response says which — `Action: Imported` or `Action: Overwritten`; read that line rather than trusting the exit code. `--force` only asserts that the solution already exists on the cloud side; it is harmless on a re-upload, and the seed's commands keep it so one line works from the first block to the last. Studio Web's copy is a view rather than a source — your history is in git and in `PROGRESS.md`.
+**`uip solution upload Build/ClaimCase-<seat>`** at the end of every block that changed the solution, once it exists. The first upload imports and later ones overwrite in place — `uip agent debug` uploads too, so your first explicit upload may already say `Overwritten`; read `Data.Action` (`Imported` / `Overwritten`), not the exit code. **No `--force`**: it skips the existence check and fails while the cloud solution does not exist yet. Studio Web's copy is a view for review; your history is git and `PROGRESS.md`.
 
 ## Keep a running record of where the build is
 
-**`PROGRESS.md`, at the root of this folder, and it is the one file here you should be generous with.** Everything else in this seed is kept short deliberately. It is written for the agent running the next block, which starts with an empty context, no memory of what you did, and no way to find out except by redoing it.
+**`PROGRESS.md` is the one file to be generous with** — the next block starts with an empty context and only this record. Read its skeleton before you start and follow its header. If you notice a compaction, re-read it from the current block heading before anything else.
 
-**A skeleton ships with the seed — one section per block and the numbers each block owes. Read it before you start; fill it as you go, not before you finish.** Your context will be compacted without warning, more than once on a long block, and nothing that exists only in your context survives it. `PROGRESS.md` is your memory, not your report: append after every deploy cycle, every fixed defect and every decision — a name, a key, what you tried, what happened. If you notice a compaction has happened, re-read `PROGRESS.md` from the current block heading before doing anything else. Append, never rewrite: a fact that turned out to be wrong is corrected by a new line saying so, because the next block needs to know it was once believed.
+Put in it: every name, key, id, folder, version and connection, with the command that produced it and its output · what the next block needs (read its `prompt.md` before you finish) · what went wrong, what you tried first, and the fix · what you would do differently or next · what you could not verify.
 
-| Put in it | Why |
-|---|---|
-| **Every name, key, id, folder, version and connection** you created or found | no document that ships with this seed can know them, and each one costs a command to rediscover |
-| **The command that produced each**, and its output | so the next block re-verifies in one line instead of researching |
-| **What the next block will need** — read its `prompt.md` before you finish and stage it | the cheapest minute in the whole exercise |
-| **What went wrong and how you fixed it**, including what you tried first | the wrong turn is often more useful than the fix, because it is what the next block is about to take |
-| **What you would do differently, and what you would do next** | you have context nobody after you will have |
-| **What you could not verify** | an open question inherited out loud beats a silent assumption |
-
-
-### Three places a problem gets written
-
-The same event legitimately appears in all three. They are written for different readers, at different distances, and they have different lifetimes.
-
-| | Who reads it | Lifetime | Shape |
-|---|---|---|---|
-| `PROGRESS.md` | the next block of **this** build | dies with this build | as long as it needs to be, raw output and all |
-| the **findings table** | the people who maintain this exercise | one round | one finding, one thing, dated |
-| `cookbook.md` | **every future participant** | until the platform or UiPath skills changes | **not yours to write.** It is maintained with the seed |
-
-So: hit a wall, and write it **everywhere it belongs** — in `PROGRESS.md` so the next block does not hit it, and as a finding so it can become a cookbook line for everyone who comes after. Neither one makes the other redundant.
+A wall you hit goes in `PROGRESS.md`, for the next block, **and** in a finding, for the seed — neither replaces the other. Cookbooks are maintained with the seed, not by you.
 
 ## Log what you learn
 
-Findings go to a shared table so they can be counted across everyone doing this exercise, and `log-finding.py` is the whole interface to it. There is no local findings file.
-
-**Identify yourself at the start of your session** — several agents write to this table at the same time, and a row naming the wrong model silently merges two of them:
+Findings go to a shared table through `log-finding.py`; there is no local file. **Identify yourself at the start of your session:**
 
 ```bash
 python3 log-finding.py --identify "<your agent>" "<your model>" --effort "<your effort tier>"
 ```
 
-If it answers *identity already recorded*, it was set for you before the session started — leave it.
-
-Include the effort tier if your runtime has one. The same model at two tiers is two different builders, and without that word every comparison between runs is confounded. **If you are not certain which model you are, ask** — `unknown` is more useful than a plausible wrong answer.
+*Identity already recorded* means it was set for you — leave it. Not certain which model you are? Say `unknown`.
 
 ```bash
 python3 log-finding.py --block 1-design --category friction \
-  --summary "What happened, what you tried, what happened next."
+  --summary 'What happened, what you tried, what happened next.'
 ```
 
-`--block` is the folder name exactly as it is spelled on disk. `--category` is free text; reuse one you have used before inventing a neighbour.
+Every flag: `python3 log-finding.py --help`. `--evidence` holds 200 characters — one error string; the explanation goes in `--summary`. Single-quote summaries: backticks inside double quotes run as commands.
 
-Four optional fields turn a finding into a recommendation: **`--source`** where the answer actually came from (`seed` · `skill` · `cli-help` · `docs` · `model` · `trial-error`) · **`--ask`** what should change (`keep` · `cut` · `fix` · `add` · `move` · `none`) · **`--artifact`** which file and section · **`--evidence`** the exact error or command. **`--evidence` holds 200 characters** — one error string, not a command and its output. Put the explanation in `--summary`, which is roomy.
+**Never paste a secret, and never paste a whole file** — the table is shared with this tenant.
 
-**Never paste a secret, and never paste a whole file.** This table is shared with everyone on this tenant.
-
-**Log a finding the moment you have it — not at the end of the task, and never at the end of the block.** Your context will be compacted, more than once on a long block, and a finding you were holding to write up later does not survive it. 
-
-**End every block with `python3 log-finding.py --retry`** and report the count it gives back — that number is a fact about the table rather than about a command, and if it is short of what you logged, say so. 
+**Log a finding the moment you have it**, never at the end of the block — compaction takes what you were holding. **End every block with `python3 log-finding.py --retry`** and report the count; if it is short of what you logged, say so.
 
 ### A finding is not only a complaint
 
-The table's job is to make the next version of this seed better, and better is as often **shorter**. Three of the most useful things you can report are not problems:
+Better is as often **shorter**. Six kinds worth logging:
 
-- **"This was already handled"** — you read a page here, then found a skill or `--help` said the same. Ours is a page we should delete, but only safely if we know what replaced it.
-- **"This saved me"** — a warning you read, believed, and would otherwise have walked into. Almost nobody reports these, and they are what makes cutting safe. **A trap you never met is not proof the warning was unnecessary — it may be proof that it worked.**
-- **"This was in the wrong place"** — build mechanics sitting in a business brief, or a design decision buried in a list of commands.
-- **"I retried"** — the same command a second time with a different flag, or a second diagnosis after the first was wrong. Log it as the friction it is, with both attempts. From outside a retry is invisible; from inside it is this exercise's most common cost.
-- **"I decided this myself"** — every question you would have asked a human and answered instead. `--category assumption`, one line: the question and your answer.
-- **"Two sources disagreed"** — a skill against this seed, or two files here against each other — and which you followed. Every one of these is a defect we cannot see from outside, because your build resolved it silently.
+- **"Already handled"** — a skill or `--help` said what a seed page says. Name what replaced it; that is what makes deleting ours safe.
+- **"This saved me"** — a warning you believed and would otherwise have walked into. A trap you never met is not proof the warning was unnecessary.
+- **"Wrong place"** — build mechanics in a business brief, a design decision buried in commands.
+- **"I retried"** — a second attempt or a second diagnosis; log both.
+- **"I decided this myself"** — `--category assumption`: the question you would have asked, and your answer.
+- **"Two sources disagreed"** — which two, and which you followed.
 
-**Suggest a rewording only when you can say what it cost you.** *"This would read better as X"* is an opinion. *"I read this, did X for forty minutes, and the right answer was Y"* is a defect with a fix attached.
+**Suggest a rewording only when you can say what it cost you** — *"I did X for forty minutes; the right answer was Y"* is a defect with a fix attached.
 
 ### Before you finish a block
 
-**The block record goes in `PROGRESS.md` — the narrative, for the next block. The numbers go in one finding, `--category block-summary`:** wall-clock, deploy cycles, claims run, retries, wrong first diagnoses, questions you answered alone, and the three most expensive minutes and what caused them. One finding per block, before `--retry`. Nobody reads your terminal; this table and `PROGRESS.md` are all that reaches us.
-
-**Set the `Status:` line of every `tasks.md` task you finished, in this block, with its evidence line** — the block that does the work closes its row; a later block cannot tell done from undone by reading `PROGRESS.md`, and a row ticked weeks later does not mean what a contemporaneous one means.
-
-Re-read what you were handed and log the two-sided answer, one finding per file: **up to three sections you never needed, and up to three you would have failed without.** One line each, naming the section. Both halves or neither — a list of what to cut with nothing to keep is an opinion; the two together are a measurement.
+- The narrative goes in `PROGRESS.md`; the seven numbers its skeleton lists go in one `--category block-summary` finding, before `--retry`.
+- **Set the `Status:` line of every `tasks.md` task you finished in this block**, with its evidence line.
+- **One `--category cookbook-recall` finding for the block**, from memory, naming file and row: the cookbook rows you used; the ones wrong or stale; the ones a skill or `--help` had already told you; and what you needed that no row said. A row you never met is *never met*, not *unneeded*.
 
 ### Before you finish the exercise
 
-Once, at the end, when you have seen the whole set. Four questions, one finding each, `--category seed-review`:
+Four findings, `--category seed-review`, one each:
 
-1. **Which single change would have saved you the most time?** Name the file and section. One answer — forcing the ranking is the point.
+1. **Where did the time go, and which single change would have saved the most of it?** Name the file and the sentence you wish had been there — one answer.
 2. **What did you have to work out that no document told you?**
-3. **Where did two documents disagree, and which did you follow?** Every one of these is a defect we cannot see from outside, because your build resolved it silently.
+3. **Where did two documents disagree, and which did you follow?**
 4. **What did you build that you now know is wrong**, and did you go back and fix it?
 
-Answer from what happened, not from what would sound useful. A blank answer is a real answer.
+Answer from what happened. A blank answer is a real answer.

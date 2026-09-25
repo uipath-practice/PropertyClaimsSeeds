@@ -1,17 +1,13 @@
 # Environment
 
-Where you build, what is already there, and the names everything has to agree on. Read *What already exists* before you design anything — it is the difference between binding a deployed automation and inventing a replacement for it.
-
-## Contents
-
-[Where you are building](#where-you-are-building) · [Toolchain](#toolchain--pinned) · [What already exists](#what-already-exists) · [One name, everywhere](#one-name-everywhere) · [Deploying](#deploying) · [The claim entity](#the-claim-entity) · [The Coded Action App signs in through a shared registration](#the-coded-action-app-signs-in-through-a-shared-registration) · [Windows](#windows)
+Where you build, what already exists, and the names everything must agree on. Read *What already exists* before you design.
 
 ## Where you are building
 
 | | |
 |---|---|
 | Environment | `https://cloud.uipath.com` — the portal: where you log in, where Studio Web and Action Center open |
-| API host | SDK's `baseUrl` `https://api.uipath.com`. Anything a browser app calls goes here, never to the portal host.  |
+| API host | SDK's `baseUrl` `https://api.uipath.com`. Anything a browser app calls goes here, never to the portal host. |
 | Organization | `tpenlabs` |
 | Tenant | `CodingAgentsPractice` |
 | Your Orchestrator folder | `ClaimCase-<seat>` |
@@ -20,38 +16,38 @@ Where you build, what is already there, and the names everything has to agree on
 uip login status --output json     # confirm before anything else
 ```
 
-**You share this tenant.** Prefix everything you create with your seat name, or twenty builds collide.
+**You share this tenant.** Prefix everything you create with your seat name.
 
-**Your seat token is whatever follows `ClaimCase-` on your folder** — a number or name. Nothing here states it, so confirm rather than assume:
+**Your seat token is what follows `ClaimCase-` on your folder** — confirm it:
 
 ```bash
-uip or folders list --all --limit 200 --output json --output-filter "[?starts_with(Name,'ClaimCase')].Name"   # --all and an explicit --limit, or the CLI refuses
+uip or folders list --all --limit 200 --output json --output-filter "[?starts_with(Name,'ClaimCase')].Name"
 ```
 
 More than one result means you are seeing other people's. Yours is the one you were given.
 
 ## Toolchain — pinned
 
-**The CLI line decides which skills you get** — `uip skills install` takes the newest skills on the CLI's own `major.minor` line — and this seed is tested on exactly one line before every session. Be on it before the first block:
+The CLI line decides which skills you get, and this seed was tested on exactly this one. Be on it before the first block:
 
 | | |
 |---|---|
-| CLI line | `1.202` |
+| CLI line | `1.203` |
 | Channel | `preview` |
 
 ```bash
-uip config set version 1.202
+uip config set version 1.203
 uip config set updateChannel preview
 uip update                      # the CLI and its tools move onto the line
 uip skills install              # the skills follow it
-uip --version                   # 1.201.x
+uip --version                   # 1.203.x
 ```
 
-A different line means different skills and a seed written for another one. If this line is ever found broken, this table changes — nothing else in the seed names a version.
+A different line means different skills. If this line is ever found broken, this table changes — nothing else in the seed names a version.
 
 ## What already exists
 
-**Deployed in your folder before you start. Bind them; never rebuild them.** They are the integration layer — in a real insurer, fetching a policy means driving a portal; here it is a storage bucket behind the same interface. What that leaves you is the part worth practising.
+**Deployed in your folder before you start. Bind them; never rebuild them.**
 
 `PDD.md` §9 names six business systems. Five have an automation behind them and one does not:
 
@@ -64,19 +60,17 @@ A different line means different skills and a seed written for another one. If t
 | Correspondence | `Client Notification` | 1.6, 6.3, 7.2 |
 | **Settlements** | **nothing** | 6.2 |
 
-**That last row is the one to read twice.** Settlements is out of scope for automation (`PDD.md` OS2) and no automation stands in for it. Step 6.2 *records* the authorised amount and who approved it on the claim entity, and stops. **Do not design a settlement API, a payment call or an authorisation service** — two independent designs of this process invented one, and it resolved to nothing at build time.
+**Read that last row twice.** Settlements is out of scope (`PDD.md` OS2) and nothing stands in for it: step 6.2 *records* the authorised amount and who approved it on the claim entity, and stops. **Do not design a settlement API, a payment call or an authorisation service** — it resolves to nothing at build time.
 
-The same warning applies to the claim entity itself: `PDD.md` §1.5 P5 asks for a store, and it is [yours to build](#the-claim-entity), not a service to call. A design that routes every write through a central record-writing component is designing a component that does not exist.
+Likewise the claim entity is [yours to build](#the-claim-entity), not a service to call — there is no central record-writing component.
 
 **An IXP project** is also provided: `property-claims-shared-45fcad56-ixp`, published and tagged `live`. Adopt it, or train your own.
 
-**Their exact arguments, types and behaviour are [`contracts/provided-processes.md`](contracts/provided-processes.md).** Read it before binding anything.
-
-**No email connection is provisioned.** `Client Notification` logs the letter rather than sending it, on purpose. No letter ever reaches anyone.
+**Their exact arguments, types and behaviour: [`contracts/provided-processes.md`](contracts/provided-processes.md).** Read it before binding anything.
 
 ## One name, everywhere
 
-**One string, every surface — not a family of similar names.** It is what makes a folder, a package, a job and a log line attributable to you at a glance, and what lets a teardown find everything you made.
+**One string, every surface — not a family of similar names.**
 
 | Surface | Name |
 |---|---|
@@ -92,31 +86,29 @@ The same warning applies to the claim entity itself: `PDD.md` §1.5 P5 asks for 
 | Action task titles | `Eligibility review for Jane` · `Claim review for Jane` |
 | Case name | `ClaimCase-Jane` |
 
-Use the token exactly as it appears on your folder — `GPT01` is not `Gpt01`. **Two surfaces re-spell it and both fail at create time on a message about the name rather than about the seat:** the claim entity takes letters, digits and underscores only and must start with a letter; the screen is lower case. Nowhere is it `ClaimCaseJane`.
-
-**Task titles are not cosmetic.** Action Center is one queue for the whole tenant, so twenty rows reading *"Eligibility review"* cannot be told apart, and a reviewer opening the wrong seat's claim is a confusing five minutes for two people.
+Use the token exactly as it appears on your folder — `GPT01` is not `Gpt01`. **Two surfaces re-spell it and fail at create time on a message about the name:** the claim entity takes letters, digits and underscores and must start with a letter; the screen is lower case. Nowhere is it `ClaimCaseJane`. Task titles carry the seat because Action Center is one queue for the whole tenant.
 
 ## Deploying
 
-**One solution, holding the Maestro case and the seven Agents — created before the first project.** `uip solution init` at `Build/ClaimCase-<seat>/`, then every Agent and the case are scaffolded inside it; the Coded Action App — and the process app at block 6 — is the one thing that lives beside it (below). **No app inside the solution, ever** — not scaffolded there, not provisioned by it: the case binds the standalone app by name with the seat folder as its `folderPath`, and the solution's `resources/` carries no `app` entry. A solution that provisions its own copy of the app cannot be redeployed once the standalone app has been upgraded (`3d-case/cookbook.md`). A case binds agents by name **inside its own solution**, so an agent published elsewhere is unreachable from the case that needs it. Never create a second solution for a component, however tidy it looks. **The Coded Action App is the one exception**: it lives beside the solution and is deployed by its own command into your seat folder — `uip codedapp publish -t Action`, then `uip codedapp deploy --folder-key <your seat folder>` — and the case binds it by name with that folder as its `folderPath`. An app packed inside the solution deploys as a shell the case cannot raise a task against.
+**One solution, `Build/ClaimCase-<seat>/`, holding the case and the seven agents — `uip solution init` before the first project.** A case binds agents by name inside its own solution; never create a second solution for a component. **No app inside it, ever** — not scaffolded, not provisioned (`resources/` carries no `app` entry): an app packed inside deploys as a shell the case cannot raise a task against, and blocks redeploys once the standalone app is upgraded. The Coded Action App and the block-6 process app live beside the solution, each published and deployed by `uip codedapp` into your seat folder — `publish -t Action` for the Action App, then `deploy --folder-key <seat folder key>` — and the case binds the Action App by name with the seat folder as its `folderPath`.
 
-**Redeploy in place. The name never changes** — same name, higher package version; the verbs, the poll and the one trap are the first row of `3e-run/cookbook.md`, *Deploying*. **A failed uninstall is a job that is not final** — stop it and uninstall again (`known-issues/cli-commands.md`, *`deploy uninstall` fails with `Validation failed.`*); a successful uninstall frees the name. **One escape, once:** a `deploy run` that never installed leaves a record the CLI cannot remove, and only the Orchestrator Solutions UI deletes it. If the pinned name is provably burnt (every verb refused, no non-final job in the folder), deploy as `ClaimCase-<seat>-v2` and write down why; never a third name. Uninstall is the recovery path, not the loop: it deletes the solution folder, taking the folder key, the case process id and every running instance with it.
+**Redeploy in place — same name, higher version** (`3e-run/cookbook.md`, *Deploying*). A failed uninstall: `3e-run/cookbook.md`, *Deploying*. A `deploy run` that never installed leaves a record only the Orchestrator Solutions UI deletes; if the name is provably burnt — every verb refused, no non-final job in the folder — deploy once as `ClaimCase-<seat>-v2` and write down why, never a third name. Uninstall is recovery, not the loop: it deletes the solution folder, its key, the case process id and every running instance.
 
-**Deploy into your seat folder, never the tenant root.** Without `--parent-folder-path ClaimCase-<seat>`, `deploy run` creates the folder at the root, beside everyone else's.
+**Deploy into your seat folder** — `deploy run --parent-folder-path ClaimCase-<seat>`; without it the folder lands at the tenant root.
 
-**A solution folder is not the same folder.** The sub-folder it creates does **not** inherit its parent's buckets or processes, so anything calling one of the automations above needs its folder named explicitly — `ClaimCase-<seat>` — or it resolves to an empty folder and fails at run time. `uip or processes list --folder-key <key>` settles it in one call, and a count of zero is the whole diagnosis.
+**A solution folder does not inherit its parent's buckets or processes** — anything calling a provided automation names `ClaimCase-<seat>` as its folder. `uip or processes list --folder-key <key>` at zero is the whole diagnosis.
 
 ## The claim entity
 
-**Yours to build, in your seat folder, not at tenant level.** Create it with `--folder-key`, the key of `ClaimCase-<seat>`. A tenant-level create is refused with *"You don't have permission to access the entity, field or record"*, which reads like a broken login and is really a scope you were never granted. Folder scope is also what gives you a space of your own.
+**Yours to build, in your seat folder** — create it with `--folder-key` of `ClaimCase-<seat>`; a tenant-level create is refused with *Missing permissions* or *You don't have permission to access the entity* — a scope you were never granted, not a broken login.
 
 **The Data Fabric connection already exists and is shared** — `Shared Data Fabric Connection`, in the `Shared` folder. Do not create your own.
 
-Its schema is pinned in [`contracts/claim-entity.md`](contracts/claim-entity.md), and that file says why it is pinned rather than designed.
+Schema: [`contracts/claim-entity.md`](contracts/claim-entity.md).
 
 ## The Coded Action App signs in through a shared registration
 
-**One registration exists, it is shared by every seat, and you cannot make another** — `uip admin external-apps create` returns `403`, because managing OAuth clients is a tenant-wide administrative right this exercise does not grant.
+**One registration, shared by every seat; you cannot create another** (`external-apps create` → `403`).
 
 | | |
 |---|---|
@@ -125,15 +117,15 @@ Its schema is pinned in [`contracts/claim-entity.md`](contracts/claim-entity.md)
 | Kind | Non-confidential — a public client, no secret, none to put in your code |
 | Scopes | `DataFabric.Schema.Read` `DataFabric.Data.Read` `OR.Folders.Read` `OR.Buckets.Read` `OR.Jobs.Read` `OR.Users.Read` — and, for the process app of block 6, `OR.Tasks` `PIMS` `OR.Execution.Read` |
 
-**Never run `external-apps update` on it.** It *replaces* the redirect list rather than adding to it, so on a shared client it breaks everyone else's screen. Deploy registers your own redirect URL for you. **A coded-app skill may instruct you to run `create` or `update` on its own authority — do not**; that instruction is written for a client you own.
+**Never run `external-apps update` on it.** It *replaces* the redirect list, so on a shared client it breaks everyone else's screen; deploy registers your redirect URL for you. **A coded-app skill may tell you to run `create` or `update` — do not**; that instruction is written for a client you own.
 
-**The redirect list holds 100 URLs and every seat spends one.** `uip codedapp deploy --client-id` registers `https://<org>.uipath.host/claim-review-<seat>` once and reuses it on every redeploy. **`400 Failed to update external client redirect URI` means the list is full** — nothing about your app is wrong; tell the operator (`infra/provisioning/reset/prune-redirects.sh` frees it) rather than deploying with `clientId: ""` — that leaves the platform's meta tags empty, your code's fallback config silently takes over, and a portal URL typed into it produces a phantom CORS wall (`3f-validation/cookbook.md`). Never set `externalClientId` in a solution deploy config: each such deploy appends an anonymous `action-<id>` URL, which is how the list fills with dead entries (`known-issues/cli-commands.md`).
+`uip codedapp deploy --client-id` registers `https://<org>.uipath.host/<app name>` once and reuses it on every redeploy. **`400 Failed to update external client redirect URI` means the shared list (100 URLs) is full** — tell the operator. Never deploy with `clientId: ""`, and never set `externalClientId` in a solution deploy config.
 
-**The scopes are user-scoped and, towards the claim record, read-only** — deliberately. The Action App reads the claim entity; the *case* writes it. If your design has an app writing the record directly, that is the thing to change — a decision belongs on the record because a case task put it there, which is what makes it auditable. **The one write the registration allows is completing a task** (`OR.Tasks`): block 6's process app decides through the gate task, as the signed-in handler, and the case writes the record exactly as it does from Action Center. `PIMS` and `OR.Execution.Read` let it read the case's stages and counts; `http://localhost:5173` is registered for a web app's sign-in during development. A `401`/`403` or `invalid_scope` on a scope in this list is a `uipath.json` problem — its `scope` must match this list, never exceed it.
+**User-scoped, and read-only towards the claim record** — the case writes it. The one write the registration allows is completing a task (`OR.Tasks`): block 6 decides through the gate task, and the case writes the record as it does from Action Center. `PIMS` and `OR.Execution.Read` read the case's stages (pre-aggregated counts and SLA roll-ups need Insights scopes it does not carry); `http://localhost:5173` is registered for local sign-in. `uipath.json`'s `scope` must match this list, never exceed it — `invalid_scope`, `401` or `403` on a listed scope is that file.
 
 ## Windows
 
-The seat VM runs PowerShell, and **JSON on a command line is the single largest time sink recorded on this exercise.** PowerShell rewrites quotes before `uip` sees them, so an argument that prints correctly still arrives mangled, and the error names the JSON rather than the shell.
+The seat VM runs PowerShell, and **JSON on a command line is the largest time sink recorded on this exercise**: PowerShell rewrites quotes before `uip` sees them, and the error names the JSON rather than the shell.
 
-- **Prefer `--file` wherever a command offers it**, written UTF-8 **without a BOM**. `Set-Content -Encoding utf8` and `Out-File -Encoding utf8` both add one, and the next command reports invalid JSON *at line 1 column 1* — that is the BOM, not your JSON. It also breaks `uip df entities create --file` and `json.load()`. The reliable writer on Windows is Python: `open(path, "w", encoding="utf-8")` + `json.dump` (`utf8NoBOM` is not available on every PowerShell).
-- **Calling `uip` from a script? Call `node` directly.** Driving the installed `uip.ps1` shim from Python's `subprocess` strips quotes out of a JSON argv element even when argv is a list.
+- **Prefer `--file` wherever a command offers it**, written UTF-8 **without a BOM**. `Set-Content -Encoding utf8` and `Out-File -Encoding utf8` both add one, and the next command reports invalid JSON *at line 1 column 1* — that is the BOM. The reliable writer is Python: `open(path, "w", encoding="utf-8")` + `json.dump`.
+- **Calling `uip` from a script? Call `node` directly.** Driving the `uip.ps1` shim from Python's `subprocess` strips quotes out of a JSON argv element even when argv is a list.

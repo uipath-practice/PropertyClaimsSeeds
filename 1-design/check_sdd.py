@@ -335,9 +335,11 @@ def check_platform_fidelity(text, r, tasks):
     # JS-1 — a bare call in an `=js:` expression is a helper nobody defined.
     unknown = {}
     for m in re.finditer(r'`=js:([^`\n]*)`', text):   # expressions are backticked; prose that mentions =js: is not
-        for c in re.finditer(r'(?<![\.\w$])([A-Za-z_$][A-Za-z0-9_$]*)\s*\(', m.group(1)):
+        # Text inside a string literal is not code: "…the dwelling limit (BR-44)" calls nothing.
+        expr = re.sub(r'"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\'', '""', m.group(1))
+        for c in re.finditer(r'(?<![\.\w$])([A-Za-z_$][A-Za-z0-9_$]*)\s*\(', expr):
             name = c.group(1)
-            if name in JS_GLOBALS or name in ("if", "for", "while", "switch", "return", "function", "typeof"):
+            if name in JS_GLOBALS or name in ("if", "for", "while", "switch", "return", "function", "typeof", "catch", "try", "new", "throw"):
                 continue
             unknown.setdefault(name, text.count("\n", 0, m.start()) + 1)
     for name, line in sorted(unknown.items(), key=lambda kv: kv[1]):
@@ -426,7 +428,8 @@ def check_design_safety(text, r, tasks):
             blk = re.search(head + r'(.*?)(?:\n\*\*|\n#|\Z)', t["body"], re.S)
             if not blk:
                 continue
-            for name in re.findall(r'`?\b([A-Za-z_]\w*)`?\s*=(?!=)\s*`?=?', blk.group(1)):
+            # `=(?![=>])`: an arrow function's `i =>` inside an expression is not an assignment.
+            for name in re.findall(r'`?\b([A-Za-z_]\w*)`?\s*=(?![=>])\s*`?=?', blk.group(1)):
                 if name in declared or name in seen or name in ("Action",) or name.lower() in ("value", "default", "type"):
                     continue
                 seen.add(name)

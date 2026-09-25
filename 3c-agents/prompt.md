@@ -14,4 +14,4 @@ Three things decide whether these are usable:
 
 **Done when:** 
 - each one runs on a real claim and returns what §7 says it should, including on a claim with nothing wrong, where the right answer is that it found nothing
-- solution is uploaded (`uip solution upload Build/ClaimCase-<seat> --force`), so all seven Agents open in Studio Web inside it. Everything you build is local until that upload.
+- solution is uploaded (`uip solution upload Build/ClaimCase-<seat>`), so all seven Agents open in Studio Web inside it. Everything you build is local until that upload.

@@ -16,4 +16,3 @@ Three things I care about:
 
 **Done when** a claim form you never labelled comes back with every field group populated and the damage rows repeating one per item — read beside the document, not as a score; a score only says the model agrees with what it was taught — and the model is deployed to your folder under a version you can name.
 
-`3a-extraction/cookbook.md` has the traps: `Name` versus `Title`, the suggested taxonomy, blobs in the damage table, retrains that seem stuck.

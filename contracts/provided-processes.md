@@ -21,7 +21,7 @@ uip or packages entry-points "<PackageId>:<Version>" --output json    # its exac
 
 ## The six
 
-**In the case, each is an `rpa` task** — not `process`, which on this tenant resolves against an empty registry (`3d-case/cookbook.md`). ; the planner types them `process` and the design has to be corrected.
+**In the case, each is an `rpa` task** — not `process`, which on this tenant resolves against an empty registry (`3d-case/cookbook.md`); the planner types them `process` and the design has to be corrected.
 
 | Automation | Serves | Give it | Get back |
 |---|---|---|---|
@@ -74,7 +74,7 @@ So **anything the case itself has to read — above all the claimant's contact d
 
 **`Retrieve Policy Document`** fetches the policy by number, so it cannot run before extraction — the number comes from the claim form. That single dependency is most of why Intake has the shape it does.
 
-**`Retrieve Previous Claims`** returns the claim history for a policy, as a JSON string. **An empty history is a result, not a failure** (`PDD.md` step 1.5).
+**`Retrieve Previous Claims`** returns the claim history for a policy, as a JSON string. **An empty history is a result, not a failure** (`PDD.md` step 1.5). **A history that says it is unavailable is not an empty one**: when Claims History does not answer, the document carries the policy number, `"status": "unavailable"` and a message, and no `priorClaims` — unreadable, flagged, and never read as zero (`PDD.md` B-05).
 
 **`Retrieve Inspection Report`** fetches the assessor's report. **It does not fail when the report is not there yet** — it returns `out_ReportReady: false` and no file, which is what makes a waiting stage possible: call it, test the flag, move on or wait and call again. Treat anything other than an explicit `true` as not-ready.
 

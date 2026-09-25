@@ -81,7 +81,7 @@ def main():
         print(f"no vars.claimData / vars.claimDataJson paths found in {SDD} — has the design stopped reading the extraction?")
         return 1
 
-    bad = 0
+    bad = empty = 0
     for arg in sys.argv[1:]:
         payload = json.loads(pathlib.Path(arg).read_text(encoding="utf-8"))
         print(f"=== {arg} — {len(found)} distinct path(s) from sdd.md ===")
@@ -93,7 +93,9 @@ def main():
                 bad += 1
                 print(f"  MISSING  {expr}   (sdd.md:{where})")
             elif value in (None, "", {}, []):
-                bad += 1
+                # The path exists and the model found nothing: a field blank on the form (a Hong Kong
+                # address has no ZIP). A wrong key is MISSING, never EMPTY — so this is a note, not a failure.
+                empty += 1
                 print(f"  EMPTY    {expr} = {value!r}   (sdd.md:{where})")
             else:
                 shown = value if not isinstance(value, (dict, list)) else json.dumps(value)
@@ -116,6 +118,8 @@ def main():
 
     print()
     print("every path resolves" if not bad else f"{bad} problem(s)")
+    if empty:
+        print(f"{empty} empty value(s) — confirm each is blank on the form itself; the design must tolerate it")
     return 0 if not bad else 1
 
 
