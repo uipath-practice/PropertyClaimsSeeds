@@ -8,6 +8,7 @@ Use **`uipath-planner`** again and derive the implementation task list from `sdd
 - Action App's *contract* (`contracts/review-task.md`): the case binds it, so it is registered before the case, and the screens come after a run. 
 - Routing, not redescription. Each task names which skill builds it and which `sdd.md` sections to read. 
 - Tasks document does not re-explain the architecture; that drifts, and then two documents disagree.
+- The case is one task: *build the case from `sdd.md` — resolve, convert, close what convert leaves unresolved*. Its stages, tasks and conditions are not listed here; `sdd.md` is the case's plan.
 - A `Validate:` step on every task that generates something, and a testing task before anything deploys.
 - Each later block sets the `Status:` line of the tasks it finishes, not only the sub-items — the status line is what a reader scans.
 

@@ -6,6 +6,7 @@
 | You have revised a prompt twice and the number has not moved | **A prompt governs what an agent reports, not what it concludes.** Where the conclusion decides whether a claim reaches a human, put it in a case condition and stop revising. |
 | Closing a false escalation made a missed problem worse | The two failures mask each other: a claim escalated for the wrong reason still reached a human, and closing that reason sends the missed problem straight through. Measure detection and restraint on the **same** batch, never one at a time. |
 | A signal you downgraded in the case keeps escalating | The decision layer re-derives it from every place it is still visible — the scalar, the envelope's conclusion, the failing check left in `checks[]`. Rebuild what the decision layer is handed; leave the agent's own verdict untouched on the record and on the screen. |
+| An Agent fix passes in `agent debug` and the case still gets the old answer | You tested it on inputs you built by hand. Fetch what the case sent — `python3 4-verify/agent_inputs.py --deploy-folder-key <deploy folder> --agent <Agent> --instance <instance> --out in.json` — and debug on that. If the wording changes but the verdict does not, reorder the output: the field that constrains the verdict goes before it (`3c-agents/cookbook.md`, key order). |
 
 ## Make each of the three cycles count
 

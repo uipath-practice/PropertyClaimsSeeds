@@ -20,8 +20,12 @@ Two families of check, both paid for in real failures:
    None of these is a `vars.` problem, so the original check passed every time. All three
    are one question: does every id a node references still resolve?
 
-`uip maestro case validate` checks the schema, not whether every id a node references still
-resolves; this script does. Run it after every edit and before every pack.
+`uip maestro case validate --strict --sdd sdd.md` is the gate and checks the plan against the
+design; this script checks what it cannot see — layout, an output named off its argument, a
+connector input without a target, a skip on a human gate, an `exited` rule on a stage that
+completes, a payload never written, a file output the runtime cannot fill, a gate that opens
+before its stage writes the record, a condition reading an output id that stays null. Run it
+after every edit and before every pack.
 
     python3 check_caseplan.py "<path to caseplan.json>"
 """
@@ -126,18 +130,14 @@ if layout.get('edges'):
         print(f'NO LAYOUT   edge {eid} has no layout.edges entry')
         problems.append(eid)
 
-# A rule may only name tasks that live in its own stage.
+# A rule may only name stages that exist. (A rule naming a task outside its own stage is
+# `validate --strict`'s: "task selection missing".)
 for stage in stages:
     label = stage['data'].get('label', stage['id'])
-    own = {t['id'] for g in (stage['data'].get('tasks') or []) for t in g}
     for scope in ('entryConditions', 'exitConditions'):
         for cond in (stage['data'].get(scope) or []):
             for group in cond['rules']:
                 for rule in group:
-                    for ref in (rule.get('selectedTasksIds') or []):
-                        if ref not in own:
-                            print(f'BAD REF     {label}/{scope}/{cond["id"]} names task {ref}, which is not in this stage')
-                            problems.append(ref)
                     for ref in stage_refs(rule):
                         if ref not in node_ids:
                             print(f'BAD REF     {label}/{scope}/{cond["id"]} names stage {ref}, which does not exist')
@@ -280,10 +280,11 @@ for node in doc['nodes']:
                         write_bodies.append(json.dumps(inp.get('body') or inp.get('value') or {}))
 
 blob = ' '.join(write_bodies)
-for name in sorted(n for n in produced if n):
-    if not re.search(r'\bvars\.' + re.escape(name) + r'\b', blob):
-        print(f'WARNING  vars.{name} is produced but reaches no write body — if it belongs on '
-              f'the claim record, nothing is carrying it there')
+unwritten = [n for n in sorted(x for x in produced if x)
+             if not re.search(r'\bvars\.' + re.escape(n) + r'\b', blob)]
+if unwritten:
+    print(f'WARNING  {len(unwritten)} produced variable(s) reach no write body: {", ".join(unwritten)} — '
+          f'check each against your design\'s data table; one that belongs on the claim record is the bug')
 
 # ------------------------------------------------------------- reachability: orphan stages
 #
@@ -390,21 +391,27 @@ for node in doc['nodes']:
                 if required:
                     problems.append(task['id'])
 
-# A stage whose exit waits for required tasks, with no task marked required, can never
-# exit -- a claim entering it is held forever. `uip maestro case validate` refuses this
-# too ("has no task(s) marked as required"); it is here so the design is caught before
-# the plan is authored around it. Found on a deliberately unreachable lane (findings 3d).
-for stage in stages:
-    waits = any(rule.get('rule') == 'required-tasks-completed'
-                for cond in (stage['data'].get('exitConditions') or [])
-                for group in cond['rules'] for rule in group)
-    if not waits:
-        continue
-    required = any(t.get('isRequired') or t.get('required') or (t.get('data') or {}).get('isRequired')
-                   for g in (stage['data'].get('tasks') or []) for t in g)
-    if not required:
-        print(f"WARNING  stage {labels.get(stage['id'], stage['id'])!r} exits on required-tasks-completed and no task in it is required -- it can never exit")
-        problems.append(stage['id'])
+# The pairing is also met without a diverting exit when every other stage entered from the
+# same origin is guarded by a test that cannot be true together with the lane's: the same
+# variable compared to a different literal, or the same comparison inverted.
+CMP = re.compile(r'vars\.(\w+)\)?(?:\.toLowerCase\(\))?\s*(===|!==)\s*("[^"]*"|true|false)')
+
+def exclusive(a, b):
+    for v, op1, l1 in CMP.findall(a or ''):
+        for w, op2, l2 in CMP.findall(b or ''):
+            if v == w and ((op1 == op2 == '===' and l1 != l2) or (l1 == l2 and op1 != op2)):
+                return True
+    return False
+
+def entries_from(origin_id, skip):
+    for st in stages:
+        if st['id'] == skip:
+            continue
+        for cond in (st['data'].get('entryConditions') or []):
+            for group in cond['rules']:
+                for rule in group:
+                    if rule.get('rule') in DECISION_ENTRY and origin_id in stage_refs(rule):
+                        yield rule.get('conditionExpression')
 
 for stage in stages:
     if stage['data'].get('stageType') != 'secondary' or stage['id'] in diverts_to:
@@ -414,7 +421,11 @@ for stage in stages:
         for group in cond['rules']:
             for rule in group:
                 if rule.get('rule') in DECISION_ENTRY:
-                    origins += [labels.get(x, x) for x in stage_refs(rule)]
+                    for src in stage_refs(rule):
+                        others = list(entries_from(src, stage['id']))
+                        if others and all(exclusive(rule.get('conditionExpression'), e) for e in others):
+                            continue
+                        origins.append(labels.get(src, src))
     if origins:
         srcs = ', '.join(sorted(set(origins)))
         print(f'WARNING  secondary {stage["data"].get("label", stage["id"])} is entered on a gate '
@@ -462,6 +473,140 @@ for stage in stages:
                   f'variable is empty and this throws, faulting the whole claim '
                   f'(`3d-case/cookbook.md`, The whole claim faults at case start)')
             problems.append(cond['id'])
+
+# ------------------------------------------------- what `sdd convert` carries over from the SDD
+#
+# An expression copied with the SDD's backticks is a string, not an expression: `"`=js:…`"`
+# reaches the runtime as that literal text, and the variable it feeds holds it.
+def strings(o):
+    if isinstance(o, dict):
+        for v in o.values():
+            yield from strings(v)
+    elif isinstance(o, list):
+        for v in o:
+            yield from strings(v)
+    elif isinstance(o, str):
+        yield o
+ticked = sorted({v[:60] for v in strings(doc.get('nodes', [])) if re.match(r'\s*`=(js|vars|bindings|jsonString):', v)})
+for v in ticked:
+    print(f'BACKTICKED  {v}… — the backticks are the SDD\'s markdown; remove them or the value is this literal text')
+    problems.append(v)
+
+# Tasks sharing one task set lose their own entryConditions when the plan compiles, and start
+# with the stage (3d-case/cookbook.md, What only a run shows).
+for stage in stages:
+    for g in (stage['data'].get('tasks') or []):
+        if len(g) > 1 and any(t.get('entryConditions') for t in g):
+            names = ', '.join(t.get('displayName', t['id']) for t in g)
+            print(f"WARNING  {stage['data'].get('label')}: {names} share one task set and carry entry conditions — "
+                  "give each conditioned task its own set, then grep the compiled .bpmn for each rule id")
+
+# Two entryConditions on one element are ANDed, not alternatives (3d-case/cookbook.md).
+for stage in stages:
+    for g in (stage['data'].get('tasks') or []):
+        for t in g:
+            ec = t.get('entryConditions') or []
+            if len(ec) > 1:
+                print(f"WARNING  {stage['data'].get('label')}/{t.get('displayName', t['id'])} has {len(ec)} entry conditions "
+                      f"({', '.join(c.get('displayName', c.get('id', '?')) for c in ec)}) — they are ANDed; alternatives "
+                      "are DNF groups inside one condition")
+
+# ------------------------------------------------ file outputs: the shape the runtime accepts
+#
+# A `file` output reaches its case variable only through `=orchestrator.JobAttachments`.
+# `sdd convert` writes `target: "=<id>"`, which faults every claim at the first file read
+# (400300 `Failed to evaluate expression: =out_ClaimFormPDF`). A `body` on the one entry is
+# compiled into the mapping and the variable then holds the JSON schema
+# (`AGENT_STARTUP.INPUT_VALIDATION_ERROR`). Both pass `validate --strict`. A `body` is fine on
+# a file entry that keeps its own variable beside a `jsonSchema` extraction of the same name.
+for node in doc['nodes']:
+    for group in (node['data'].get('tasks') or []):
+        for task in group:
+            outs = task['data'].get('outputs') or []
+            for out in outs:
+                if out.get('type') != 'file':
+                    continue
+                name = out.get('name')
+                if out.get('target') != '=orchestrator.JobAttachments':
+                    print(f'FILE TARGET {task.get("displayName", task["id"])}.{name} targets {out.get("target")!r} — '
+                          f'a file output needs "=orchestrator.JobAttachments"; as written the claim faults at the first read')
+                    problems.append(name)
+                companion = any(o is not out and o.get('name') == name and o.get('type') == 'jsonSchema' for o in outs)
+                if 'body' in out and not companion:
+                    print(f'FILE BODY   {task.get("displayName", task["id"])}.{name} carries a body — on a single file entry '
+                          f'the variable then holds the schema, not the file; remove it')
+                    problems.append(name)
+
+# ----------------------------------------- a gate opens on a record that already has the analysis
+#
+# The review screen reads the claim record. A stage that runs an agent or automation and then a
+# human gate must write the record between them, or the reviewer opens a task with nothing to
+# review (`3d-case/cookbook.md`, Structure: one write before the gate opens, one after it closes).
+by_id = {}
+for stage in stages:
+    for g in (stage['data'].get('tasks') or []):
+        for t in g:
+            by_id[t['id']] = (stage, t)
+
+def before(task, seen=None):
+    """Task ids this task waits for, transitively, through `selected-tasks-completed`."""
+    seen = set() if seen is None else seen
+    for cond in (task.get('entryConditions') or []):
+        for group in cond['rules']:
+            for rule in group:
+                for tid in (rule.get('selectedTasksIds') or rule.get('selectedTaskIds') or []):
+                    if tid not in seen and tid in by_id:
+                        seen.add(tid)
+                        before(by_id[tid][1], seen)
+    return seen
+
+for tid, (stage, task) in by_id.items():
+    if task.get('type') != 'action':
+        continue
+    prior = [by_id[p][1] for p in before(task)]
+    producers = [p for p in prior if p.get('type') in ('agent', 'rpa', 'process')]
+    writes = [p for p in prior if 'EntityRecord' in json.dumps(p.get('data') or {})]
+    if producers and not writes:
+        names = ', '.join(p.get('displayName', p['id']) for p in producers)
+        print(f'GATE BEFORE WRITE  {stage["data"].get("label")}/{task.get("displayName", tid)} opens after {names} '
+              f'with no record write between them — the reviewer sees none of that work')
+        problems.append(tid)
+
+# ------------------------------------------- a condition reading an output's id instead of its variable
+#
+# Where an output row's `id` differs from its `var` (the reassign shape), the id reads null in
+# conditions at run time; only the variable it writes carries the value. A stage gated on the
+# id never moves (`3e-run/cookbook.md`).
+reassigned = {}
+for node in doc['nodes']:
+    for group in (node['data'].get('tasks') or []):
+        for task in group:
+            for out in (task['data'].get('outputs') or []):
+                if out.get('id') and out.get('var') and out['id'] != out['var'] and not out.get('custom'):
+                    reassigned[out['id']] = out['var']
+
+def all_conditions():
+    for stage in stages:
+        for scope, cond, expr in conditions(stage):
+            yield stage['data'].get('label'), expr
+        for g in (stage['data'].get('tasks') or []):
+            for t in g:
+                for cond in (t.get('entryConditions') or []):
+                    for group in cond['rules']:
+                        for rule in group:
+                            if rule.get('conditionExpression'):
+                                yield f'{stage["data"].get("label")}/{t.get("displayName", t["id"])}', rule['conditionExpression']
+
+for where, expr in all_conditions():
+    for oid, var in reassigned.items():
+        if re.search(r'\bvars\.' + re.escape(oid) + r'\b', expr) and not re.search(r'\bvars\.' + re.escape(var) + r'\b', expr):
+            print(f'WARNING  {where} reads vars.{oid}, an output id written into vars.{var} — the id reads null '
+                  f'at run time; test vars.{var}')
+
+# ------------------------------------------------------------- the case's own name
+if not re.fullmatch(r'ClaimCase-[A-Za-z0-9]+', doc.get('name') or ''):
+    print(f'WARNING  the case is named {doc.get("name")!r} — `CONFIG.md` names it ClaimCase-<seat>; '
+          f'`sdd convert` copies the whole SDD cell, notes included')
 
 # ------------------------------------------------------------- legibility (warnings)
 # Entry conditions drive execution; edges draw the picture. A plan with none runs

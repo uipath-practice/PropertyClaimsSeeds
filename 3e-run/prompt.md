@@ -4,12 +4,12 @@ Case Plan is checked, but not tested yet on real claims. Compile, Pack, Publish 
 
 Aim each run with the case's own `scenario` / `discrepancy` inputs (and `profileId` to repeat a claimant) — they flow to the generator (`contracts/provided-processes.md`, *Retrieve Property Claim*); a scenario alone does not guarantee a route — pin a `discrepancy` with it, preferably an unambiguous breach (`cookbook.md`).
 
-Complete the Action Center tasks from the command line (`uip tasks complete`) — the Coded Action App has no screens yet, only the empty-page registration the case binds. A route that misbehaves now is a case defect; the point is to find case-plan issues before the app is live.
+Complete the Action Center tasks from the command line (`uip tasks complete`) — the Coded Action App has no screens yet, only the empty-page registration the case binds. A route that misbehaves now is a case defect; the point is to find case-plan issues before the app is live. Read the record while a gate task is still open, before you complete it: the reviewer sees what is on it then, and a write that lands only after the gate is hidden once the task is done.
 
 
 **Done when:**
 - a claim with nothing wrong with it goes in and a settled claim comes out, with no human touching it and no task ever raised. That is the run that proves the whole case (happy path), the Action Center task never appears. Read the Data Fabric record and the case instance's timeline instead.
 - four human routes proven: proceed and refuse at the first gate, approve and deny at the second. 
 
-Five runs in total. The Data Fabric record populated by the end of this block: the next block builds the Action App's screens against these payloads.
+Five runs prove the block; a broken version costs more, so start one claim on each new version before the batch. The Data Fabric record populated by the end of this block: the next block builds the Action App's screens against these payloads.
 

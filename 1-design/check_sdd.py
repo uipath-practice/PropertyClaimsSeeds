@@ -31,18 +31,18 @@ from collections import defaultdict
 SECTIONS = ["## Section 1: Case Definition", "## Section 2: Stages & Tasks",
             "## Section 3: Personas & App Views", "## Section 4: Integrations"]
 SUBHEADS = ["### Case Metadata", "### Case Variables", "### Case Exit Conditions"]
-TASK_TYPES = {"action", "process", "agent", "rpa", "api-workflow", "case-management",
-              "execute-connector-activity", "wait-for-connector", "wait-for-timer"}
+TASK_TYPES = {"action", "process", "agent", "rpa", "api-workflow", "function", "business-rule",
+              "case-management", "execute-connector-activity", "wait-for-connector", "wait-for-timer"}
 # Judgement work must not land on a deterministic runner, and vice versa.
 JUDGEMENT_TYPES = {"agent"}
-DETERMINISTIC_TYPES = {"rpa", "api-workflow", "execute-connector-activity"}
+DETERMINISTIC_TYPES = {"rpa", "api-workflow", "function", "business-rule", "execute-connector-activity"}
 
 # The six provided Orchestrator automations (contracts/provided-processes.md) — for TYPE-4.
 PROVIDED = ["Retrieve Property Claim", "Extract Claim Data", "Retrieve Policy Document",
             "Retrieve Previous Claims", "Retrieve Inspection Report", "Client Notification"]
 
 # Their argument names, as `uip or packages entry-points` returned them on 2026-08-28 at the
-# versions then deployed (propery-insurance-claims 1.0.38 · Extract.Claim.Data._IXP_ 1.0.2 ·
+# versions then deployed (propery-insurance-claims 1.0.39, arguments unchanged from 1.0.38 · Extract.Claim.Data._IXP_ 1.0.2 ·
 # Retrieve.Policy.Document, Retrieve.Previous.Claims, Retrieve.Inspection.Report 1.0.0 ·
 # Client.Notification 1.1.4) — for ARG-1. The contract says the platform is authoritative:
 # if entry-points disagrees with this list, the platform wins, this list is updated, and the
@@ -63,6 +63,20 @@ PROVIDED_ARGS = {
 JS_GLOBALS = {"JSON", "Number", "String", "Boolean", "Math", "Date", "Array", "Object", "parseInt",
               "parseFloat", "isNaN", "isFinite", "RegExp", "Set", "Map", "BigInt", "Symbol", "Error",
               "encodeURIComponent", "decodeURIComponent", "String.raw", "Intl"}
+
+
+def js_exprs(text):
+    """Every `=js:` expression as (offset, expr, bare). Backticked anywhere; bare only inside a
+    table cell, where it runs to the cell's next unescaped pipe. Prose that mentions =js: is
+    neither. Escaped pipes come back as `\\|` so JS-2 can see them."""
+    out = [(m.start(), m.group(1), False) for m in re.finditer(r'`=js:([^`\n]*)`', text)]
+    pos = 0
+    for line in text.split("\n"):
+        if line.lstrip().startswith("|"):
+            for m in re.finditer(r'(?<!`)=js:((?:\\\||[^|`])*)', line):
+                out.append((pos + m.start(), m.group(1).strip(), True))
+        pos += len(line) + 1
+    return sorted(out)
 
 
 def gateway_outputs(sdd_path):
@@ -135,16 +149,34 @@ def check_structure(text, r):
     return ts
 
 
+def _planner_file(*rel):
+    """The first installed copy of a planner file, or None. Lines 1.204+ ship no audit script."""
+    import os
+    for root in ("~/.agents/skills/uipath-planner", "~/.uipath/.skills/skills/uipath-planner"):
+        for rp in rel:
+            pth = os.path.expanduser(f"{root}/{rp}")
+            if os.path.exists(pth):
+                return pth
+    return None
+
+
+AUDIT = ("scripts/case/audit_sdd.py", "scripts/audit_sdd.py")
+CHECKLIST = ("references/case/case-sdd-conformance-checklist.md",)
+
+
 def check_planner_audit(sdd_path, r):
     """Run the planner's own shape audit so the designer runs one command. SHAPE-5 carries its
     findings; a missing audit script is a note, not a pass."""
-    import os, subprocess
-    audit = next((pth for pth in (os.path.expanduser("~/.agents/skills/uipath-planner/scripts/case/audit_sdd.py"),
-                                   os.path.expanduser("~/.uipath/.skills/skills/uipath-planner/scripts/case/audit_sdd.py"),
-                                   os.path.expanduser("~/.agents/skills/uipath-planner/scripts/audit_sdd.py"),
-                                   os.path.expanduser("~/.uipath/.skills/skills/uipath-planner/scripts/audit_sdd.py")) if os.path.exists(pth)), None)
+    import subprocess
+    audit = _planner_file(*AUDIT)
     if not audit:
-        r.add("NOTE", "SHAPE-0", "the planner's audit_sdd.py was not found — run `uip skills install`, then the audit by hand")
+        if _planner_file(*CHECKLIST):
+            r.add("NOTE", "SHAPE-0", "this planner line has no audit script; its shape gate is the conformance checklist "
+                                     "(`uipath-planner/references/case/case-sdd-conformance-checklist.md`), which the planner "
+                                     "walks before it sets `Status | ready`. This checker does not repeat it — the skills are current")
+        else:
+            r.add("NOTE", "SHAPE-0", "found neither the planner's audit script nor its conformance checklist — check the skills "
+                                     "line against `CONFIG.md`, *Toolchain*, and walk the template's validation footer by hand")
         return
     res = subprocess.run([sys.executable, audit, sdd_path], capture_output=True, text=True)
     out = (res.stdout + res.stderr).strip()
@@ -296,9 +328,9 @@ def check_bindings(text, r, tasks):
     # every read — `=vars.x` bindings and `vars.x` inside `=js:` expressions and conditions;
     # a stage entry on `=js:vars.missingRequiredDocument` that nothing declares passed here
     # until 2026-08-28 (Terra01 run 2)
-    reads = set(re.findall(r'=vars\.(\w+)', text)) | set(re.findall(r'`=js:[^`\n]*?\bvars\.(\w+)', text))
-    for m in re.finditer(r'`=js:([^`\n]*)`', text):
-        reads |= set(re.findall(r'\bvars\.(\w+)', m.group(1)))
+    reads = set(re.findall(r'=vars\.(\w+)', text))
+    for _, expr, _bare in js_exprs(text):
+        reads |= set(re.findall(r'\bvars\.(\w+)', expr))
     for v in sorted(reads):
         if v in declared and v not in produced:
             r.add("FAIL", "BIND-4", f"`vars.{v}` is read but nothing produces it — no output row, "
@@ -334,17 +366,30 @@ def check_platform_fidelity(text, r, tasks):
                                    "disagrees with this checker, the platform wins — log it")
     # JS-1 — a bare call in an `=js:` expression is a helper nobody defined.
     unknown = {}
-    for m in re.finditer(r'`=js:([^`\n]*)`', text):   # expressions are backticked; prose that mentions =js: is not
+    for at, raw, _bare in js_exprs(text):
         # Text inside a string literal is not code: "…the dwelling limit (BR-44)" calls nothing.
-        expr = re.sub(r'"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\'', '""', m.group(1))
+        expr = re.sub(r'"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\'', '""', raw)
         for c in re.finditer(r'(?<![\.\w$])([A-Za-z_$][A-Za-z0-9_$]*)\s*\(', expr):
             name = c.group(1)
             if name in JS_GLOBALS or name in ("if", "for", "while", "switch", "return", "function", "typeof", "catch", "try", "new", "throw"):
                 continue
-            unknown.setdefault(name, text.count("\n", 0, m.start()) + 1)
+            unknown.setdefault(name, text.count("\n", 0, at) + 1)
     for name, line in sorted(unknown.items(), key=lambda kv: kv[1]):
         r.add("FAIL", "JS-1", f"`{name}(…)` is called in an =js: expression (first at line {line}) and is not "
                               "defined anywhere the case can see — write the logic inline or in an agent")
+    # JS-0 — a bare `=js:` in a table cell is read by the build; the checks above now see it too,
+    # and the planner template writes every expression backticked.
+    bare = [text.count("\n", 0, at) + 1 for at, _e, b in js_exprs(text) if b]
+    if bare:
+        r.add("WARN", "JS-0", f"{len(bare)} `=js:` expression(s) in table cells are not backticked (line(s) "
+                              f"{', '.join(map(str, bare[:6]))}{'…' if len(bare) > 6 else ''}) — wrap each in backticks "
+                              "as the template does")
+    # JS-2 — `\|\|` is the only way to write OR in a table cell, and it reaches the build escaped.
+    esc = [text.count("\n", 0, at) + 1 for at, e, _b in js_exprs(text) if "\\|" in e]
+    if esc:
+        r.add("FAIL", "JS-2", f"escaped pipe `\\|` inside an =js: expression at line(s) {', '.join(map(str, esc[:6]))} — it "
+                              "reaches the build as `\\|\\|`, which is not JavaScript. Write `!(!A && !B)`, coalesce with "
+                              "`??`, or use a ternary (method/sdd-guide.md)")
     # ACT-2 — a gateway's outputs must map the platform's literal `Action` (contracts/review-task.md).
     for t in tasks:
         if t.get("type") == "action" and not re.search(r'\bAction\b', _outputs_section(t["body"])):
@@ -353,8 +398,9 @@ def check_platform_fidelity(text, r, tasks):
                                    "claim takes the same branch while the plan looks correct")
     # ROUTE-1 — a skip or exit condition written against the outcome not wanted passes when unset.
     hits = []
-    for m in re.finditer(r'`=js:[^`\n]*?!==?\s*(?:true|"[A-Za-z ]+"|\'[A-Za-z ]+\')', text):
-        hits.append(text.count("\n", 0, m.start()) + 1)
+    for at, expr, _bare in js_exprs(text):
+        if re.search(r'!==?\s*(?:true|"[A-Za-z ]+"|\'[A-Za-z ]+\')', expr):
+            hits.append(text.count("\n", 0, at) + 1)
     if hits:
         r.add("WARN", "ROUTE-1", f"{len(hits)} condition(s) are written against a value (`!== …`) at line(s) "
                                  f"{', '.join(map(str, hits[:6]))}{'…' if len(hits) > 6 else ''} — an unset variable "
@@ -384,18 +430,18 @@ def check_platform_fidelity(text, r, tasks):
                                      "under **Inputs:** binds nothing; the build needs a row per field (name, type, binding)")
     # HANDOFF-4 — the header may say `Template validation | passed` only if the planner's audit passes.
     if re.search(r'Template validation\*?\*?\s*\|\s*passed', text, re.I):
-        import shutil, subprocess, os
-        audit = next((pth for pth in (os.path.expanduser("~/.agents/skills/uipath-planner/scripts/case/audit_sdd.py"),
-                                   os.path.expanduser("~/.uipath/.skills/skills/uipath-planner/scripts/case/audit_sdd.py"),
-                                   os.path.expanduser("~/.agents/skills/uipath-planner/scripts/audit_sdd.py"),
-                                       os.path.expanduser("~/.uipath/.skills/skills/uipath-planner/scripts/audit_sdd.py")) if os.path.exists(pth)), None)
+        import subprocess
+        audit = _planner_file(*AUDIT)
         if audit and tasks and tasks[0].get("_sdd_path"):
             res = subprocess.run([sys.executable, audit, tasks[0]["_sdd_path"]], capture_output=True, text=True)
             if res.returncode != 0 or "AUDIT FAIL" in (res.stdout + res.stderr):
                 r.add("FAIL", "HANDOFF-4", "the Planner Handoff header says `Template validation | passed` and the planner's "
                                            "audit_sdd.py exits non-zero — run the audit, repair, then flip the header")
-        elif not audit:
-            r.add("NOTE", "HANDOFF-4", "cannot find the planner's audit_sdd.py to confirm `Template validation | passed`")
+        elif not audit and not _planner_file(*CHECKLIST):
+            r.add("NOTE", "HANDOFF-4", "cannot find the planner's audit script or checklist to confirm `Template validation | passed`")
+    elif re.search(r'Status\*?\*?\s*\|\s*ready', text, re.I) and re.search(r'Template validation\*?\*?\s*\|\s*pending', text, re.I):
+        r.add("FAIL", "HANDOFF-4", "the header says `Status | ready` and `Template validation | pending` — the planner flips both "
+                                   "together, after its conformance checklist passes; walk it, repair, then flip")
     # PROGRESS-1 — the record is written as you go; its absence at gate time is worth a line.
     if tasks and tasks[0].get("_sdd_path"):
         import pathlib as _pl
@@ -428,8 +474,12 @@ def check_design_safety(text, r, tasks):
             blk = re.search(head + r'(.*?)(?:\n\*\*|\n#|\Z)', t["body"], re.S)
             if not blk:
                 continue
-            # `=(?![=>])`: an arrow function's `i =>` inside an expression is not an assignment.
-            for name in re.findall(r'`?\b([A-Za-z_]\w*)`?\s*=(?![=>])\s*`?=?', blk.group(1)):
+            # Only a row's target is an assignment: blank every `=js:` expression first, so a local
+            # inside a function body (`let s = …`) is not read as a case variable. `=(?![=>])`: an
+            # arrow function's `i =>` is not an assignment either.
+            rows = re.sub(r'`=js:[^`]*`', '`EXPR`', blk.group(1))
+            rows = re.sub(r'=js:.*?(?=\s\|(?!\|)|$)', 'EXPR', rows, flags=re.M)
+            for name in re.findall(r'`?\b([A-Za-z_]\w*)`?\s*=(?![=>])\s*`?=?', rows):
                 if name in declared or name in seen or name in ("Action",) or name.lower() in ("value", "default", "type"):
                     continue
                 seen.add(name)
@@ -437,8 +487,9 @@ def check_design_safety(text, r, tasks):
                                         "never declares it — io-binding has no companion for the `=`; the row is dropped or faults")
     # ROUTE-2 — the same flag tested `=== true` to open a gate and `=== false` to skip it leaves the
     # unset case to neither: the stage stalls instead of routing to the human.
-    opens = set(re.findall(r'`=js:\s*vars\.(\w+)\s*===\s*true\s*`', text))
-    skips = set(re.findall(r'`=js:\s*vars\.(\w+)\s*===\s*false\s*`', text))
+    exprs = [e.strip() for _, e, _b in js_exprs(text)]
+    opens = {m.group(1) for e in exprs for m in [re.fullmatch(r'vars\.(\w+)\s*===\s*true', e)] if m}
+    skips = {m.group(1) for e in exprs for m in [re.fullmatch(r'vars\.(\w+)\s*===\s*false', e)] if m}
     for v in sorted(opens & skips):
         r.add("FAIL", "ROUTE-2", f"`vars.{v}` opens on `=== true` and skips on `=== false` — a value that never lands satisfies "
                                  "neither, and the claim stalls. One side must be the complement (`!== true` opens the human gate)")

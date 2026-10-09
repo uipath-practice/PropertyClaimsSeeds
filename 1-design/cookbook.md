@@ -18,4 +18,4 @@
 
 **Three ways a design passes both gates and still cannot be built:** `ARG-1` — an `rpa` task bound to an argument the automation does not have; read arguments from `uip or packages entry-points`, never from memory. `JS-1` — a helper in an `=js:` expression that nothing defines (`nowIso()`); the grammar has none, write it inline. `ACT-2` — a gateway whose outputs never map the platform's literal `Action`.
 
-`NATURE-3` lists tasks it could not match to a PDD step; until it is zero, their types were not checked. `NATURE-1` as a warning is expected four times — the screening agent (PDD 2.1, 2.4), settlement (4.3), decision (5.1): the contract pins agents where the PDD says rule-expressible. Leave them and show the numbers reproduce.
+`NATURE-3` lists tasks it could not match to a PDD step; until it is zero, their types were not checked.

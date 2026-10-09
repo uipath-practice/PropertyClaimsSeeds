@@ -32,18 +32,20 @@ The CLI line decides which skills you get, and this seed was tested on exactly t
 
 | | |
 |---|---|
-| CLI line | `1.203` |
+| CLI line | `1.204` |
 | Channel | `preview` |
 
 ```bash
-uip config set version 1.203
+uip config set version 1.204
 uip config set updateChannel preview
 uip update                      # the CLI and its tools move onto the line
 uip skills install              # the skills follow it
-uip --version                   # 1.203.x
+uip --version                   # 1.204.x
 ```
 
 A different line means different skills. If this line is ever found broken, this table changes — nothing else in the seed names a version.
+
+**The line holds; the patch moves.** The first `uip` call of each day updates each tool within the line, and `uip update` refreshes the skills as well, so a long build can change patch under you. Do neither while a block is running; if a tool's behaviour changes mid-run, `uip --version` and `uip tools list` say what moved. To hold an exact build, `uip config set version <exact version>`.
 
 ## What already exists
 

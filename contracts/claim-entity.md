@@ -33,7 +33,7 @@ Grouped by the moment they are written, because that ordering is the part that m
 
 | Column | Type | Source |
 |---|---|---|
-| `claimId` | `STRING` 100, **required, unique** | the case's external id. A business key, not the primary key — the platform keeps its own `Id`. **Set `isUnique` in the create** — it cannot be added to a column that exists, and the only repair is dropping the column; what the platform does with a duplicate at run time is below, *The case writes this itself* |
+| `claimId` | `STRING` 100, **required, unique** | the case's external id. A business key, not the primary key — the platform keeps its own `Id`. **Set `isUnique` in the create**; what the platform does with a duplicate at run time is below, *The case writes this itself* |
 | `caseInstanceId` | `STRING` 100 | `=js:metadata.InstanceId`. Case metadata carries exactly two usable fields, this and `ExternalId` |
 | `status` | `STRING` 100 | a lifecycle word your case sets; the dashboard filters on it |
 | `claimantName` | `STRING` 200 | |

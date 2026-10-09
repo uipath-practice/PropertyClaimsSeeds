@@ -14,4 +14,5 @@ Three things decide whether these are usable:
 
 **Done when:** 
 - each one runs on a real claim and returns what §7 says it should, including on a claim with nothing wrong, where the right answer is that it found nothing
+- every Agent that computes a figure returns the same figures on three runs of identical inputs, and each figure agrees with its own copies — claimed against the form, net against its envelope (`cookbook.md`)
 - solution is uploaded (`uip solution upload Build/ClaimCase-<seat>`), so all seven Agents open in Studio Web inside it. Everything you build is local until that upload.

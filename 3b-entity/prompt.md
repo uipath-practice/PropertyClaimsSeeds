@@ -6,6 +6,6 @@ The schema is `contracts/claim-entity.md` and it is **pinned** — that file say
 
 Use the **`uipath-platform`** skill — its Data Fabric section owns `uip df`. The entity goes in **your seat folder**, not at tenant level — `CONFIG.md`, *The claim entity*. Read the contract's five column tables and its casing rule; the rest of that file is for the block that writes the entity (`3d`).
 
-**Get the schema right in one create.** `updateFields` takes a field's id and only what changes, not the shape `get` returns, so a read-edit-write loop does not work; creating fresh from a file is one call and no repair.
+**Get the schema right in one create**, from a file: it is one call and no repair.
 
 **Done when** you have written a value with cents and a nine-thousand-character payload into it, read both back unchanged, and deleted the row you used. That round trip validates correct set of limits.

@@ -2,7 +2,7 @@
 
 Everything below is transcribed from *UiPath Brand Identity Guidelines 2026 V3.1*, reduced to what a screen uses. **You do not need any brand tooling to apply it** — the values are here because the guidelines themselves are a slide-deck skill you are not expected to have.
 
-`uipath-coded-apps` ships the design system this plugs into: copy its `index-template.css` to `src/index.css`, then **change only the token values below**. The skill's own rule is that brand, colour, font and radius requests are satisfied in `:root` / `body.dark` and nowhere else — component stylesheets stay untouched, which keeps the diff reviewable and the baseline stable.
+`uipath-coded-apps` ships the design system this plugs into: start from its `index-template.css` and **change only the token values below**, as the skill's token-first rule says.
 
 ## The palette
 

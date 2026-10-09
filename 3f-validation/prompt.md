@@ -12,7 +12,7 @@ The client id for the app is what lets the screen read the Data Fabric record (`
 - Where each of those sits on the page — `3f-validation/layout.md`. Fixes the regions of both screens based on business user's requirements — header, where the claim is, the decision, the at-a-glance cards, the checks, the documents — with a wireframe and what each region must carry. **The layout is decided; the styling is yours.**
 - How it looks — `3f-validation/brand.md`. Carries the palette, type and CSS tokens — use these as official company style.
 
-**Build it against payloads your own Agents actually produced**, not against payloads you imagined. Use claims from previous run to read what landed on the Data Fabric record.
+**Build it against payloads your own Agents actually produced**, not against payloads you imagined. Use claims from previous run to read what landed on the Data Fabric record, and capture each open-gate fixture while its task is still open — that record is what the reviewer will see.
 
 **Pause for a human before the first publish.** Serve the app locally on fixtures captured from your own records — development-only, never shipped — and ask your reviewer to open `http://127.0.0.1:<port>` with `?gate=eligibility`, `?gate=eligibility&state=decided`, `?gate=review`, `?gate=review&state=decided` — one screen state each, the decided review carrying a real settlement override. Apply what they find, then publish once.
 

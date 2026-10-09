@@ -19,9 +19,9 @@ Paths in this seed are relative to this folder. A block ships `prompt.md`, `cook
 
 Your seat — folder, buckets, solution, claim record — is yours and disposable; the claims are synthetic and no letter is ever delivered. **Creating, publishing, deploying, uninstalling, deleting what you made and starting real runs are authorised in advance**, as often as you need. Do not pause for approval — a build that stops at the deploy gate proves nothing.
 
-**This approval answers your skills' confirmation gates, by name:** creating `ClaimCase_<seat>` with the schema in `contracts/claim-entity.md`, altering that schema, and writing, updating and deleting its records (Data Fabric Rules 0 and 14); uploading, packing, publishing, deploying and debugging `ClaimCase-<seat>`, its agents, its case and your two apps (agents Rule 6, case Rule 12). Do not stop to ask.
+**This approval answers your skills' confirmation gates, by name:** creating `ClaimCase_<seat>` with the schema in `contracts/claim-entity.md`, altering that schema, and writing, updating and deleting its records (Data Fabric Rules 0 and 14); uploading, packing, publishing, deploying and debugging `ClaimCase-<seat>`, its agents, its case and your two apps (agents Rule 6, case Rule 13). Do not stop to ask.
 
-**Your harness may refuse what this grants.** Recovery verbs — uninstall, delete a process, cancel an instance — read as destructive and are the likeliest to be refused mid-block. Ask your operator to allow the whole loop — pack, publish, deploy, upload — before the first deploy.
+**Your harness may refuse what this grants.** Uploads, recovery verbs (uninstall, delete a process, cancel an instance) and even a plain edit of your own `caseplan.json` or `sdd.md` have been refused mid-block. Ask your operator to allow the whole loop before the first deploy: pack, publish, deploy, upload, and edits to the case files under `Build/` and to `sdd.md`.
 
 **Three things are still worth a pause**, all outside your seat: touching another seat's folder or solution, changing anything at tenant level, and deleting a shared resource. If a command names a resource without your seat name in it, stop and ask.
 
@@ -50,9 +50,11 @@ Three near-misses that have each cost time: **`uipath-maestro-bpmn` is not the c
 
 **Do not read the answer key.** One file in the `Claims` bucket states the planted problems and the expected outcome; it is the test oracle, and yours in Verify only. [`contracts/provided-processes.md`](contracts/provided-processes.md), *Where the files live*, names it so you can avoid it.
 
+**Stay inside this folder.** Other `ClaimCase-*` folders beside it are other participants' work; do not open them, list them or search across them for examples, any more than the answer key. When a shape is unclear, the installed skill, its references, `--help` and the tool's own validator are where to look.
+
 ## Push the solution to Studio Web at the end of every block
 
-**`uip solution upload Build/ClaimCase-<seat>`** at the end of every block that changed the solution, once it exists. The first upload imports and later ones overwrite in place — `uip agent debug` uploads too, so your first explicit upload may already say `Overwritten`; read `Data.Action` (`Imported` / `Overwritten`), not the exit code. **No `--force`**: it skips the existence check and fails while the cloud solution does not exist yet. Studio Web's copy is a view for review; your history is git and `PROGRESS.md`.
+**`uip solution upload Build/ClaimCase-<seat>`** at the end of every block that changed the solution, once it exists. The first upload imports and later ones overwrite in place — `uip agent debug` uploads too, so your first explicit upload may already say `Overwritten`. Studio Web's copy is a view for review; your history is git and `PROGRESS.md`.
 
 ## Keep a running record of where the build is
 
