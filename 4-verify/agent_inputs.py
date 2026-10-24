@@ -6,8 +6,7 @@
 
 Then `uip agent debug Build/ClaimCase-<seat>/<Agent> --inputs "$(cat agent-inputs.json)"` reruns the
 Agent on exactly what the case gave it. Run it from inside your seat folder. Agent jobs run in the
-deploy folder, not the seat folder. `uip or jobs list` returns nothing at `--limit` 100 or more, so
-this pages at 50.
+deploy folder, not the seat folder. This pages at 50.
 """
 import argparse, json, subprocess, sys
 

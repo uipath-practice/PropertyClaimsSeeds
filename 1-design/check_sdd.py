@@ -32,7 +32,8 @@ SECTIONS = ["## Section 1: Case Definition", "## Section 2: Stages & Tasks",
             "## Section 3: Personas & App Views", "## Section 4: Integrations"]
 SUBHEADS = ["### Case Metadata", "### Case Variables", "### Case Exit Conditions"]
 TASK_TYPES = {"action", "process", "agent", "rpa", "api-workflow", "function", "business-rule",
-              "case-management", "execute-connector-activity", "wait-for-connector", "wait-for-timer"}
+              "case-management", "execute-connector-activity", "flow-process", "http-request",
+              "wait-for-connector", "wait-for-timer"}
 # Judgement work must not land on a deterministic runner, and vice versa.
 JUDGEMENT_TYPES = {"agent"}
 DETERMINISTIC_TYPES = {"rpa", "api-workflow", "function", "business-rule", "execute-connector-activity"}
@@ -397,10 +398,19 @@ def check_platform_fidelity(text, r, tasks):
                                    "platform's `Action` output — the decision reaches no variable and every "
                                    "claim takes the same branch while the plan looks correct")
     # ROUTE-1 — a skip or exit condition written against the outcome not wanted passes when unset.
+    # Only condition rows route: an Outputs row (`| — | name = …`) or an Inputs row
+    # (`| field | string (body) | …`) computes a value, and a `!==` there routes nothing.
     hits = []
+    lines = text.split("\n")
     for at, expr, _bare in js_exprs(text):
         if re.search(r'!==?\s*(?:true|"[A-Za-z ]+"|\'[A-Za-z ]+\')', expr):
-            hits.append(text.count("\n", 0, at) + 1)
+            n = text.count("\n", 0, at) + 1
+            cells = [c.strip() for c in lines[n - 1].strip().strip("|").split("|")]
+            if lines[n - 1].lstrip().startswith("|") and (
+                    cells[0] in ("—", "-") or re.match(r'(?:string|number|integer|boolean|object|array|jsonSchema|file)(?: \((?:body|query|path)\))?$', cells[1] if len(cells) > 1 else "")
+                    or re.search(r'\w\s*=\s*`?=js:', lines[n - 1])):
+                continue
+            hits.append(n)
     if hits:
         r.add("WARN", "ROUTE-1", f"{len(hits)} condition(s) are written against a value (`!== …`) at line(s) "
                                  f"{', '.join(map(str, hits[:6]))}{'…' if len(hits) > 6 else ''} — an unset variable "

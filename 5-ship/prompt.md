@@ -22,7 +22,7 @@ Everything runs, `4-verify` proved it and the build is done.
 
 **Done when** 
 - `sdd.md` describes what runs
-- every task is closed
+- every task is closed, except the process app's (`6-process-app`)
 - the runbook exists and opens with the last verify scorecard
 - the deployed version is the one you packed
 - Studio Web opens the solution that is running.

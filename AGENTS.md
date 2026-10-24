@@ -21,7 +21,7 @@ Your seat — folder, buckets, solution, claim record — is yours and disposabl
 
 **This approval answers your skills' confirmation gates, by name:** creating `ClaimCase_<seat>` with the schema in `contracts/claim-entity.md`, altering that schema, and writing, updating and deleting its records (Data Fabric Rules 0 and 14); uploading, packing, publishing, deploying and debugging `ClaimCase-<seat>`, its agents, its case and your two apps (agents Rule 6, case Rule 13). Do not stop to ask.
 
-**Your harness may refuse what this grants.** Uploads, recovery verbs (uninstall, delete a process, cancel an instance) and even a plain edit of your own `caseplan.json` or `sdd.md` have been refused mid-block. Ask your operator to allow the whole loop before the first deploy: pack, publish, deploy, upload, and edits to the case files under `Build/` and to `sdd.md`.
+**Your harness may refuse what this grants.** Uploads, recovery verbs (uninstall, delete a process, cancel an instance) and even a plain edit of your own case plan or `sdd.md` have been refused mid-block. Ask your operator to allow the whole loop before the first deploy: pack, publish, deploy, upload, and edits to the case files under `Build/` and to `sdd.md`.
 
 **Three things are still worth a pause**, all outside your seat: touching another seat's folder or solution, changing anything at tenant level, and deleting a shared resource. If a command names a resource without your seat name in it, stop and ask.
 

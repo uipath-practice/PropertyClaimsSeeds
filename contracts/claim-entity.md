@@ -17,7 +17,7 @@ The same fact travels three surfaces and must keep one name:
 | what a component returns | `out_EligibilityChecksJSON` |
 | the case variable | `eligibilityChecksJson` |
 | the column here | `eligibilityChecksJson` |
-| **what a record read returns** | **`EligibilityChecksJson`** — the platform PascalCases every column on the way out (`uip df records get`, `records list`, the app's SDK read), while `entities get` still reports `eligibilityChecksJson`. . Write camelCase; read case-tolerantly — an app keyed on `row.claimId` gets `undefined` and renders an empty screen with no error |
+| **what a record read returns** | **`EligibilityChecksJson`** — the platform PascalCases every column on the way out (`uip df records get`, `records list`, the app's SDK read), while `entities get` still reports `eligibilityChecksJson`. Write camelCase; read case-tolerantly — an app keyed on `row.claimId` gets `undefined` and renders an empty screen with no error |
 
 **Do not improve any of the three.** Bindings resolve by name at run time, so a better name packs, deploys and runs — then fails on a live claim with an error naming neither the binding nor the name.
 

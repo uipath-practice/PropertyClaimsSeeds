@@ -12,25 +12,16 @@ FK=$(uip or folders list --all --limit 200 --output json \
                                                if f['Name']=='ClaimCase-<seat>'))")
 ```
 
-`--all` is required or the seat folder is not listed. `--output-filter` keeps the envelope, so `FK=$(… --output-filter "[0].Key")` captures JSON, not the GUID. **A list bigger than you expected is scoped wrongly; `HasMore: true` has not answered your question.**
+`--all` is required or the seat folder is not listed. `--output-filter` needs an explicit `--limit` and keeps the envelope, so `FK=$(… --output-filter "[0].Key")` captures JSON, not the GUID. **A list bigger than you expected is scoped wrongly; `HasMore: true` has not answered your question.**
 
 ## Reading what came back: `entry-points` at a wrong version, outputs parsed twice, query field names
 
 It reads as *no arguments*, not *no such version* — read the version from `uip or processes list` first (not all six are on `1.0.0`). `uip maestro case tasks describe --type process` finds nothing for them either. `uip df records query` filters take a field's own camelCase name (`claimId`, `sentAt`), although every read prints it PascalCased (`ClaimId`). `uip or jobs get` needs no folder — with `--folder-key` it can return no data. **Parse twice**: `entry-points` argument schemas and `uip or jobs get`'s `OutputArguments` are JSON strings inside the JSON.
 
-## `jobs list` at `--limit` 100, and `tasks assign` with a folder
+## `tasks assign` with a folder, `attachments download` to a directory
 
-`uip or jobs list --limit 100` (or more) returns an empty `Data[]` where 50 returns rows: page with `--limit 50 --offset`. `uip tasks assign` refuses `--folder-key`, while `uip tasks data get` and `uip tasks complete` need it — assign without, complete with.
+`uip tasks assign` refuses `--folder-key`, while `uip tasks data get` and `uip tasks complete` need it — assign without, complete with. `uip or attachments download <id> -d <path>` takes a **file** path; given a directory it hangs.
 
-## `codedapp publish -t Action` hangs or fails at registration on the 1.203 and 1.204 preview lines
+## Warnings mixed into the output you parse
 
-The package uploads, then *Registering coded app…* fails with *Error occurred while creating a version for action schema … multi-document transaction*, or hangs for 300 s and ends `fetch failed`. The preview `codedapp-tool` gives every Action App on a tenant the same action-schema key, so only the first one ever registers (APPS-38047). Your app is fine. Publish that one step with the stable tool, run from its package in the app folder; `uip codedapp deploy` and everything else stay on the pinned line:
-
-```bash
-npm pack @uipath/codedapp-tool@1.202.2 --silent && mkdir -p /tmp/codedapp-stable \
-  && tar -xzf uipath-codedapp-tool-1.202.2.tgz -C /tmp/codedapp-stable && rm uipath-codedapp-tool-1.202.2.tgz
-uip codedapp pack                                          # as usual
-node /tmp/codedapp-stable/package/dist/index.js publish -t Action -n <app-name> -v <version>
-```
-
-Use a version the failed attempts did not take. A Web app has no action schema and publishes normally.
+`uip solution upload --output json` prints `[WARN]` lines on stdout before the JSON, so a JSON parse of the whole capture fails at line 1 — find the envelope (`{`) first, or read `"Action": "Overwritten"`. `uip maestro case spec` writes its `[WARN]` lines to stderr: keep `2>&1` out of the redirect that saves the spec cache. In `--output-filter`, `contains(FullyQualifiedName, …)` fails on the tenant folders whose name is null; filter on `starts_with(Name, …)`.

@@ -10,7 +10,7 @@ Use **`uipath-planner`** again and derive the implementation task list from `sdd
 - Tasks document does not re-explain the architecture; that drifts, and then two documents disagree.
 - The case is one task: *build the case from `sdd.md` — resolve, convert, close what convert leaves unresolved*. Its stages, tasks and conditions are not listed here; `sdd.md` is the case's plan.
 - A `Validate:` step on every task that generates something, and a testing task before anything deploys.
-- Each later block sets the `Status:` line of the tasks it finishes, not only the sub-items — the status line is what a reader scans.
+- Each later block sets the `Status:` line of the tasks it finishes, not only the sub-items — the status line is what a reader scans. Hand-over (`5-ship`) closes every task before it; the process app's tasks come after it and stay open there.
 
 **Done when:**
 - someone could work the list top to bottom without opening the design to find out what comes next

@@ -27,18 +27,18 @@ completes, a payload never written, a file output the runtime cannot fill, a gat
 before its stage writes the record, a condition reading an output id that stays null. Run it
 after every edit and before every pack.
 
-    python3 check_caseplan.py "<path to caseplan.json>"
+    python3 check_caseplan.py "<path to caseplan.case>"
 """
-import json, re, sys
+import json, os, re, sys
 
-path = sys.argv[1] if len(sys.argv) > 1 else 'caseplan.json'
+path = sys.argv[1] if len(sys.argv) > 1 else next((p for p in ('caseplan.case', 'caseplan.json') if os.path.exists(p)), 'caseplan.case')
 if path in ('-h', '--help'):
     print(__doc__.strip())
     sys.exit(0)
 try:
     doc = json.load(open(path))
 except FileNotFoundError:
-    print(f'cannot read {path} — pass the path to your caseplan.json', file=sys.stderr)
+    print(f'cannot read {path} — pass the path to your caseplan.case', file=sys.stderr)
     sys.exit(2)
 except json.JSONDecodeError as e:
     print(f'{path} is not valid JSON: {e}', file=sys.stderr)

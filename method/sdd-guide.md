@@ -1,6 +1,6 @@
 # Writing an SDD
 
-**One author, one shape.** `uipath-planner` writes every Case Management SDD — from a PDD, from a conversation, or when `uipath-maestro-case` is asked to build with no `sdd.md` and hands the design to it — and it writes the four named sections the build reads: `## Section 1: Case Definition` … `## Section 4: Integrations`, a `##### Task N.M:` block per task, a `## Planner Handoff` header. Its `audit_sdd.py` gates that shape before `Status: ready`.
+**One author, one shape.** `uipath-planner` writes every Case Management SDD — from a PDD, from a conversation, or when `uipath-maestro-case` is asked to build with no `sdd.md` and hands the design to it — and it writes the four named sections the build reads: `## Section 1: Case Definition` … `## Section 4: Integrations`, a `##### Task N.M:` block per task, a `## Planner Handoff` header. Its conformance checklist (`references/case/case-sdd-conformance-checklist.md`) gates that shape before `Status: ready`.
 
 > **The build still checks nothing but the shape.** `uipath-maestro-case` Rule 2 — *"trust `sdd.md` as written; do not validate, gap-fill, or silently infer it"* — and it refuses a summary SDD. Nothing downstream compares the design with the process; `1-design/check_sdd.py` does.
 
@@ -44,7 +44,7 @@ Per stage: `**Type:** Stage` · `**Stage Kind:**` · `**Design Rationale:**` (ma
 
 **A secondary stage can never be required for completion.** If a stage is on the healthy path, it is primary, however much waiting it does.
 
-**Task type — closed enum of nine:** `action` · `process` · `agent` · `rpa` · `api-workflow` · `case-management` · `execute-connector-activity` · `wait-for-connector` · `wait-for-timer`.
+**Task type — a closed enum**, listed in `uipath-maestro-case` Rule 17; nothing outside it.
 
 **Typing guidance** (this exercise pins two rule-expressible steps on Agents on purpose — `contracts/components.md`)**:** human required work → `action` · optional user-launched → adhoc, not required · a user-chosen exception lane → a **secondary stage**, not an adhoc task · judgement → `agent` · rule check → `rpa`/`api-workflow` · a compliance trigger — a licensed role, a regulated review — → `action`, always.
 

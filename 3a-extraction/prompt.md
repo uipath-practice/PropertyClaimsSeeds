@@ -17,4 +17,4 @@ Save the payload and let the checker walk every path the design reads:
 Training your own model instead of reusing the shared one: `3a-extraction/prompt-build.md` — same output shape, about an hour.
 
 **Done when:** 
-- two claim forms you have never seen come back with every field group populated, the damage rows repeating correctly, and every key your design reads confirmed against a real payload. 
+- two claim forms you have never seen (give them different `in_ProfileId` values — two random draws can be the same claimant) come back with every field group populated, the damage rows repeating correctly, and every key your design reads confirmed against a real payload. 

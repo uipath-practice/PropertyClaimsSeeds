@@ -32,15 +32,15 @@ The CLI line decides which skills you get, and this seed was tested on exactly t
 
 | | |
 |---|---|
-| CLI line | `1.204` |
+| CLI line | `1.205` |
 | Channel | `preview` |
 
 ```bash
-uip config set version 1.204
+uip config set version 1.205
 uip config set updateChannel preview
 uip update                      # the CLI and its tools move onto the line
 uip skills install              # the skills follow it
-uip --version                   # 1.204.x
+uip --version                   # 1.205.x
 ```
 
 A different line means different skills. If this line is ever found broken, this table changes — nothing else in the seed names a version.

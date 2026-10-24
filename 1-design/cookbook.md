@@ -3,12 +3,9 @@
 | Issue | Fix |
 |---|---|
 | Two conditions share a display name — *Stage started* on six tasks | Condition names are one pool across the whole case: stage entry, stage exit, task entry, case exit. The planner's audit does not check it; `uip maestro case validate` refuses it at `3d`. Name each for what it tests. |
-| `validate --strict --sdd` rejects the task-output variables listed in *Case Variables*, and `check_sdd.py` BIND-7 fails when they are missing | List them in a `#### Task-output variables` subsection under `### Case Variables` — both gates read it there. Write each output row as a plain `Field -> outX`, nothing after it. |
-| A lane enters on `selected-stage-exited` from a stage that marks itself complete | *Exited* never fires, and `3d-case/check_caseplan.py` reports the lane unreachable. Enter the lane on the origin's completion with a guard, and give the next primary stage the inverse guard. |
+| `validate --strict --sdd` rejects the task-output variables listed in *Case Variables*, and `check_sdd.py` BIND-7 fails when they are missing | List them in the one `### Case Variables` table, with the other variables — `sdd convert` reads only the first table there and drops a second one silently. Write each output row as a plain `Field -> outX`, nothing after it. |
 
 **Put every routing conclusion in a case condition over facts an Agent reports** — the aggregate bound the settlement, the settlement adds up, the claimant's account rules out its own cause (`3c-agents/cookbook.md`, *An Agent whose verdict routes a claim reports facts*). A conclusion left to a prompt is the one Verify spends its cycles on.
-
-**Missing details is deliberately not wired** (PDD §8.1): give its one task `Required: Yes` and gate the stage's entry on a variable nothing sets. An all-optional stage under `required-tasks-completed` fails validate at `3d`.
 
 ## Reading the checker
 
