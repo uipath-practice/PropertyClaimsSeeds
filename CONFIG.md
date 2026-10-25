@@ -9,7 +9,7 @@ Where you build, what already exists, and the names everything must agree on. Re
 | Environment | `https://cloud.uipath.com` — the portal: where you log in, where Studio Web and Action Center open |
 | API host | SDK's `baseUrl` `https://api.uipath.com`. Anything a browser app calls goes here, never to the portal host. |
 | Organization | `tpenlabs` |
-| Tenant | `CodingAgentsPractice` |
+| Tenant | `ClaimCaseWorkshop` |
 | Your Orchestrator folder | `ClaimCase-<seat>` |
 
 ```bash
