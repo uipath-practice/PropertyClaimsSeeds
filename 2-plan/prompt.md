@@ -2,15 +2,14 @@
 
 You have a design that says what the solution is. Turn it into the order things get built in.
 
-Use **`uipath-planner`** again and derive the implementation task list from `sdd.md` into `tasks.md`, which says what gets built, in what order, by which skill, and where you stop to check. Store it at the folder's root; it is consumed during the build.
+Use **`uipath-planner`** again to derive the task list from `sdd.md` into `tasks.md` at the folder's root: what gets built, in what order, by which skill, and where you stop to check.
 
-- Anything referenced by name has to exist and be published first: models, workflows, processes used as tools, the claim entity, the solution the case and the Agents are scaffolded inside, the standalone Action App deployed into the seat folder. Nothing binds to something unbuilt. 
-- Action App's *contract* (`contracts/review-task.md`): the case binds it, so it is registered before the case, and the screens come after a run. 
-- Routing, not redescription. Each task names which skill builds it and which `sdd.md` sections to read. 
-- Tasks document does not re-explain the architecture; that drifts, and then two documents disagree.
-- The case is one task: *build the case from `sdd.md` — resolve, convert, close what convert leaves unresolved*. Its stages, tasks and conditions are not listed here; `sdd.md` is the case's plan.
-- A `Validate:` step on every task that generates something, and a testing task before anything deploys.
-- Each later block sets the `Status:` line of the tasks it finishes, not only the sub-items — the status line is what a reader scans. Hand-over (`5-ship`) closes every task before it; the process app's tasks come after it and stay open there.
+Guidelines:
+- Nothing binds to something unbuilt. Whatever is referenced by name comes first: the models, the automations, the claim entity, the solution the case and the Agents live in, the review app.
+- The review app's contract comes before the case, because the case binds it; its screens come after a run.
+- Route, don't redescribe. Each task names its skill and the parts of `sdd.md` to read; the list never re-explains the architecture.
+- The case is one task. Its stages, tasks and conditions are in `sdd.md`, not here.
+- Every task that generates something has a check, and testing comes before anything deploys.
 
 **Done when:**
 - someone could work the list top to bottom without opening the design to find out what comes next

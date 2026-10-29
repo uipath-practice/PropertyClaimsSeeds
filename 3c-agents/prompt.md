@@ -1,18 +1,21 @@
-# Build — the seven Agents
+# The seven Agents
 
-**Seven agents, one per `PDD.md` §7 section — `contracts/components.md` names them and what each owns.** Nothing else is built here: the deterministic work is already deployed as the six provided RPA processes, or belongs in the Maestro Case as a connector activity or an expression.
+Build the seven Agents the PDD's analysis needs, one for each section of `PDD.md` §7, with the **`uipath-agents`** skill (low-code Agents). `contracts/components.md` names them and what each owns. Build all seven inside your one solution: the case binds only Agents that live beside it. Nothing else is built here; the deterministic work is already deployed or belongs in the case.
 
-Use the **`uipath-agents`** skill (low-code Agents). All seven inside your one solution — the Maestro case binds only Agents that live alongside it.
+What each Agent decides is in §7, by rule id. Don't re-derive it and don't soften it: those rules are what Verify tests.
 
-What each one must decide is `PDD.md` §7, by rule id. Do not re-derive it and do not soften it: those rules are what the Verify block tests.
+Steps:
+1. Build one Agent and prove it end to end on a real claim before you build the other six.
+2. Build the rest, and test each on real claims: one with a problem it owns, one with nothing wrong.
+3. Test the Agents that compute figures for repeatability.
+4. Upload the solution, so all seven open in Studio Web.
 
-Three things decide whether these are usable:
+Guidelines:
+- **One concern, one owner.** An Agent may cite another Agent's finding; it never re-raises it as its own. A reviewer who sees one problem reported three times reads three problems.
+- **A check can only see its own input.** Before writing one, ask whether that data reaches this Agent at all. An Agent asked to confirm something it was never given reports it missing, confidently and wrongly.
+- §7.9 says what to leave alone. Agents that only implement §7.1 to §7.8 flag something on every claim.
 
-- **One concern, one owner.** An Agent may cite another Agent's finding as evidence; it may never re-raise it as its own. A reviewer sees every finding at once, so the same problem reported three times reads as three problems.
-- **A finding must be visible to whatever reports it.** Before writing any check, ask whether that data actually reaches that component at that point — not whether it is on the document somewhere. An Agent asked to confirm something absent from its own input can only report it missing, confidently and wrongly.
-- §7.9 says what to leave alone and which claim should settle by itself. Agents that only implement §7.1–§7.8 flag something on every claim.
-
-**Done when:** 
-- each one runs on a real claim and returns what §7 says it should, including on a claim with nothing wrong, where the right answer is that it found nothing
-- every Agent that computes a figure returns the same figures on three runs of identical inputs, and each figure agrees with its own copies — claimed against the form, net against its envelope (`cookbook.md`)
-- solution is uploaded (`uip solution upload Build/ClaimCase-<seat>`), so all seven Agents open in Studio Web inside it. Everything you build is local until that upload.
+**Done when:**
+- each Agent returns what §7 says on a real claim, including a claim with nothing wrong, where the right answer is that it found nothing
+- every Agent that computes a figure returns the same figures on three runs of identical inputs, and each figure agrees with its own copies
+- all seven open in Studio Web inside your solution.

@@ -1,4 +1,33 @@
-# The case — what bites
+# The case
+
+## How it is built here
+
+**The Coded Action App, first** (`uipath-coded-apps`): scaffold it stand-alone at `Build/claim-review-<seat>/`, beside the solution, with `create-vite` and the React + TypeScript template (`-t Action` belongs to `publish`, not to the scaffold). Put the contract in `action-schema.json`, then `uip codedapp publish -t Action` and `uip codedapp deploy --folder-key <seat folder key>`. Write its name, deployment id and folder into `PROGRESS.md`. Until `3f`, its tasks open blank in Action Center; that is expected. The case binds it by name, with the seat folder as its explicit `folderPath`.
+
+**The plan, generated**, from inside the solution folder:
+
+```bash
+uip maestro case init <project>
+uip maestro case sdd resolve sdd.md --out tasks/registry-resolved.json
+uip maestro case sdd convert sdd.md --resolved tasks/registry-resolved.json --out <project>/caseplan.case
+```
+
+- **What convert lists under `Data.Unresolved[]` is the work left**: close each entry the way the skill says, and nothing else by hand. The shapes convert writes wrong on this case are below; `check_caseplan.py` flags them.
+- The skill's `tasks/` folder beside the plan (`registry-resolved.json`, its resolution ledger) is not your `tasks.md`; neither replaces the other.
+- Fix `sdd.md` and convert again only before any splice or hand edit; every one after it is redone.
+
+**The gates**:
+
+```bash
+python3 3d-case/check_caseplan.py <path-to>/caseplan.case
+uip maestro case validate <path-to>/caseplan.case --strict --sdd sdd.md
+```
+
+- Run the checker as it ships; reimplementing its rules in another language is not the gate. Read its rules even when it passes. It checks what the validator cannot: layout, argument-named outputs, connector inputs, skips on human gates.
+- The **full** validator, never `--skeleton-v2`, and it must say `Valid`.
+- The diagram: *Canvas*, below. Then `uip solution upload Build/ClaimCase-<seat>` and hand your operator the designer link.
+
+## What bites
 
 `check_caseplan.py` catches what it names — undeclared `vars.`, output names without `out_`, connector inputs without `target`, payloads no write carries, missing layout entries, backticks `sdd convert` carried into a value, conditioned tasks sharing a task set, two entry conditions on one task. `validate --strict --sdd sdd.md` catches what differs from the design. This page covers what neither catches.
 

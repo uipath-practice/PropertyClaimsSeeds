@@ -1,29 +1,27 @@
-# Build the Coded Action App
+# The review screens
 
-`PDD.md` §5.7 says what each of the two reviewers must be able to see. Build the **Coded Action App** the Maestro case raises its `action` tasks against in Action Center.
+Build the two review screens in the **Coded Action App** the case raises its gate tasks against, with the **`uipath-coded-apps`** skill. The app already exists from the case block, with its contract and an empty page. Replace the page and redeploy **the app alone**; leave the solution and the case untouched.
 
-Use the **`uipath-coded-apps`** skill. The app already exists — created at `3d` **beside** the solution with its contract and an empty page, and deployed into your seat folder. This block replaces the empty page with the two screens and redeploys **the app alone** — `uip codedapp pack` → `publish -t Action` → `deploy --folder-key <seat folder> --client-id <the shared registration>` — the solution and the case untouched.
+Two gates, one app:
+- **Eligibility check**: the five screening checks, no assessments yet.
+- **Claim review**: everything the Agents produced.
 
-The client id for the app is what lets the screen read the Data Fabric record (`CONFIG.md`, *The Coded Action App signs in through a shared registration*); **`contracts/review-task.md` is the shape you implement**, the case already binds it, so don't change it. It reads the Data Fabric entity and returns a decision.
+Requirements:
+- What each reviewer sees, may change and decides: `PDD.md` §5.7.
+- What the app hands back: `contracts/review-task.md`. The case already binds it, so don't change it.
+- Where each part sits on the page: `3f-validation/layout.md`. The layout is decided; the styling is yours.
+- How it looks: `3f-validation/brand.md`, the company style.
 
-**Requirements:** 
-- What each reviewer must see, may change and decides — `PDD.md` §5.7 (the stages the claim is at, the checks with passes included, the settlement line by line, the three documents, two outcomes with a written reason)
-- What the app hands back — `contracts/review-task.md`. 
-- Where each of those sits on the page — `3f-validation/layout.md`. Fixes the regions of both screens based on business user's requirements — header, where the claim is, the decision, the at-a-glance cards, the checks, the documents — with a wireframe and what each region must carry. **The layout is decided; the styling is yours.**
-- How it looks — `3f-validation/brand.md`. Carries the palette, type and CSS tokens — use these as official company style.
+Steps:
+1. Leave a claim waiting at each gate, and build against what your own Agents wrote on those records, not against data you imagined.
+2. **Pause for me before the first publish.** Serve the app locally on the records you captured and ask me to check four states: each gate open and decided, with a real settlement change on the decided review. Apply what I find.
+3. Publish and deploy the app once.
+4. Prove each gate writes back: a fresh claim per gate, its task completed from the command line, the decision read back from the record.
+5. Leave one fresh claim waiting at each gate, so I can check the screens in Action Center.
 
-**Build it against payloads your own Agents actually produced**, not against payloads you imagined. Use claims from previous run to read what landed on the Data Fabric record, and capture each open-gate fixture while its task is still open — that record is what the reviewer will see.
-
-**Pause for a human before the first publish.** Serve the app locally on fixtures captured from your own records — development-only, never shipped — and ask your reviewer to open `http://127.0.0.1:<port>` with `?gate=eligibility`, `?gate=eligibility&state=decided`, `?gate=review`, `?gate=review&state=decided` — one screen state each, the decided review carrying a real settlement override. Apply what they find, then publish once.
-
-**After the deploy, prove the write-back once per gateway without a browser**: raise a fresh claim, complete its task with `uip tasks complete`, read the record back — a task decided before a fix proves nothing (`contracts/review-task.md`). Validating the deployed screens inside Action Center is the reviewer's own optional check.
-
-Two gates handled by single app. 
-- First: **Eligibility Check** gate has five checks and no assessments. 
-- Second: **Claim Review** will have all payloads. 
-
-**Done when** 
-- your reviewer has approved all four localhost states. 
-- the app is republished alone and upgraded in place. 
-- a fresh task per gateway, completed from the command line, lands its decision on the Data Fabric record and moves the case on. 
-- a completed task still carries all its data when read back.
+**Done when:**
+- I have approved all four local states
+- the app is republished on its own and upgraded in place
+- a fresh task per gate, completed from the command line, lands its decision on the record and moves the case on
+- a completed task still shows all its data
+- a claim waits at each gate for me.

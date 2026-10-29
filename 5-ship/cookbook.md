@@ -1,4 +1,12 @@
-# Hand over — what bites
+# Hand over
+
+## How it is built here
+
+- **Pins in `PROGRESS.md`**: the deployment name, the package name and version, both folder keys (seat and `-Deploy`) and the case release key; never the deployment's `Key`, which rotates. The Coded Action App's deployed version. Then `uip solution upload Build/ClaimCase-<seat>`.
+- **As built**: the planner owns the edit. A condition Verify narrowed goes in as a *Design Feedback to PDD* row **and** an *Action Required* row. The *As Built* section states the pins and each known limitation with the change it needs; where it and the design differ, it is right. Every task in `tasks.md` is `[x]` or says why not.
+- **The runbook** names what has to exist first: the six RPA processes, the shared IXP project, the Data Fabric entity, the shared connection. Its scorecard: each planted problem caught or missed, the clean-claim referral rate against SC5, the next fix for every open failure. Most of it is already in `PROGRESS.md`; rewrite it for an operator.
+
+## What bites
 
 | Issue | Fix |
 |---|---|

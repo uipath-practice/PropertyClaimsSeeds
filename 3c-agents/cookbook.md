@@ -1,4 +1,12 @@
-# Agents — what bites
+# Agents
+
+## How it is built here
+
+- Low-code Agents, all seven inside `Build/ClaimCase-<seat>`.
+- **The repeatability test**: three runs on identical inputs, the numbers compared, and each figure checked against its other copies: claimed amounts against the form, the net against the envelope it is copied from (the row below).
+- **Upload at the end**: `uip solution upload Build/ClaimCase-<seat>`. Everything you build is local until then.
+
+## What bites
 
 **When an Agent gets a judgement or a figure wrong, change the order and shape of its output, not its wording** — make it write the evidence before the conclusion (rows below). After every edit to `agent.json`, run `uip agent refresh` before `uip agent debug`: debug uploads `.agent-builder/agent.json`, which only refresh regenerates.
 

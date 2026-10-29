@@ -1,4 +1,13 @@
-# Plan — what bites
+# Plan
+
+## How it is built here
+
+- `tasks.md` at the seed's root. The Coded Action App is a stand-alone task (beside the solution, deployed to the seat folder), ordered before the case.
+- The case is one task: *build the case from `sdd.md`: resolve, convert, close what convert leaves unresolved*.
+- A `Validate:` step on every task that generates something, and a testing task before anything deploys.
+- **`Status:` lines**: each later block sets the `Status:` line of every task it finishes, not only the sub-items. Hand-over (`5-ship`) closes every task before it; the process app's tasks come after it and stay open there.
+
+## What bites
 
 | Issue | Fix |
 |---|---|

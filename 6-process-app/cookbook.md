@@ -1,4 +1,14 @@
-# The Process App — what bites
+# The Process App
+
+## How it is built here
+
+- At `Build/property-claims-<seat>/`. Use `uipath-coded-apps`' **web-app** path: not the action-app path, and not its dashboard generator, which reads Insights, not your claim record. Sign-in uses the shared registration in `CONFIG.md`: the same client, its scopes and no others.
+- **The design** goes in `6-process-app/design.md`: each screen, what it shows, from which column or call, and the map from the record's status words to a handler's labels. About ten lines a screen.
+- **The claim screen**: import it from `Build/claim-review-<seat>/src` by an alias, with its stylesheet. Completing its controls completes the Action Center task with `contracts/review-task.md`'s payload: outcome and outputs, the three identifiers replayed.
+- **Reconcile before the first publish**: `uip df records list`, then run the app's own aggregation over those rows. A signed-in browser is your operator's.
+- **Ship**: `npm run build` → `uip codedapp pack` → `uip codedapp publish` (a Web app, no `-t Action`) → `uip codedapp deploy --folder-key <seat folder key> --client-id <the shared registration>`.
+
+## What bites
 
 | Issue | Fix |
 |---|---|

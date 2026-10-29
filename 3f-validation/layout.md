@@ -18,7 +18,7 @@ The two reviews are the same job at different depths, so one Coded Action App se
 ## Where the data comes from
 
 - **The claim: from the Data Fabric record, by `recordId`.** The task payload carries the three inOut identifiers and the outputs — nothing else (`review-task.md`, *Everything else the app reads from the claim record*). The app signs in through the shared read-only registration (`CONFIG.md`). **The record comes back PascalCased** — `ClaimId`, `SettlementJson` — while the schema is camelCase (`contracts/claim-entity.md`, *a fourth on the way back*); read case-tolerantly or every panel is empty with no error.
-- **The stages: from your own `sdd.md` Section 2**, and the current one from the record's `status` column — never a list typed into the app, which drifts the first time either changes.
+- **The stages: from your own `sdd.md` Section 2**, and the current one from the open task's `triggerStage` while a gate is open, else from the record's `status` column, which lags an open gate — never a list typed into the app, which drifts the first time either changes.
 - **The three documents, twice over.** Their *content* as data — the extracted claim, the policy data, the assessor's report as the Agents read them, from the record's payload columns — rendered in the reviewer's language on their own tabs, so a claims officer looks a value up without opening anything. And the *originals*, on demand from the buckets the record's `*PdfName` columns name, behind a button — never rendered inline in the flow.
 
 ## The wireframe — H2, a 1440 × 900 window

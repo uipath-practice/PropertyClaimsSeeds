@@ -1,28 +1,22 @@
 # Design
 
-Read:
-- `PDD.md` — property claims department manager has described how property claims are handled. 
-- `CONFIG.md` - describes environment and settings.
-- `contracts/` - some technical specs and description of automation blocks that already exist (use what is deployed instead of designing a replacement for it).
+Design the solution for the property claims process with the **`uipath-planner`** skill, and write it to `sdd.md` beside `PDD.md`. Work on your own; everything you would ask me is in the files below.
 
-Use the **`uipath-planner`** skill and design the solution from the PDD. Run **autonomous** — do not pause for confirmation. **Design only: write the design to `sdd.md` at the seed's root, beside `PDD.md`, and stop** — with `Tasks file: tasks.md` in its handoff header, which is where `2-plan` writes. No task list, nothing built, nothing deployed — `2-plan` derives the tasks next.
+Read first:
+- `PDD.md`: how the claims department handles a property claim today, written by its manager.
+- `CONFIG.md`: the environment you build in.
+- `contracts/`: what is already deployed and the shapes everything must keep. Use what exists instead of designing a replacement.
 
-`sdd.md` describes what the solution **is** when it runs. It outlives the build and everything downstream binds to it.
+Steps:
+1. Map the process onto the platform: which steps need judgement and become Agents, which follow a rule, and where a person decides.
+2. Write the design. It describes what the solution **is** when it runs; everything built later binds to it.
+3. Check it with the design checker and fix what it finds.
+4. Stop after the design. The task list is the next block.
 
-Three things I care about:
+Guidelines:
+- Let the PDD decide what each step is. It says which steps are judgement and which are rules; what the tenant happens to hold does not.
+- Build only the components the contracts list. How you shape the case (stages, order, conditions, SLAs) is your call.
+- Describe the claim record (which step writes each column), and write down where the design changes the process, so the PDD's owner sees it.
+- If a check fires on something you believe is right, tell me and leave it.
 
-- **Take every task's type from the PDD's §5.3 decision-nature column**, not from whatever the tenant happens to hold — and name the step in each task's *Design Rationale* (`PDD step 4.3`), which is how the checker verifies it.
-- **Build only what `contracts/components.md` lists** — seven agents and one Action app, no tools, no evaluation sets. How you shape the case — stages, ordering, conditions, SLAs — is yours.
-- **Add the two sections in `method/sdd-addendum.md`** after Section 4, headings as written: the claim entity with its write-ownership matrix, and what the design fed back to the PDD.
-
-Then check your own work and fix what it finds:
-
-```bash
-python3 1-design/check_sdd.py sdd.md --pdd PDD.md
-```
-
-One command, both checks: it runs the planner's shape audit and then checks the design against the process — task types against the PDD, one writer per column, every read variable produced, real argument names, tables that render. Read its rules when a failure is unclear — each one is a shape that built and then failed.
-
-**Done when a solution architect could hand this to a developer and walk away** — every stage, task, rule and human decision described well enough to build from, with nothing left to guess. The checker exiting 0 is the floor, not the finish.
-
-If a check fires on something you believe is right, say so and leave it — a wrong rule in the checker is worth more to us than a file edited to satisfy it.
+**Done when** a solution architect could hand `sdd.md` to a developer and walk away: every stage, task, rule and human decision described well enough to build from, nothing left to guess. The checker passing is the floor, not the finish.

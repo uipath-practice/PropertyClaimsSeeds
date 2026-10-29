@@ -13,7 +13,7 @@ This is the seed for the Property Claims exercise. **`README.md` has the steps, 
 | Findings | the shared table, via `log-finding.py`. Never a local file |
 | Where the build has got to, what exists, what broke, what is next | `PROGRESS.md`, at this folder's root — the one file that spans blocks |
 
-Paths in this seed are relative to this folder. A block ships `prompt.md`, `cookbook.md` and sometimes a script; **any other file in a block folder is yours.** `Build/` holds only solution and app sources.
+Paths in this seed are relative to this folder. A block ships `prompt.md` (what your operator asks for), `cookbook.md` (how it is built here: the commands, the checks, the traps) and sometimes a script; **any other file in a block folder is yours.** `Build/` holds only solution and app sources.
 
 ## You have standing approval to build, deploy and run
 
@@ -31,7 +31,7 @@ Your seat — folder, buckets, solution, claim record — is yours and disposabl
 
 **Verify, do not assume.** Nearly every *not found* is a wrong folder, tenant, scope or stale cache — check [`known-issues/`](known-issues/) and `uip login status` before believing an empty list.
 
-**When something fails, read the block's `cookbook.md` before searching further** — issue → fix, from the builds before yours.
+**Read the block's `cookbook.md` before you start it, after its `prompt.md`.** The prompt says what to build and when it is done; the cookbook says how it is built on this tenant, and its *How it is built here* section is part of the request. When something fails, read the cookbook again before searching further.
 
 **`uip --help` and the installed skills are ahead of any document here.** Where they disagree with a cookbook, the tool wins — and log the disagreement.
 

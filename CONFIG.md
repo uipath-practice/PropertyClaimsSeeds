@@ -66,7 +66,7 @@ A different line means different skills. If this line is ever found broken, this
 
 Likewise the claim entity is [yours to build](#the-claim-entity), not a service to call — there is no central record-writing component.
 
-**An IXP project** is also provided: `property-claims-shared-45fcad56-ixp`, published and tagged `live`. Adopt it, or train your own.
+**An IXP project** is also provided: `property-claims-shared-45fcad56-ixp`, published and tagged `live`. Use it; you do not train a model.
 
 **Their exact arguments, types and behaviour: [`contracts/provided-processes.md`](contracts/provided-processes.md).** Read it before binding anything.
 
@@ -81,7 +81,6 @@ Likewise the claim entity is [yours to build](#the-claim-entity), not a service 
 | Solution, and every package it publishes | `ClaimCase-Jane` |
 | Deployment (`deploy run --name`) | `ClaimCase-Jane` — **exactly one, for the whole exercise** |
 | Solution folder you deploy into | `ClaimCase-Jane-Deploy`, under your seat folder |
-| IXP project, if you train your own | `ClaimCase-Jane` |
 | **Claim record** | **`ClaimCase_Jane`** — underscore, not hyphen |
 | **Coded Action App** | **`claim-review-jane`** — lower case; deployed into `ClaimCase-Jane`, the seat folder, not into `-Deploy` |
 | **Coded Web App — the process app (block 6)** | **`property-claims-jane`** — lower case; deployed into `ClaimCase-Jane`, the seat folder, beside the Action App |

@@ -1,4 +1,12 @@
-# The Data Fabric entity — what bites
+# The Data Fabric entity
+
+## How it is built here
+
+- `uipath-platform`'s Data Fabric section owns `uip df`. The entity is **folder-scoped, in your seat folder**, never tenant level (`CONFIG.md`, *The claim entity*).
+- From `contracts/claim-entity.md` read the five column tables and the casing rule; the rest of that file is for `3d`.
+- **One create, from a file**, with `lengthLimit` set on every column: one call and no repair.
+
+## What bites
 
 | Issue | Fix |
 |---|---|

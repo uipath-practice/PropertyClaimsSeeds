@@ -1,15 +1,18 @@
-# Run Maestro Case and test it: the clean claim, then the four possible routes involving human review
+# Run the case: the clean claim, then the four human routes
 
-Case Plan is checked, but not tested yet on real claims. Compile, Pack, Publish and Deploy with the **`uipath-solution`** skill. Run it to find out what the plan actually does. It is normal for it to take several deploy cycles, each one should end with a named defect and fix.
+The plan is checked but has never run. Deploy it with the **`uipath-solution`** skill and run real claims to find out what it actually does. Several deploy cycles are normal; end each one with a named defect and its fix.
 
-Aim each run with the case's own `scenario` / `discrepancy` inputs (and `profileId` to repeat a claimant) — they flow to the generator (`contracts/provided-processes.md`, *Retrieve Property Claim*); a scenario alone does not guarantee a route — pin a `discrepancy` with it, preferably an unambiguous breach (`cookbook.md`).
+Steps:
+1. Deploy, and start one claim on each new version before you start more.
+2. Run a claim with nothing wrong with it, and follow it to the end.
+3. Aim a claim at each of the four human routes: proceed and refuse at the first gate, approve and deny at the second. The generator takes inputs that plant a problem; a scenario alone does not guarantee a route.
+4. Decide the gate tasks from the command line. The review app has no screens yet, so a route that misbehaves now is a case defect.
 
-Complete the Action Center tasks from the command line (`uip tasks complete`) — the Coded Action App has no screens yet, only the empty-page registration the case binds. A route that misbehaves now is a case defect; the point is to find case-plan issues before the app is live. Read the record while a gate task is still open, before you complete it: the reviewer sees what is on it then, and a write that lands only after the gate is hidden once the task is done.
-
+Guidelines:
+- Read the claim record while a gate task is still open, before you complete it. That is what the reviewer will see, and a write that lands only after the gate is hidden once the task is done.
+- A broken version costs a whole batch, so prove it on one claim first.
 
 **Done when:**
-- a claim with nothing wrong with it goes in and a settled claim comes out, with no human touching it and no task ever raised. That is the run that proves the whole case (happy path), the Action Center task never appears. Read the Data Fabric record and the case instance's timeline instead.
-- four human routes proven: proceed and refuse at the first gate, approve and deny at the second. 
-
-Five runs prove the block; a broken version costs more, so start one claim on each new version before the batch. The Data Fabric record populated by the end of this block: the next block builds the Action App's screens against these payloads.
-
+- a claim with nothing wrong goes in and a settled claim comes out with no human involved and no task ever raised; you checked the claim record and the case timeline
+- the four human routes work
+- the claim record holds these runs: the next block builds the review screens against them.
