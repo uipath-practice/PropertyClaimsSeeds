@@ -25,3 +25,12 @@ It reads as *no arguments*, not *no such version* — read the version from `uip
 ## Warnings mixed into the output you parse
 
 `uip solution upload --output json` prints `[WARN]` lines on stdout before the JSON, so a JSON parse of the whole capture fails at line 1 — find the envelope (`{`) first, or read `"Action": "Overwritten"`. `uip maestro case spec` writes its `[WARN]` lines to stderr: keep `2>&1` out of the redirect that saves the spec cache. In `--output-filter`, `contains(FullyQualifiedName, …)` fails on the tenant folders whose name is null; filter on `starts_with(Name, …)`.
+
+## Instances and jobs that stop moving
+
+| Issue | Fix |
+|---|---|
+| `instance migrate` answers a generic `400` | The instance is still `Pausing`. Resume it, wait for `Running`, then migrate. |
+| A job sits `Pending` with no reason given | Kill it (`uip or jobs stop <key> --strategy Kill`) and start it again. |
+| `instance variables` answers HTTP 500 | Transient. Wait a few seconds and read again. |
+| A records or correspondence query returns exactly 50 rows | It pages at 50. Read the next page until it comes back short. |

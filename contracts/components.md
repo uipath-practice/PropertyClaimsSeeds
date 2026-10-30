@@ -16,7 +16,7 @@ One per `PDD.md` §7 section, which is where the split comes from — the proces
 | `SettlementCalculation` | what is payable, line by line, and every cap that bound it — from the assessor's report, the policy's limits and deductible, the claim history against the annual aggregate, the claim itself, **and `CoverageAnalysis`'s per-item verdict**: it computes over what §7.3 said is covered, it never re-decides coverage, so it runs after coverage, not beside it | §7.4, `BR-20`–`BR-29` |
 | `CredibilityAssessment` | whether the claim reads as told straight | §7.5, `BR-30`–`BR-33` |
 | `DecisionRecommendation` | the outcome, and what an adjuster's override does to it | §7.6 and §7.8, `BR-40`–`BR-45`, `BR-60`–`BR-62` |
-| `ClaimantCorrespondence` | what the claimant is told, and when | §7.7, `BR-50`–`BR-52` |
+| `ClaimantCorrespondence` | what the claimant is told, and when | §7.7, `BR-50`–`BR-53` |
 
 **§7.9 belongs to all seven.** It says what is *not* a finding, and a component that skips it flags something on every claim.
 

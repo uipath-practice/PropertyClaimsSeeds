@@ -68,7 +68,7 @@ The title is set where the task is raised, in the case.
 
 ## Who receives it
 
-**Every gate task, and every SLA notification, goes to the seat owner: you, as `User:` with your sign-in email** (`uip login status`). The tenant has no *Eligibility reviewer*, *Claims adjuster*, *Claims team lead* or country groups, and you create none. The PDD's roles, reassignment and country residency (§10) are production design; record them in `sdd.md` as a production limitation and build none of them. **Never `ClaimCaseParticipants`**: that group is every participant, so every seat's reviews and alerts would reach everyone.
+**Every gate task, and every SLA notification, goes to the seat owner: you, as `Email:<your sign-in email>`** (`uip login status`). Write it that way in `sdd.md`: `sdd convert` does not convert a `User:` recipient. The tenant has no *Eligibility reviewer*, *Claims adjuster*, *Claims team lead* or country groups, and you create none. The PDD's roles, reassignment and country residency (§10) are production design; record them in `sdd.md` as a production limitation and build none of them. **Never `ClaimCaseParticipants`**: that group is every participant, so every seat's reviews and alerts would reach everyone.
 
 ## The casing depends on who completed the task
 

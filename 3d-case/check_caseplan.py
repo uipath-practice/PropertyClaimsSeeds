@@ -31,6 +31,11 @@ after every edit and before every pack.
 """
 import json, os, re, sys
 
+try:
+    sys.stdout.reconfigure(errors="replace")   # a cp1252 console must not crash on an arrow
+except AttributeError:
+    pass
+
 path = sys.argv[1] if len(sys.argv) > 1 else next((p for p in ('caseplan.case', 'caseplan.json') if os.path.exists(p)), 'caseplan.case')
 if path in ('-h', '--help'):
     print(__doc__.strip())
@@ -164,11 +169,14 @@ for stage in stages:
 # every task green. This is the check that would have caught it in a second.
 #
 # The inverse is fine and is used deliberately: a stage with no marks-complete exit (the
-# Awaiting Assessment poll loop) is *only* reachable via `exited`.
+# Awaiting Assessment poll loop) is *only* reachable via `exited`. So is a gate stage whose
+# refusal exit does not complete it beside a completing Proceed exit: the rule fires on the
+# refusal. Only a stage whose every exit marks it complete can never be `exited`.
 
 marks_complete = {
-    s['id']: any(c.get('marksStageComplete') for c in (s['data'].get('exitConditions') or []))
+    s['id']: bool(exits) and all(c.get('marksStageComplete') for c in exits)
     for s in stages
+    for exits in [s['data'].get('exitConditions') or []]
 }
 labels = {s['id']: s['data'].get('label', s['id']) for s in stages}
 
@@ -330,9 +338,18 @@ for stage in stages:
 #    2026-08-26: seven stages, thirty-one tasks, not one entity write, and this script
 #    said `0 referential problems`. The budget rule below only ever looked for too
 #    many. Components computing the values is not the same as anything storing them.
+def _is_write(t):
+    """A create or update of an entity record. A Get/Query/List read is not a write (sol61,
+    2026-10-30: GetEntityRecord_V3 reads were counted against the budget)."""
+    d = json.dumps(t.get('data') or {})
+    if re.search(r'(Create|Update|Insert|Upsert|Delete)EntityRecord', d):
+        return True
+    return 'EntityRecord' in d and not re.search(r'(Get|Query|List)EntityRecord', d)
+
+
 _all_writes = [t for stage in stages
                for g in (stage['data'].get('tasks') or []) for t in g
-               if 'EntityRecord' in json.dumps(t.get('data') or {})]
+               if _is_write(t)]
 if stages and not _all_writes:
     print('WARNING  the plan never writes the claim record — no task anywhere carries an '
           'entity write. Every screen and every report reads that record, so a plan like '
@@ -344,7 +361,7 @@ if stages and not _all_writes:
 for stage in stages:
     label = stage['data'].get('label', stage['id'])
     tasks = [t for g in (stage['data'].get('tasks') or []) for t in g]
-    writes = [t for t in tasks if 'EntityRecord' in json.dumps(t.get('data') or {})]
+    writes = [t for t in tasks if _is_write(t)]
     if not writes:
         continue
     # A human gateway is an `action` task -- the only task type a person completes. Two per
@@ -565,7 +582,7 @@ for tid, (stage, task) in by_id.items():
         continue
     prior = [by_id[p][1] for p in before(task)]
     producers = [p for p in prior if p.get('type') in ('agent', 'rpa', 'process')]
-    writes = [p for p in prior if 'EntityRecord' in json.dumps(p.get('data') or {})]
+    writes = [p for p in prior if _is_write(p)]
     if producers and not writes:
         names = ', '.join(p.get('displayName', p['id']) for p in producers)
         print(f'GATE BEFORE WRITE  {stage["data"].get("label")}/{task.get("displayName", tid)} opens after {names} '

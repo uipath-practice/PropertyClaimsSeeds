@@ -3,8 +3,8 @@
 **Client / business unit:** Household Claims, Property & Casualty
 **Document owner:** Business Analyst, Claims Transformation
 **Status:** Signed
-**Version:** 1.0
-**Date:** 2026-08-25
+**Version:** 1.4
+**Date:** 2026-10-30
 
 > This is a **synthetic process**, written for a build exercise. The behaviour described is internally consistent and complete, and every figure in it is a real oracle you can test against. The organisation and the people are not real, so the sign-off table below records roles rather than names.
 
@@ -37,6 +37,7 @@
 | 1.1 | 2026-08-27 | Business Analyst, Claims Transformation | Whole-claim SLA raised to 25 business days (5.5); SC3 unchanged. The automations already running stated up front (1.2, 2.2, 5.3). Re-signed |
 | 1.2 | 2026-09-21 | Business Analyst, Claims Transformation | BR-40: *without justification* defined — a reason recorded on the claim, not a reviewer's decision to proceed (7.6). No other rule changed. Re-signed |
 | 1.3 | 2026-09-25 | Business Analyst, Claims Transformation | Meanings the builds had to discover, now given: dates are day first (§12); BR-15's conflict defined against §6.3's perils (Storm/Hailstorm and Wind read as one peril); BR-30's test and its two reads, levels Low or High; BR-31 always low; BR-33's thresholds; BR-08's contradiction; a settlement that does not add up is unreadable (BR-28); a failing peril classification is coverage disputed (BR-41); a proceeded late filing is a granted exception (§5.7); the aggregate caps before the deductible (BR-24); the letter's sign-off and no appeal (BR-52); the vacancy base (BR-13); the fire form value is *Fire Damage*; §13.2 hard cases. Re-signed |
+| 1.4 | 2026-10-30 | Business Analyst, Claims Transformation | An item under two sublimits takes the lower (BR-23); an override goes down to zero, never below (BR-61); the letter quotes the decision and works nothing out (BR-53). Re-signed |
 
 ## Sign-off
 
@@ -749,7 +750,7 @@ Applied at step 4.3, in this order. **Settlement computes; it does not adjudicat
 | BR-20 | Every row starts at the **amount claimed**. A covered item pays the claimed amount or its cap, whichever is lower; an excluded item pays nothing | 4.3 | | Claimed 4,500, no cap → payable 4,500 |
 | BR-21 | **The assessor's estimate is evidence, not a ceiling.** The only thing that reduces a claim without a human deciding is a cap printed in the policy | 4.3 | | Claimed 4,500, assessor 3,900, no cap → payable **4,500**, and the gap is BR-29's business |
 | BR-22 | Total the covered items per coverage section, then cap each section at its policy limit | 4.3 | | Dwelling items 14,500, limit 500,000 → 14,500 |
-| BR-23 | Cap the sublimited personal-property categories, then re-total that section | 4.3 | | Jewellery claimed 8,000, sublimit 2,500 → 2,500 |
+| BR-23 | Cap the sublimited personal-property categories, then re-total that section. **An item that falls under two sublimits takes the lower one** | 4.3 | | Jewellery claimed 8,000, sublimit 2,500 → 2,500. A watch claimed 6,000, under jewellery 2,500 and valuables 4,000 → **2,500** |
 | BR-24 | **Cap at whatever the annual aggregate has left.** Subtract what earlier settled claims in this policy period have paid from the policy's annual aggregate; where the covered total exceeds the remainder, reduce the rows and name the limit that bound them. **The remainder caps the covered total before the deductible is taken off ([BR-25](#74-settlement))**, in the order of this table. **No prior claims is a result, not missing data** | 4.3 | | Aggregate 125,000, earlier claim paid 110,000, covered total 22,000, deductible 2,500 → covered total capped at **15,000**, less the deductible → payable **12,500**, naming the earlier claim |
 | BR-25 | **Subtract the deductible once**, from dwelling + other structures + personal property combined. It does **not** apply to loss of use | 4.3 | | Three sections totalling 16,600, deductible 2,500 → 14,100. Never 2,500 per item and never 2,500 per section |
 | BR-26 | If the combined total is below the deductible, those coverages pay nothing. This is a **valid covered claim that pays zero, not a refusal** | 4.3 | Settled at zero | Covered total 1,800, deductible 2,500 → payable 0, outcome **Settled** ([E4](#exit-paths--every-one-not-just-the-happy-path)) |
@@ -792,13 +793,14 @@ Applied at step 5.1, in this order. **These produce a recommendation, not an out
 | BR-50 | The claimant is written to exactly **twice**: the claim was received, and the outcome. There is no third letter, and **never one saying the claim is still under review** | 1.6, 6.3, 7.2 | |
 | BR-51 | The outcome message carries the decision letter itself, so the letter is written inside the ending, before the message is sent. Each ending drafts its own — a claim refused at 2.7 never passes through claim review and would otherwise be notified with nothing to send | 6.1, 7.1 | |
 | BR-52 | **The letter explains; it never analyses.** By the time it is drafted the claim has an outcome, and every concern raised was ruled on before it. Explain the outcome using them; never re-open their questions, and never ask an approved claimant for a document the decision did not depend on. **Both letters are signed *Household Claims*.** A refusal carries its reason and says nothing of an appeal or a review — complaints and appeals are a separate process ([OS4](#23-out-of-scope)) | 6.1, 7.1 | |
+| BR-53 | **The letter quotes the decision, it never works one out.** Every amount, limit and date in it is the figure the outcome holds, in the claim's currency as the documents write it (*52,215.55 RON*). A letter adds nothing up, derives no balance and states no figure the decision did not contain. It reads correctly whoever decided: it never says a person reviewed a claim that was settled automatically | 6.1, 7.1 | |
 
 ### 7.8 Adjuster overrides
 
 | ID | Rule | Step | Outcome |
 |---|---|---|---|
 | BR-60 | The recommended settlement is **never mutated**. An adjuster's change produces a final figure plus one recorded override per changed line — the original, the new value and the reason | 5.2 | |
-| BR-61 | An override is **rejected** above the higher of the amount claimed and the assessor's estimate for that line, or above the line's cap. Downward has no floor | 5.2 | |
+| BR-61 | An override is **rejected** above the higher of the amount claimed and the assessor's estimate for that line, or above the line's cap. **Downward it may go as far as zero, never below** | 5.2 | |
 | BR-62 | Every override carries a reason. An override without one is not accepted | 5.2 | |
 
 ### 7.9 What is not a finding
@@ -1005,7 +1007,7 @@ At most one screening-level and one review-level problem is present in any claim
 | BR-05 (explanation) | Filed 81 days after the loss; the form describes the damage and temporary repairs, nothing about the delay | Filing deadline **fails** — a description of the damage is not a reason for the delay |
 | BR-05 proceeded | The eligibility reviewer proceeds past a late filing | A granted exception: later steps cite it and nobody raises it again |
 | BR-15 (typhoon) | Form says Wind Damage; the assessor determines a typhoon broke a window and wind-driven rain did the rest | Peril classification **passes** |
-| BR-15 (storm) | Form says Storm/Hailstorm Damage; the assessor determines a summer storm with high winds, no hail | Peril classification **passes** |
+| BR-15 (storm) | Form says Storm/Hailstorm Damage; the assessor determines a storm with high winds, no hail | Peril classification **passes** |
 | BR-15 (hail on a Wind form) | Form says Wind Damage; the assessor determines a hailstorm | **Passes** — both are windstorm or hail ([§6.3](#63-value-mappings)) |
 | BR-15 (a value the form does not offer) | Form says "Plumbing Failure" or "Electrical Damage"; the assessor determines a burst pipe, or a fire from an electrical fault | Peril classification **fails** |
 | BR-15 (the boilerplate) | The report opens "consistent with the reported cause: a burst supply pipe"; the form says Storm/Hailstorm Damage | Peril classification **fails** — the named cause is compared, not the phrase |
@@ -1055,6 +1057,7 @@ At most one screening-level and one review-level problem is present in any claim
 | 2 | 2026-08-27 | Whole-claim SLA 8 → 25 business days; SC3 keeps 8 as the average target | 5.5 | An SLA shorter than the stages it contains alarms on every claim — found by the design stage | Claims department manager | business-process — re-baselined as 1.1 |
 | 3 | 2026-08-27 | The automations that already exist are stated up front (1.2), against the activities they cover (2.2) and the steps they perform (5.3) | 1.2, 2.2, 5.3 | Two designs of this document rebuilt what the department already runs; Appendix D alone was read too late | Claims department manager | clarification — same baseline 1.1 |
 | 4 | 2026-09-25 | Rule meanings stated with examples (see 1.3) | 5.7, 6.2, 6.3, 7.1–7.7, 12, 13.2 | Three builds each spent verify cycles discovering them | Claims department manager | clarification — re-baselined as 1.3 |
+| 5 | 2026-10-30 | Three meanings stated: two sublimits, the override floor, figures in letters | 7.4, 7.7, 7.8 | Builds asked for the first two and computed figures in letters | Claims department manager | clarification — re-baselined as 1.4 |
 
 **Known and deliberately deferred:** the *Missing details* stage ([8.1](#stage-8--missing-details)) is defined and unwired. The business wants the claimant asked for a missing document and the claim to wait, but the request channel is not agreed. The stage exists in the lifecycle so the later change is an addition rather than a restructure. **Do not remove it, and do not build it.**
 

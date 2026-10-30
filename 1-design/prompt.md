@@ -16,6 +16,7 @@ Steps:
 Guidelines:
 - Let the PDD decide what each step is. It says which steps are judgement and which are rules; what the tenant happens to hold does not.
 - Build only the components the contracts list. How you shape the case (stages, order, conditions, SLAs) is your call.
+- Design the smallest case the PDD allows. Every task and variable you add is one more thing to build, test and keep right; a design that guards against everything is the slowest to make work.
 - Describe the claim record (which step writes each column), and write down where the design changes the process, so the PDD's owner sees it.
 - If a check fires on something you believe is right, tell me and leave it.
 

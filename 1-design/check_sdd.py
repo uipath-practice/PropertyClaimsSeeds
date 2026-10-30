@@ -26,6 +26,11 @@ not stop the build. NOTE is something the script could not decide — never a pa
 import argparse, pathlib, re, sys
 from collections import defaultdict
 
+try:
+    sys.stdout.reconfigure(errors="replace")   # a cp1252 console must not crash on an arrow
+except AttributeError:
+    pass
+
 # The build reads these four headings and nothing else will do — the planner's case
 # template writes them since CLI line 1.201; a hand-written or older design may not.
 SECTIONS = ["## Section 1: Case Definition", "## Section 2: Stages & Tasks",
@@ -472,6 +477,18 @@ def _declared_vars(text):
     return out
 
 
+def check_size(text, r, tasks):
+    """The smallest case the PDD allows. Four designs that passed (2026-10-28/29) held 28-29 tasks
+    and 34-72 case variables; the one at 43 tasks and 83 variables spent its build defending its
+    own guards and still referred clean claims. Size is a WARN: the designer says why, or cuts."""
+    nv = len(_declared_vars(text))
+    if len(tasks) > 34 or nv > 75:
+        r.add("WARN", "SIZE-1", f"{len(tasks)} tasks and {nv} case variables; designs that passed held about 30 and "
+                                "at most 75. Merge tasks that only move data, give each stage one record write "
+                                "(3d-case/cookbook.md, *Structure*), and keep in the case only what a condition "
+                                "or a later task reads — or say in the design why it needs more")
+
+
 def check_design_safety(text, r, tasks):
     """Terra01 run 3 (2026-08-28) met every rule above with real work and was still not buildable:
     eleven `x = =js:true` outputs to undeclared variables, gateways whose entry and skip conditions
@@ -897,6 +914,7 @@ def main():
     check_bindings(text, r, tasks)
     check_platform_fidelity(text, r, tasks)
     check_design_safety(text, r, tasks)
+    check_size(text, r, tasks)
     check_reachability(text, r)
     check_table_integrity(text, r)
     check_write_ownership(text, r)

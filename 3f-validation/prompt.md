@@ -14,7 +14,7 @@ Requirements:
 
 Steps:
 1. Leave a claim waiting at each gate, and build against what your own Agents wrote on those records, not against data you imagined.
-2. **Pause for me before the first publish.** Serve the app locally on the records you captured and ask me to check four states: each gate open and decided, with a real settlement change on the decided review. Apply what I find.
+2. **Pause for me before the first publish.** Serve the app locally on the records you captured and ask me to check four states: each gate open and decided, with a real settlement change on the decided review. Give me the four addresses and what each should show, and wait for my answer. Apply what I find.
 3. Publish and deploy the app once.
 4. Prove each gate writes back: a fresh claim per gate, its task completed from the command line, the decision read back from the record.
 5. Leave one fresh claim waiting at each gate, so I can check the screens in Action Center.

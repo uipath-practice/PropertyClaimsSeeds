@@ -32,6 +32,10 @@ uip or packages entry-points "<PackageId>:<Version>" --output json    # its exac
 | `Retrieve Inspection Report` | step 3.1 | the claim number | a ready flag, and the report once it exists |
 | `Client Notification` | steps 1.6, 6.3, 7.2 | subject, body, recipient; optionally `in_ClaimId` | a row in the tenant-level `ClaimCorrespondence` entity — the letter as sent |
 
+### Every amount is in currency units, never cents
+
+**Every money value the six return is in whole currency units of the claim's currency**: the claim form's lines and totals, the policy's limits, sublimits and deductible, the assessor's estimates, and the history's `paidTotal` and `paidByCoverage`. `4500` is four and a half thousand, not 45.00. If the case computes in integer cents, convert **once**, where each value enters the case, and test each converted copy against its source: a copied limit must equal the policy's figure, a prior claim's paid amount must equal the history's.
+
 ### Three shapes that are easy to get wrong
 
 A mismatch here faults at run time having packed and deployed cleanly.

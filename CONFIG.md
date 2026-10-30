@@ -124,9 +124,23 @@ Schema: [`contracts/claim-entity.md`](contracts/claim-entity.md).
 
 **User-scoped, and read-only towards the claim record** — the case writes it. The one write the registration allows is completing a task (`OR.Tasks`): block 6 decides through the gate task, and the case writes the record as it does from Action Center. `PIMS` and `OR.Execution.Read` read the case's stages (pre-aggregated counts and SLA roll-ups need Insights scopes it does not carry); `http://localhost:5173` is registered for local sign-in. `uipath.json`'s `scope` must match this list, never exceed it — `invalid_scope`, `401` or `403` on a listed scope is that file.
 
+## Your machine
+
+**Set this up before block 1.** Most lost hours on this exercise were the machine, not the build.
+
+| | |
+|---|---|
+| A coding agent that sandboxes its shell | Exclude `uip` from the sandbox and call `uip` directly, never through a script that spawns it (a child process stays sandboxed). Claude Code: `"sandbox": {"excludedCommands": ["uip"]}` in `.claude/settings.local.json`. Inside a sandbox the CLI cannot write its token refresh and reports *refresh token invalid*: the login is fine, the sandbox blocked the write |
+| Port `5173` | The only local sign-in redirect the shared registration knows (`6-process-app`). Keep it free: stop a dev server you started in `3f` before block 6 |
+
 ## Windows
 
 The seat VM runs PowerShell, and **JSON on a command line is the largest time sink recorded on this exercise**: PowerShell rewrites quotes before `uip` sees them, and the error names the JSON rather than the shell.
 
-- **Prefer `--file` wherever a command offers it**, written UTF-8 **without a BOM**. `Set-Content -Encoding utf8` and `Out-File -Encoding utf8` both add one, and the next command reports invalid JSON *at line 1 column 1* — that is the BOM. The reliable writer is Python: `open(path, "w", encoding="utf-8")` + `json.dump`.
-- **Calling `uip` from a script? Call `node` directly.** Driving the `uip.ps1` shim from Python's `subprocess` strips quotes out of a JSON argv element even when argv is a list.
+| Issue | Fix |
+|---|---|
+| A command's JSON argument arrives mangled | **Prefer `--file` wherever a command offers it.** A here-string keeps `\u` escapes literally, and `node -e` quoting breaks the same way: write the JSON to a file. |
+| The next command reports invalid JSON *at line 1 column 1*, or a byte `0xff` | PowerShell wrote the file. `Set-Content -Encoding utf8` and `Out-File -Encoding utf8` add a UTF-8 BOM (read with `encoding="utf-8-sig"`); `>` writes **UTF-16** (read with `encoding="utf-16"`; `utf-8-sig` does not fix it). Write files with Python, `open(path, "w", encoding="utf-8")` + `json.dump`, or from PowerShell with `[System.IO.File]::WriteAllText($path, $text, (New-Object System.Text.UTF8Encoding($false)))`. |
+| A checker crashes on `UnicodeEncodeError` | The console is cp1252. Run every Python script as `python -X utf8 …` on every call: `$env:PYTHONUTF8 = '1'` holds only in that one shell, and each tool call may be a new one. `python3` is a Store alias; use `python` or `py`. |
+| Calling `uip` from a script fails or loses quotes | Call `node` on the CLI's entry script, one argv item per argument: `["node", "<npm root -g>/@uipath/cli/dist/index.js", *args]` (find the folder with `npm root -g`). `CreateProcess` cannot start `uip.cmd`, and the `uip.ps1` shim strips quotes out of a JSON argv element even when argv is a list. |
+| `npm run dev -- --host` fails with *Unknown cli flags* | In PowerShell `npm` is `npm.ps1`, which drops the `--`. Use `npm.cmd run dev -- --host 127.0.0.1 --port 5173 --strictPort`, or `node node_modules/vite/bin/vite.js --host 127.0.0.1 --port 5173 --strictPort`. Keep `--strictPort`: without it Vite moves to `5174` and sign-in fails. |
